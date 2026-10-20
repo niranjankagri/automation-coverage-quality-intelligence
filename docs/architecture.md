@@ -73,9 +73,10 @@ The `qi` command is meant to run inside CI pipelines, so its exit codes are a co
 | Code | Meaning | Since |
 |---|---|---|
 | 0 | Success | Milestone 1 |
-| 1 | A configured quality gate failed | Milestone 7 |
+| 1 | A configured quality gate failed (`qi gate`) | Milestone 7 |
 | 2 | Wrong usage or invalid configuration | Milestone 1 |
 | 3 | Input missing or invalid (result files, catalog); nothing was evaluated | Milestone 3 |
+| 4 | Internal error (a crash), never confused with a gate decision | Milestone 7 |
 
 A missing, empty or unreadable result file always gives exit code 3, never 0, so a broken
 pipeline step cannot turn into a green quality gate.

@@ -55,12 +55,12 @@ src/qualityintel/
   models/         typed data model (requirements, test cases, results)      M2
   ingest/         result files -> model, JUnit XML first                    M3
   traceability/   result matching, coverage metrics, gaps, execution status M4
-  reporting/      text (and later JSON/HTML) renderers, no calculations
+  reporting/      text, JSON, HTML and Markdown renderers, no calculations
   dashboard/      FastAPI JSON API + static HTML/JS front end               M5
   workspace.py    view models behind every dashboard page (tested without a server)
   history/        SQLite store; stability classes, recurring failures,     M6
                   duration regressions, trends, run comparison
-  gates/          release criteria, reports, pipeline exit status           M7
+  gates/          gate file, rule evaluation, passed / failed / incomplete   M7
   config.py       settings from QI_* environment variables
   cli.py          the `qi` command
 tests/
@@ -114,6 +114,7 @@ qi dashboard --catalog samples/catalog.toml samples/results  # web dashboard on 
 qi history import samples/results     # store runs in .qi/quality.db (SQLite)
 qi history report                     # flaky candidates, recurring failures, slow-downs, trends
 qi history compare <base> <head>      # what changed between two runs
+qi gate --catalog samples/catalog.toml --config samples/gates/release.toml samples/results         --json reports/gate.json --html reports/gate.html   # exit 0 passed, 1 failed, 3 incomplete
 python -m qualityintel version   # same, when the qi script is not on PATH
 ```
 
@@ -126,8 +127,9 @@ catalog ([docs/traceability.md](docs/traceability.md)); metric formulas are in
 Settings are optional environment variables, listed with their defaults in
 [.env.example](.env.example). The tool needs no credentials.
 
-Exit codes: `0` success, `2` wrong usage or invalid configuration, `3` input missing or invalid
-(`1` = failed quality gate arrives in Milestone 7).
+Exit codes: `0` success / gate passed, `1` gate failed, `2` wrong usage or invalid
+configuration, `3` input missing or invalid (never a pass), `4` internal error. Details:
+[docs/quality-gates.md](docs/quality-gates.md).
 
 ## Checks
 
@@ -154,7 +156,7 @@ Chromium, and keeps the JUnit XML of each job (and the dashboard screenshots) as
 | 4 | Requirement traceability engine | Done |
 | 5 | Quality dashboard | Done |
 | 6 | Historical quality intelligence | Done |
-| 7 | CI/CD quality gates | Planned |
+| 7 | CI/CD quality gates | Done |
 | 8 | Portfolio-ready release | Planned |
 
 A milestone is marked done only when its acceptance criteria pass.
