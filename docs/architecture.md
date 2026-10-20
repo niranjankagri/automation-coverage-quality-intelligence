@@ -1,6 +1,6 @@
 # Architecture
 
-Status: Milestone 1 (foundation). This page describes the target design; each section says
+Status: updated with each milestone. This page describes the target design; each section says
 which milestone builds it. Nothing below is claimed as working until its milestone is done.
 
 ## Purpose
@@ -74,8 +74,10 @@ The `qi` command is meant to run inside CI pipelines, so its exit codes are a co
 | 0 | Success | Milestone 1 |
 | 1 | A configured quality gate failed | Milestone 7 |
 | 2 | Wrong usage or invalid configuration | Milestone 1 |
+| 3 | Input missing or invalid (result files, catalog); nothing was evaluated | Milestone 3 |
 
-Milestone 7 adds a rule that missing or unreadable result files are never treated as success.
+A missing, empty or unreadable result file always gives exit code 3, never 0, so a broken
+pipeline step cannot turn into a green quality gate.
 
 ## Quality checks on this repository
 

@@ -11,9 +11,8 @@ It complements the Selenium, Playwright, Appium, Robot Framework and API automat
 my [portfolio](https://niranjankagri.github.io); it does not run tests itself and duplicates none
 of them.
 
-> **Status: Milestone 1 of 8 (foundation).** Package layout, tooling, CI and architecture are in
-> place. Ingestion, coverage metrics, history, gates and the dashboard are built in the
-> milestones listed below; nothing is claimed here before its milestone is done and tested.
+> **Status: in progress, see [Milestones](#milestones).** Nothing is claimed here before its
+> milestone is done and tested.
 
 ## Goals
 
@@ -95,14 +94,20 @@ pip install -e ".[dev]"
 ```bash
 qi version          # prints the version
 qi config           # prints the settings in effect
+qi inspect samples/results                       # what the result files contain
+qi inspect "target/surefire-reports/TEST-*.xml"  # quoted patterns work in cmd.exe too
 python -m qualityintel version   # same, when the qi script is not on PATH
 ```
+
+Result files from pytest, Robot Framework, Maven Surefire/TestNG and Playwright Test are
+imported and tested with real CI files ([docs/ingestion.md](docs/ingestion.md),
+[samples/README.md](samples/README.md)).
 
 Settings are optional environment variables, listed with their defaults in
 [.env.example](.env.example). The tool needs no credentials.
 
-Exit codes: `0` success, `2` wrong usage or invalid configuration (`1` = failed quality gate
-arrives in Milestone 7).
+Exit codes: `0` success, `2` wrong usage or invalid configuration, `3` input missing or invalid
+(`1` = failed quality gate arrives in Milestone 7).
 
 ## Checks
 
@@ -123,8 +128,8 @@ of each run as an artifact.
 | # | Milestone | Status |
 |---|---|---|
 | 1 | Project foundation: package, tooling, CI, architecture | Done |
-| 2 | Coverage data model and metric definitions | Planned |
-| 3 | Multi-framework result ingestion (JUnit XML) | Planned |
+| 2 | Coverage data model and metric definitions | Done |
+| 3 | Multi-framework result ingestion (JUnit XML) | Done |
 | 4 | Requirement traceability engine | Planned |
 | 5 | Quality dashboard | Planned |
 | 6 | Historical quality intelligence | Planned |
