@@ -1,0 +1,19 @@
+# Release gate for the demonstration data: what must be true before a release.
+# On the sample data it FAILS on purpose: two critical requirements have no automated test
+# (SHOP-008 card payment is only planned, ADMIN-012 second factor has no test at all), and
+# that is exactly the kind of gap a release gate must stop.
+
+name = "release gate"
+# A metric with nothing to measure (n/a) fails its rule: "not measured" is not a pass
+not_applicable = "fail"
+
+[coverage]
+min_requirement_coverage = 90            # percent of requirements with at least one test case
+min_automated_requirement_coverage = 75  # percent of requirements with an automated test case
+max_uncovered_critical = 0               # critical requirements without an automated test
+
+[execution]
+min_pass_rate = 98                       # latest run per context, skipped tests not counted
+max_failing_critical = 0                 # critical requirements with a failing automated test
+min_results = 200                        # protects against a suite that silently ran fewer tests
+max_automated_cases_without_results = 0  # an automated case whose tests vanished is a gap

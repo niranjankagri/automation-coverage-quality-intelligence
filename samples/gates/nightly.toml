@@ -1,0 +1,12 @@
+# Nightly gate for the demonstration data: did the automated tests that exist run and pass?
+# Coverage gaps are tracked by the release gate, not here; this gate answers "is the build
+# healthy tonight?". It PASSES on the latest sample runs and FAILS on the first attempt of
+# Playwright run 39229363499 (see docs/quality-gates.md).
+
+name = "nightly gate"
+not_applicable = "fail"
+
+[execution]
+min_pass_rate = 95
+max_failing_critical = 0
+min_results = 20
