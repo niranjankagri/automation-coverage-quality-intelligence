@@ -210,3 +210,10 @@ def test_the_right_login_opens_everything() -> None:
 
     for path in ("/", "/static/app.js", "/api/health", "/api/summary"):
         assert client.get(path, auth=("qi", "correct horse battery")).status_code == 200, path
+
+
+@pytest.mark.parametrize("method", ["POST", "PUT", "PATCH", "DELETE"])
+def test_the_api_accepts_no_writes(client: TestClient, method: str) -> None:
+    """Read-only: no route takes a body or changes anything, so there is nothing to upload into."""
+    for path in ("/api/summary", "/api/runs", "/api/pipelines", "/"):
+        assert client.request(method, path).status_code == 405, (method, path)
