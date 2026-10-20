@@ -1,0 +1,252 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="TestSuite" time="150.347" tests="121" errors="0" skipped="0" failures="0" flakes="0" timestamp="2026-10-10T08:18:07Z">
+  <properties>
+    <property name="build" value="f5a40d5" />
+    <property name="framework" value="testng" />
+    <property name="environment" value="ci" />
+    <property name="platform" value="linux" />
+    <property name="browser" value="firefox" />
+  </properties>
+  <testcase name="protectedPagesRedirectToLoginWithoutASession" classname="com.enterprise.automation.tests.ui.LoginRegressionTest" time="1.625">
+    </testcase>
+  <testcase name="signInIsRejected[wrong password, admin, not-the-password, form, Invalid username or password](1)" classname="com.enterprise.automation.tests.ui.LoginRegressionTest" time="2.095">
+    </testcase>
+  <testcase name="signInIsRejected[unknown user, nobody, Admin@12345, form, Invalid username or password](2)" classname="com.enterprise.automation.tests.ui.LoginRegressionTest" time="1.684">
+    </testcase>
+  <testcase name="signInIsRejected[password case matters, admin, admin@12345, form, Invalid username or password](3)" classname="com.enterprise.automation.tests.ui.LoginRegressionTest" time="1.061">
+    </testcase>
+  <testcase name="signInIsRejected[username missing, , Admin@12345, username, Username is required](4)" classname="com.enterprise.automation.tests.ui.LoginRegressionTest" time="0.228">
+    </testcase>
+  <testcase name="signInIsRejected[password missing, admin, , password, Password is required](5)" classname="com.enterprise.automation.tests.ui.LoginRegressionTest" time="1.389">
+    </testcase>
+  <testcase name="viewerSignsInWithTheReadOnlyRole" classname="com.enterprise.automation.tests.ui.LoginRegressionTest" time="2.331">
+    </testcase>
+  <testcase name="emptyCartCannotBeOrdered" classname="com.enterprise.automation.tests.ui.CheckoutTest" time="5.012">
+    </testcase>
+  <testcase name="orderNeedsACustomer" classname="com.enterprise.automation.tests.ui.CheckoutTest" time="2.478">
+    </testcase>
+  <testcase name="quantitiesDriveTheTotal" classname="com.enterprise.automation.tests.ui.CheckoutTest" time="3.331">
+    </testcase>
+  <testcase name="removingTheLastItemEmptiesTheCart" classname="com.enterprise.automation.tests.ui.CheckoutTest" time="1.172">
+    </testcase>
+  <testcase name="viewerCannotPlaceOrders" classname="com.enterprise.automation.tests.ui.CheckoutTest" time="0.904">
+    </testcase>
+  <testcase name="adminCreatesACustomer" classname="com.enterprise.automation.tests.ui.CustomerManagementTest" time="0.529">
+    </testcase>
+  <testcase name="adminDeletesACustomer" classname="com.enterprise.automation.tests.ui.CustomerManagementTest" time="0.136">
+    </testcase>
+  <testcase name="adminEditsACustomer" classname="com.enterprise.automation.tests.ui.CustomerManagementTest" time="5.709">
+    </testcase>
+  <testcase name="cancellingTheFormCreatesNothing" classname="com.enterprise.automation.tests.ui.CustomerManagementTest" time="1.85">
+    </testcase>
+  <testcase name="customerWithoutOptionalFieldsIsAccepted" classname="com.enterprise.automation.tests.ui.CustomerManagementTest" time="0.067">
+    </testcase>
+  <testcase name="duplicateEmailIsRejected" classname="com.enterprise.automation.tests.ui.CustomerManagementTest" time="0.117">
+    </testcase>
+  <testcase name="invalidInputIsRejectedPerField[first name missing, firstName, First name, , First name is required](1)" classname="com.enterprise.automation.tests.ui.CustomerManagementTest" time="0.16">
+    </testcase>
+  <testcase name="invalidInputIsRejectedPerField[last name missing, lastName, Last name, , Last name is required](2)" classname="com.enterprise.automation.tests.ui.CustomerManagementTest" time="0.08">
+    </testcase>
+  <testcase name="invalidInputIsRejectedPerField[email missing, email, Email, , Email is required](3)" classname="com.enterprise.automation.tests.ui.CustomerManagementTest" time="0.22">
+    </testcase>
+  <testcase name="invalidInputIsRejectedPerField[email without @, email, Email, ava.example.com, Email must be a valid email address](4)" classname="com.enterprise.automation.tests.ui.CustomerManagementTest" time="0.498">
+    </testcase>
+  <testcase name="invalidInputIsRejectedPerField[email without domain, email, Email, ava@, Email must be a valid email address](5)" classname="com.enterprise.automation.tests.ui.CustomerManagementTest" time="1.036">
+    </testcase>
+  <testcase name="invalidInputIsRejectedPerField[phone with letters, phone, Phone, call-me-maybe, Phone must contain 7-20 digits, spaces, +, - or ()](6)" classname="com.enterprise.automation.tests.ui.CustomerManagementTest" time="1.378">
+    </testcase>
+  <testcase name="invalidInputIsRejectedPerField[phone too short, phone, Phone, 12345, Phone must contain 7-20 digits, spaces, +, - or ()](7)" classname="com.enterprise.automation.tests.ui.CustomerManagementTest" time="0.994">
+    </testcase>
+  <testcase name="invalidInputIsRejectedPerField[first name too long, firstName, First name, ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ, First name must be at most 50 characters](8)" classname="com.enterprise.automation.tests.ui.CustomerManagementTest" time="0.951">
+    </testcase>
+  <testcase name="viewerCannotChangeCustomers" classname="com.enterprise.automation.tests.ui.CustomerManagementTest" time="0.978">
+    </testcase>
+  <testcase name="adminCancelsAnOrder" classname="com.enterprise.automation.tests.e2e.PurchaseJourneyTest" time="1.612">
+    </testcase>
+  <testcase name="adminPlacesAnOrderForACustomer" classname="com.enterprise.automation.tests.e2e.PurchaseJourneyTest" time="1.892">
+    </testcase>
+  <testcase name="categoryFilterShowsExactlyItsProducts[Accessories, [Wireless Keyboard, Wireless Mouse, USB-C Dock]](1)" classname="com.enterprise.automation.tests.ui.ProductCatalogTest" time="3.809">
+    </testcase>
+  <testcase name="categoryFilterShowsExactlyItsProducts[Audio, [Noise-Cancelling Headphones]](2)" classname="com.enterprise.automation.tests.ui.ProductCatalogTest" time="0.019">
+    </testcase>
+  <testcase name="categoryFilterShowsExactlyItsProducts[Laptops, [Ultrabook 14, Workstation 16]](3)" classname="com.enterprise.automation.tests.ui.ProductCatalogTest" time="0.411">
+    </testcase>
+  <testcase name="categoryFilterShowsExactlyItsProducts[Monitors, [27-inch 4K Monitor, 34-inch Ultrawide Monitor]](4)" classname="com.enterprise.automation.tests.ui.ProductCatalogTest" time="0.444">
+    </testcase>
+  <testcase name="productIsListedWithItsDetails[LAP-1001, ProductData[sku=LAP-1001, name=Ultrabook 14, category=Laptops, price=1199.00, stock=25]](1)" classname="com.enterprise.automation.tests.ui.ProductCatalogTest" time="0.778">
+    </testcase>
+  <testcase name="productIsListedWithItsDetails[LAP-1002, ProductData[sku=LAP-1002, name=Workstation 16, category=Laptops, price=2199.00, stock=10]](2)" classname="com.enterprise.automation.tests.ui.ProductCatalogTest" time="0.193">
+    </testcase>
+  <testcase name="productIsListedWithItsDetails[MON-2001, ProductData[sku=MON-2001, name=27-inch 4K Monitor, category=Monitors, price=429.00, stock=40]](3)" classname="com.enterprise.automation.tests.ui.ProductCatalogTest" time="1.634">
+    </testcase>
+  <testcase name="productIsListedWithItsDetails[MON-2002, ProductData[sku=MON-2002, name=34-inch Ultrawide Monitor, category=Monitors, price=649.00, stock=15]](4)" classname="com.enterprise.automation.tests.ui.ProductCatalogTest" time="1.882">
+    </testcase>
+  <testcase name="productIsListedWithItsDetails[ACC-3001, ProductData[sku=ACC-3001, name=Wireless Keyboard, category=Accessories, price=79.00, stock=120]](5)" classname="com.enterprise.automation.tests.ui.ProductCatalogTest" time="1.967">
+    </testcase>
+  <testcase name="productIsListedWithItsDetails[ACC-3002, ProductData[sku=ACC-3002, name=Wireless Mouse, category=Accessories, price=49.00, stock=150]](6)" classname="com.enterprise.automation.tests.ui.ProductCatalogTest" time="2.312">
+    </testcase>
+  <testcase name="productIsListedWithItsDetails[ACC-3003, ProductData[sku=ACC-3003, name=USB-C Dock, category=Accessories, price=189.00, stock=60]](7)" classname="com.enterprise.automation.tests.ui.ProductCatalogTest" time="1.776">
+    </testcase>
+  <testcase name="productIsListedWithItsDetails[AUD-4001, ProductData[sku=AUD-4001, name=Noise-Cancelling Headphones, category=Audio, price=299.00, stock=35]](8)" classname="com.enterprise.automation.tests.ui.ProductCatalogTest" time="1.734">
+    </testcase>
+  <testcase name="searchWithoutMatchShowsAnEmptyList" classname="com.enterprise.automation.tests.ui.ProductCatalogTest" time="1.971">
+    </testcase>
+  <testcase name="cancellingAndDeletingOrdersGiveStockBackInTheDatabase" classname="com.enterprise.automation.tests.integration.ApiToDatabaseTest" time="0.352">
+    </testcase>
+  <testcase name="createdCustomerIsStoredExactlyAsSent" classname="com.enterprise.automation.tests.integration.ApiToDatabaseTest" time="0.217">
+    </testcase>
+  <testcase name="passwordsAreStoredHashedAndSalted" classname="com.enterprise.automation.tests.integration.ApiToDatabaseTest" time="0.432">
+    </testcase>
+  <testcase name="placedOrderIsStoredWithItsLinesAndReservesStock" classname="com.enterprise.automation.tests.integration.ApiToDatabaseTest" time="0.531">
+    </testcase>
+  <testcase name="rejectedOrderLeavesNoTraceInTheDatabase" classname="com.enterprise.automation.tests.integration.ApiToDatabaseTest" time="0.751">
+    </testcase>
+  <testcase name="updatesAndDeletesReachTheDatabase" classname="com.enterprise.automation.tests.integration.ApiToDatabaseTest" time="0.6">
+    </testcase>
+  <testcase name="assertionFailuresShowTheRow" classname="com.enterprise.automation.tests.db.DatabaseLayerTest" time="0.045">
+    </testcase>
+  <testcase name="catalogueRowsMatchTheReferenceData[LAP-1001, ProductData[sku=LAP-1001, name=Ultrabook 14, category=Laptops, price=1199.00, stock=25]](1)" classname="com.enterprise.automation.tests.db.DatabaseLayerTest" time="0.017">
+    </testcase>
+  <testcase name="catalogueRowsMatchTheReferenceData[LAP-1002, ProductData[sku=LAP-1002, name=Workstation 16, category=Laptops, price=2199.00, stock=10]](2)" classname="com.enterprise.automation.tests.db.DatabaseLayerTest" time="0.015">
+    </testcase>
+  <testcase name="catalogueRowsMatchTheReferenceData[MON-2001, ProductData[sku=MON-2001, name=27-inch 4K Monitor, category=Monitors, price=429.00, stock=40]](3)" classname="com.enterprise.automation.tests.db.DatabaseLayerTest" time="0.021">
+    </testcase>
+  <testcase name="catalogueRowsMatchTheReferenceData[MON-2002, ProductData[sku=MON-2002, name=34-inch Ultrawide Monitor, category=Monitors, price=649.00, stock=15]](4)" classname="com.enterprise.automation.tests.db.DatabaseLayerTest" time="0.026">
+    </testcase>
+  <testcase name="catalogueRowsMatchTheReferenceData[ACC-3001, ProductData[sku=ACC-3001, name=Wireless Keyboard, category=Accessories, price=79.00, stock=120]](5)" classname="com.enterprise.automation.tests.db.DatabaseLayerTest" time="0.021">
+    </testcase>
+  <testcase name="catalogueRowsMatchTheReferenceData[ACC-3002, ProductData[sku=ACC-3002, name=Wireless Mouse, category=Accessories, price=49.00, stock=150]](6)" classname="com.enterprise.automation.tests.db.DatabaseLayerTest" time="0.019">
+    </testcase>
+  <testcase name="catalogueRowsMatchTheReferenceData[ACC-3003, ProductData[sku=ACC-3003, name=USB-C Dock, category=Accessories, price=189.00, stock=60]](7)" classname="com.enterprise.automation.tests.db.DatabaseLayerTest" time="0.022">
+    </testcase>
+  <testcase name="catalogueRowsMatchTheReferenceData[AUD-4001, ProductData[sku=AUD-4001, name=Noise-Cancelling Headphones, category=Audio, price=299.00, stock=35]](8)" classname="com.enterprise.automation.tests.db.DatabaseLayerTest" time="0.02">
+    </testcase>
+  <testcase name="catalogueSizeMatches" classname="com.enterprise.automation.tests.db.DatabaseLayerTest" time="0.013">
+    </testcase>
+  <testcase name="connectsAndReadsTheSchema" classname="com.enterprise.automation.tests.db.DatabaseLayerTest" time="0.047">
+    </testcase>
+  <testcase name="parametersAreBoundNotConcatenated" classname="com.enterprise.automation.tests.db.DatabaseLayerTest" time="0.077">
+    </testcase>
+  <testcase name="queryForOneRejectsSeveralRows" classname="com.enterprise.automation.tests.db.DatabaseLayerTest" time="0.043">
+    </testcase>
+  <testcase name="catalogueMatchesTheReferenceData[LAP-1001, ProductData[sku=LAP-1001, name=Ultrabook 14, category=Laptops, price=1199.00, stock=25]](1)" classname="com.enterprise.automation.tests.api.ProductApiTest" time="0.795">
+    </testcase>
+  <testcase name="catalogueMatchesTheReferenceData[LAP-1002, ProductData[sku=LAP-1002, name=Workstation 16, category=Laptops, price=2199.00, stock=10]](2)" classname="com.enterprise.automation.tests.api.ProductApiTest" time="0.221">
+    </testcase>
+  <testcase name="catalogueMatchesTheReferenceData[MON-2001, ProductData[sku=MON-2001, name=27-inch 4K Monitor, category=Monitors, price=429.00, stock=40]](3)" classname="com.enterprise.automation.tests.api.ProductApiTest" time="0.385">
+    </testcase>
+  <testcase name="catalogueMatchesTheReferenceData[MON-2002, ProductData[sku=MON-2002, name=34-inch Ultrawide Monitor, category=Monitors, price=649.00, stock=15]](4)" classname="com.enterprise.automation.tests.api.ProductApiTest" time="0.341">
+    </testcase>
+  <testcase name="catalogueMatchesTheReferenceData[ACC-3001, ProductData[sku=ACC-3001, name=Wireless Keyboard, category=Accessories, price=79.00, stock=120]](5)" classname="com.enterprise.automation.tests.api.ProductApiTest" time="0.339">
+    </testcase>
+  <testcase name="catalogueMatchesTheReferenceData[ACC-3002, ProductData[sku=ACC-3002, name=Wireless Mouse, category=Accessories, price=49.00, stock=150]](6)" classname="com.enterprise.automation.tests.api.ProductApiTest" time="0.347">
+    </testcase>
+  <testcase name="catalogueMatchesTheReferenceData[ACC-3003, ProductData[sku=ACC-3003, name=USB-C Dock, category=Accessories, price=189.00, stock=60]](7)" classname="com.enterprise.automation.tests.api.ProductApiTest" time="0.328">
+    </testcase>
+  <testcase name="catalogueMatchesTheReferenceData[AUD-4001, ProductData[sku=AUD-4001, name=Noise-Cancelling Headphones, category=Audio, price=299.00, stock=35]](8)" classname="com.enterprise.automation.tests.api.ProductApiTest" time="0.336">
+    </testcase>
+  <testcase name="createdProductIsListedInItsCategory" classname="com.enterprise.automation.tests.api.ProductApiTest" time="0.346">
+    </testcase>
+  <testcase name="deleteDeactivatesInsteadOfRemoving" classname="com.enterprise.automation.tests.api.ProductApiTest" time="0.655">
+    </testcase>
+  <testcase name="duplicateSkuGives409" classname="com.enterprise.automation.tests.api.ProductApiTest" time="0.336">
+    </testcase>
+  <testcase name="invalidValuesGive400PerField" classname="com.enterprise.automation.tests.api.ProductApiTest" time="0.173">
+    </testcase>
+  <testcase name="patchUpdatesPriceAndStock" classname="com.enterprise.automation.tests.api.ProductApiTest" time="0.306">
+    </testcase>
+  <testcase name="putReplacesTheProduct" classname="com.enterprise.automation.tests.api.ProductApiTest" time="0.452">
+    </testcase>
+  <testcase name="customerChangedInTheUiIsVisibleThroughTheApiAndStored" classname="com.enterprise.automation.tests.integration.UiApiDatabaseTest" time="0.217">
+    </testcase>
+  <testcase name="customerCreatedThroughTheApiIsStoredAndVisibleInTheUi" classname="com.enterprise.automation.tests.integration.UiApiDatabaseTest" time="0.019">
+    </testcase>
+  <testcase name="orderPlacedInTheUiIsConsistentInApiAndDatabase" classname="com.enterprise.automation.tests.integration.UiApiDatabaseTest" time="0.557">
+    </testcase>
+  <testcase name="adminLogsInAndGetsABearerToken" classname="com.enterprise.automation.tests.api.AuthApiTest" time="0.165">
+    </testcase>
+  <testcase name="currentUserIsReturnedWithoutPassword" classname="com.enterprise.automation.tests.api.AuthApiTest" time="0.503">
+    </testcase>
+  <testcase name="invalidTokenGets401" classname="com.enterprise.automation.tests.api.AuthApiTest" time="0.183">
+    </testcase>
+  <testcase name="loggedOutTokenStopsWorking" classname="com.enterprise.automation.tests.api.AuthApiTest" time="0.648">
+    </testcase>
+  <testcase name="missingCredentialsGive400PerField" classname="com.enterprise.automation.tests.api.AuthApiTest" time="0.197">
+    </testcase>
+  <testcase name="requestsWithoutTokenGet401" classname="com.enterprise.automation.tests.api.AuthApiTest" time="0.175">
+    </testcase>
+  <testcase name="theClientsRequestIdIsUsedForCorrelation" classname="com.enterprise.automation.tests.api.AuthApiTest" time="0.291">
+    </testcase>
+  <testcase name="viewerCanReadButNotWrite" classname="com.enterprise.automation.tests.api.AuthApiTest" time="0.927">
+    </testcase>
+  <testcase name="wrongPasswordGives401WithoutRevealingWhichPartWasWrong" classname="com.enterprise.automation.tests.api.AuthApiTest" time="0.418">
+    </testcase>
+  <testcase name="cancellingGivesTheStockBack" classname="com.enterprise.automation.tests.api.OrderApiTest" time="0.61">
+    </testcase>
+  <testcase name="inactiveCustomerCannotOrder" classname="com.enterprise.automation.tests.api.OrderApiTest" time="0.363">
+    </testcase>
+  <testcase name="invalidOrdersGive400PerField" classname="com.enterprise.automation.tests.api.OrderApiTest" time="0.305">
+    </testcase>
+  <testcase name="orderingMoreThanTheStockGives409AndChangesNothing" classname="com.enterprise.automation.tests.api.OrderApiTest" time="0.159">
+    </testcase>
+  <testcase name="ordersCanBeListedPerCustomerAndStatus" classname="com.enterprise.automation.tests.api.OrderApiTest" time="0.439">
+    </testcase>
+  <testcase name="placingAnOrderComputesTotalsAndReservesStock" classname="com.enterprise.automation.tests.api.OrderApiTest" time="0.532">
+    </testcase>
+  <testcase name="statusFollowsTheAllowedFlow" classname="com.enterprise.automation.tests.api.OrderApiTest" time="0.659">
+    </testcase>
+  <testcase name="unknownReferencesGive404" classname="com.enterprise.automation.tests.api.OrderApiTest" time="0.292">
+    </testcase>
+  <testcase name="viewerCanReadOrdersButNotPlaceThem" classname="com.enterprise.automation.tests.api.OrderApiTest" time="0.462">
+    </testcase>
+  <testcase name="adminCannotDeleteTheirOwnAccount" classname="com.enterprise.automation.tests.api.UserApiTest" time="0.303">
+    </testcase>
+  <testcase name="adminCreatesAUserWhoCanSignInWithTheirRole" classname="com.enterprise.automation.tests.api.UserApiTest" time="0.67">
+    </testcase>
+  <testcase name="adminListsUsers" classname="com.enterprise.automation.tests.api.UserApiTest" time="0.123">
+    </testcase>
+  <testcase name="deletedUserCannotSignIn" classname="com.enterprise.automation.tests.api.UserApiTest" time="0.411">
+    </testcase>
+  <testcase name="invalidAndDuplicateUsersAreRejected" classname="com.enterprise.automation.tests.api.UserApiTest" time="0.207">
+    </testcase>
+  <testcase name="promotingAUserGrantsWriteAccess" classname="com.enterprise.automation.tests.api.UserApiTest" time="0.511">
+    </testcase>
+  <testcase name="allInvalidFieldsAreReportedTogether" classname="com.enterprise.automation.tests.api.CustomerApiTest" time="0.119">
+    </testcase>
+  <testcase name="customerWithOrdersCannotBeDeleted" classname="com.enterprise.automation.tests.api.CustomerApiTest" time="0.544">
+    </testcase>
+  <testcase name="deleteRemovesTheCustomer" classname="com.enterprise.automation.tests.api.CustomerApiTest" time="0.409">
+    </testcase>
+  <testcase name="duplicateEmailGives409" classname="com.enterprise.automation.tests.api.CustomerApiTest" time="0.245">
+    </testcase>
+  <testcase name="getReturnsTheCustomer" classname="com.enterprise.automation.tests.api.CustomerApiTest" time="0.327">
+    </testcase>
+  <testcase name="invalidFieldsGive400WithTheFieldMessage[first name missing, firstName, First name, , First name is required](1)" classname="com.enterprise.automation.tests.api.CustomerApiTest" time="0.125">
+    </testcase>
+  <testcase name="invalidFieldsGive400WithTheFieldMessage[last name missing, lastName, Last name, , Last name is required](2)" classname="com.enterprise.automation.tests.api.CustomerApiTest" time="0.131">
+    </testcase>
+  <testcase name="invalidFieldsGive400WithTheFieldMessage[email missing, email, Email, , Email is required](3)" classname="com.enterprise.automation.tests.api.CustomerApiTest" time="0.129">
+    </testcase>
+  <testcase name="invalidFieldsGive400WithTheFieldMessage[email without @, email, Email, ava.example.com, Email must be a valid email address](4)" classname="com.enterprise.automation.tests.api.CustomerApiTest" time="0.127">
+    </testcase>
+  <testcase name="invalidFieldsGive400WithTheFieldMessage[email without domain, email, Email, ava@, Email must be a valid email address](5)" classname="com.enterprise.automation.tests.api.CustomerApiTest" time="0.14">
+    </testcase>
+  <testcase name="invalidFieldsGive400WithTheFieldMessage[phone with letters, phone, Phone, call-me-maybe, Phone must contain 7-20 digits, spaces, +, - or ()](6)" classname="com.enterprise.automation.tests.api.CustomerApiTest" time="0.131">
+    </testcase>
+  <testcase name="invalidFieldsGive400WithTheFieldMessage[phone too short, phone, Phone, 12345, Phone must contain 7-20 digits, spaces, +, - or ()](7)" classname="com.enterprise.automation.tests.api.CustomerApiTest" time="0.132">
+    </testcase>
+  <testcase name="invalidFieldsGive400WithTheFieldMessage[first name too long, firstName, First name, ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ, First name must be at most 50 characters](8)" classname="com.enterprise.automation.tests.api.CustomerApiTest" time="0.155">
+    </testcase>
+  <testcase name="malformedRequestsGive400Or405" classname="com.enterprise.automation.tests.api.CustomerApiTest" time="0.563">
+    </testcase>
+  <testcase name="patchChangesOnlyTheGivenFields" classname="com.enterprise.automation.tests.api.CustomerApiTest" time="0.342">
+    </testcase>
+  <testcase name="postCreatesACustomer" classname="com.enterprise.automation.tests.api.CustomerApiTest" time="0.183">
+    </testcase>
+  <testcase name="putReplacesTheWholeCustomer" classname="com.enterprise.automation.tests.api.CustomerApiTest" time="0.269">
+    </testcase>
+  <testcase name="searchFindsByEmailNameAndCity" classname="com.enterprise.automation.tests.api.CustomerApiTest" time="0.688">
+    </testcase>
+  <testcase name="unknownIdsGive404" classname="com.enterprise.automation.tests.api.CustomerApiTest" time="0.354">
+    </testcase>
+</testsuite>
