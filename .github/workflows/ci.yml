@@ -141,3 +141,65 @@ jobs:
           name: quality-gate-reports
           path: reports/gates/
           if-no-files-found: error
+
+  # The platform gates its own release: quality/catalog.toml lists the plan's acceptance
+  # criteria and rules, linked to this repository's tests; the JUnit files of the test and
+  # browser jobs are the input. Fails the build when a criterion loses its tests or a test fails.
+  self-gate:
+    name: Self gate (acceptance criteria)
+    needs: [tests, dashboard]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev,e2e]"
+      # A missing artifact must not stop this job: the gate itself reports missing input (exit 3)
+      - uses: actions/download-artifact@v7
+        continue-on-error: true
+        with:
+          name: junit-python-3.12
+          path: own-results/unit
+      - uses: actions/download-artifact@v7
+        continue-on-error: true
+        with:
+          name: dashboard-e2e
+          path: own-results/e2e
+      - name: qi gate on this repository's own results
+        run: >-
+          qi gate --catalog quality/catalog.toml --config quality/release.toml
+          own-results/unit/junit-3.12.xml own-results/e2e/junit-e2e.xml
+          --context framework=pytest --context environment=ci --context build=${{ github.sha }}
+          --json reports/self-gate.json --html reports/self-gate.html --summary "$GITHUB_STEP_SUMMARY"
+      - name: Keep the report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: self-gate-report
+          path: reports/
+          if-no-files-found: error
+
+  # Acceptance criterion 9: a clean checkout reproduces the documented demonstration
+  demo:
+    name: Demonstration from a clean checkout
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e .
+      - name: python tools/demo.py
+        run: python tools/demo.py demo-output
+      - name: Keep the demonstration output
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: demo-output
+          path: demo-output/
+          if-no-files-found: error
