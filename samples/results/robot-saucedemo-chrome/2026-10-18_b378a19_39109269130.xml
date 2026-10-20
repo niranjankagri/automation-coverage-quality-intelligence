@@ -1,0 +1,88 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="Robot Framework Automation" tests="30" errors="0" failures="0" skipped="0" time="28.056" timestamp="2026-10-18T07:52:34.943548">
+  <properties>
+    <property name="build" value="b378a19" />
+    <property name="framework" value="robot-framework" />
+    <property name="environment" value="ci" />
+    <property name="platform" value="linux" />
+    <property name="browser" value="chrome" />
+  </properties>
+  <testsuite name="Api" tests="15" errors="0" failures="0" skipped="0" time="3.068" timestamp="2026-10-18T07:52:35.618000">
+    <testsuite name="01 Auth" tests="4" errors="0" failures="0" skipped="0" time="0.430" timestamp="2026-10-18T07:52:35.619000">
+      <testcase classname="Robot Framework Automation.Api.01 Auth" name="Valid Login Returns Tokens And User" time="0.181">
+</testcase>
+      <testcase classname="Robot Framework Automation.Api.01 Auth" name="Token Gives Access To Current User" time="0.243">
+</testcase>
+      <testcase classname="Robot Framework Automation.Api.01 Auth" name="Current User Needs A Token" time="0.173">
+</testcase>
+      <testcase classname="Robot Framework Automation.Api.01 Auth" name="Invalid Credentials Are Rejected" time="0.258">
+</testcase>
+    </testsuite>
+    <testsuite name="02 Products" tests="8" errors="0" failures="0" skipped="0" time="1.644" timestamp="2026-10-18T07:52:36.488000">
+      <testcase classname="Robot Framework Automation.Api.02 Products" name="Product Can Be Fetched By Id" time="0.100">
+</testcase>
+      <testcase classname="Robot Framework Automation.Api.02 Products" name="Unknown Product Returns 404" time="0.168">
+</testcase>
+      <testcase classname="Robot Framework Automation.Api.02 Products" name="Search Finds Only Matching Products" time="0.376">
+</testcase>
+      <testcase classname="Robot Framework Automation.Api.02 Products" name="Paging Returns The Requested Slice" time="0.393">
+</testcase>
+      <testcase classname="Robot Framework Automation.Api.02 Products" name="Select Returns Only Requested Fields" time="0.131">
+</testcase>
+      <testcase classname="Robot Framework Automation.Api.02 Products" name="Add Product Echoes The New Product" time="0.414">
+</testcase>
+      <testcase classname="Robot Framework Automation.Api.02 Products" name="Update Product Changes Only The Sent Field" time="0.495">
+</testcase>
+      <testcase classname="Robot Framework Automation.Api.02 Products" name="Delete Product Marks It As Deleted" time="0.155">
+</testcase>
+    </testsuite>
+    <testsuite name="03 Carts" tests="3" errors="0" failures="0" skipped="0" time="0.816" timestamp="2026-10-18T07:52:37.869000">
+      <testcase classname="Robot Framework Automation.Api.03 Carts" name="Cart Line Totals Add Up" time="0.163">
+</testcase>
+      <testcase classname="Robot Framework Automation.Api.03 Carts" name="New Cart Contains The Added Products" time="0.146">
+</testcase>
+      <testcase classname="Robot Framework Automation.Api.03 Carts" name="Carts Of A User Belong To That User" time="0.166">
+</testcase>
+    </testsuite>
+  </testsuite>
+  <testsuite name="Ui" tests="15" errors="0" failures="0" skipped="0" time="25.102" timestamp="2026-10-18T07:52:38.567000">
+    <testsuite name="01 Login" tests="4" errors="0" failures="0" skipped="0" time="21.974" timestamp="2026-10-18T07:52:38.568000">
+      <testcase classname="Robot Framework Automation.Ui.01 Login" name="Standard User Can Log In" time="10.812">
+</testcase>
+      <testcase classname="Robot Framework Automation.Ui.01 Login" name="User Can Log Out" time="11.162">
+</testcase>
+      <testcase classname="Robot Framework Automation.Ui.01 Login" name="Logged Out User Cannot Open Products Page Directly" time="9.705">
+</testcase>
+      <testcase classname="Robot Framework Automation.Ui.01 Login" name="Invalid Logins Show The Right Error" time="11.850">
+</testcase>
+    </testsuite>
+    <testsuite name="02 Products" tests="3" errors="0" failures="0" skipped="0" time="5.656" timestamp="2026-10-18T07:52:49.656000">
+      <testcase classname="Robot Framework Automation.Ui.02 Products" name="Products Page Lists Six Products" time="2.334">
+</testcase>
+      <testcase classname="Robot Framework Automation.Ui.02 Products" name="Default Sort Is Name A To Z" time="2.799">
+</testcase>
+      <testcase classname="Robot Framework Automation.Ui.02 Products" name="Products Can Be Sorted" time="3.631">
+</testcase>
+    </testsuite>
+    <testsuite name="03 Cart" tests="4" errors="0" failures="0" skipped="0" time="7.092" timestamp="2026-10-18T07:52:52.234000">
+      <testcase classname="Robot Framework Automation.Ui.03 Cart" name="Added Products Appear In The Cart" time="2.666">
+</testcase>
+      <testcase classname="Robot Framework Automation.Ui.03 Cart" name="Removing A Product Updates The Badge" time="2.864">
+</testcase>
+      <testcase classname="Robot Framework Automation.Ui.03 Cart" name="Cart Is Empty For A New Session" time="2.466">
+</testcase>
+      <testcase classname="Robot Framework Automation.Ui.03 Cart" name="Cart Keeps Products After Continue Shopping" time="2.653">
+</testcase>
+    </testsuite>
+    <testsuite name="04 Checkout" tests="4" errors="0" failures="0" skipped="0" time="7.930" timestamp="2026-10-18T07:52:56.353000">
+      <testcase classname="Robot Framework Automation.Ui.04 Checkout" name="User Can Buy Two Products" time="4.671">
+</testcase>
+      <testcase classname="Robot Framework Automation.Ui.04 Checkout" name="Order Totals Include Eight Percent Tax" time="3.259">
+</testcase>
+      <testcase classname="Robot Framework Automation.Ui.04 Checkout" name="Cancel On Overview Keeps The Cart" time="3.097">
+</testcase>
+      <testcase classname="Robot Framework Automation.Ui.04 Checkout" name="Customer Information Is Required" time="2.669">
+</testcase>
+    </testsuite>
+  </testsuite>
+</testsuite>
