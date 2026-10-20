@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import UTC, datetime
 
 import pytest
@@ -83,9 +84,9 @@ def test_markdown_escapes_table_pipes() -> None:
     """A | in a value would break the CI summary table."""
     markdown = to_markdown(document())
 
-    assert markdown.startswith("## ❌ release <gate>: FAILED")
+    assert markdown.startswith("## ❌ release \\<gate\\>: FAILED")
     assert "\\| pipe" in markdown
-    assert "| failing critical requirements | 1 | <= 0 | fail |" in markdown
+    assert "| failing critical requirements | 1 | \\<= 0 | fail |" in markdown
 
 
 def test_text_lists_failed_items_under_the_rule() -> None:
@@ -127,3 +128,25 @@ def test_pipeline_section_is_in_every_format_and_escaped() -> None:
     assert "| ui | 0 | missing |" in to_markdown(data)
     assert r"\| pipe" in to_markdown(data)
     assert "pipeline 9 at abc: incomplete (1 job(s) reported, missing: ui)" in to_text(data)
+
+
+def test_markdown_summary_shows_untrusted_text_literally() -> None:
+    """A test or job name cannot become a link, an image, HTML or a fake heading in a CI summary."""
+    name = "[click](https://evil.example) <img src=x onerror=alert(1)> **PASSED** # heading"
+    job = run(result("A")).model_copy(update={"pipeline": PipelineJob(pipeline_id="9", job=name)})
+    execution = pipeline_execution([job], "9")
+    cat = catalog([req("R1")], [case("A", "R1", automated_by=("suite::*",))])
+    report = build_report(cat, execution.runs, one_execution=True)
+    config = GateConfig.model_validate({"name": "gate `x` *y*", "execution": {"max_failed_tests": 0}})
+
+    summary = to_markdown(
+        gate_document(evaluate(report, config, pipeline=execution), report, "my_`cat`.toml")
+    )
+
+    assert r"\[click\]\(https://evil.example\)" in summary
+    assert r"\<img src=x onerror=alert\(1\)\>" in summary
+    assert r"\*\*PASSED\*\*" in summary
+    assert r"gate \`x\` \*y\*" in summary
+    assert "catalog `my_'cat'.toml`" in summary
+    for raw in (r"\[click\]\(", r"<img", r"\*\*PASSED"):
+        assert not re.search(r"(?<!\\)" + raw, summary), raw  # never without its escaping backslash

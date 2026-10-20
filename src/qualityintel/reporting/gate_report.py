@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import html
 import json
+import re
 from datetime import UTC, datetime
 from importlib.resources import files
 from string import Template
@@ -180,7 +181,7 @@ def to_markdown(document: dict[str, Any]) -> str:
         "",
         f"Requirement coverage {metrics['requirement_coverage']['text']} · automation coverage "
         f"{metrics['automation_coverage']['text']} · pass rate {metrics['execution_pass_rate']['text']} · "
-        f"{len(document['inputs']['runs'])} run(s), catalog `{_md(document['inputs']['catalog'])}`",
+        f"{len(document['inputs']['runs'])} run(s), catalog `{_md_code(document['inputs']['catalog'])}`",
     ]
     return "\n".join(lines) + "\n"
 
@@ -306,9 +307,22 @@ def _h(value: object) -> str:
     return html.escape(str(value), quote=True)
 
 
+# Markdown punctuation that can start a link, image, emphasis, code, heading, HTML tag or table cell
+_MD_SPECIAL = re.compile(r"([\\`*_{}\[\]()#+!<>|~])")
+
+
 def _md(value: object) -> str:
-    """Escape characters that would break a Markdown table cell."""
-    return str(value).replace("|", "\\|").replace("\n", " ")
+    """Untrusted text as literal Markdown: every special character escaped, one line.
+
+    Test names and failure messages end up in a CI job summary; a name like
+    ``[click](https://...)`` or ``<img src=...>`` must show as text, not as a link or an image.
+    """
+    return _MD_SPECIAL.sub(r"\\\1", " ".join(str(value).splitlines()))
+
+
+def _md_code(value: object) -> str:
+    """Text for inside a code span, where escapes do not work: backticks and line breaks removed."""
+    return " ".join(str(value).replace("`", "'").splitlines())
 
 
 def to_text(document: dict[str, Any]) -> str:
