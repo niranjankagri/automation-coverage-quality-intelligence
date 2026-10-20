@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 520" width="1040" height="520" font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">Data flow</title>
+  <desc id="d">JUnit XML from four frameworks and a TOML catalog flow through ingestion, matching and traceability into the history store, quality gates and the dashboard.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5b6676"/>
+    </marker>
+    <style>
+      .box { fill: #ffffff; stroke: #c3cad5; stroke-width: 1.2; }
+      .src { fill: #eef3ff; stroke: #a9bdf0; }
+      .core { fill: #f2f8f4; stroke: #a8d1b6; }
+      .out { fill: #fff7e8; stroke: #e6c98d; }
+      .title { font-size: 15px; font-weight: 650; fill: #1c2430; }
+      .text { font-size: 12.5px; fill: #3c4757; }
+      .small { font-size: 11.5px; fill: #5b6676; }
+      .lane { font-size: 12px; font-weight: 700; fill: #5b6676; letter-spacing: .06em; }
+      .flow { stroke: #5b6676; stroke-width: 1.6; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1040" height="520" fill="#ffffff"/>
+
+  <text class="lane" x="24" y="34">INPUT</text>
+  <text class="lane" x="300" y="34">CORE (no web code; tested without a server)</text>
+  <text class="lane" x="816" y="34">OUTPUT</text>
+
+  <!-- inputs -->
+  <rect class="box src" x="24" y="52" width="220" height="168" rx="10"/>
+  <text class="title" x="40" y="78">JUnit XML result files</text>
+  <text class="text" x="40" y="102">pytest · Robot Framework (--xunit)</text>
+  <text class="text" x="40" y="122">Maven Surefire / TestNG</text>
+  <text class="text" x="40" y="142">Playwright Test (merge-reports)</text>
+  <text class="small" x="40" y="170">files, folders or "TEST-*.xml"</text>
+  <text class="small" x="40" y="188">+ --context framework=… build=…</text>
+  <text class="small" x="40" y="206">id = SHA-256 of the file</text>
+
+  <rect class="box src" x="24" y="250" width="220" height="118" rx="10"/>
+  <text class="title" x="40" y="276">Requirement catalog</text>
+  <text class="text" x="40" y="300">catalog.toml</text>
+  <text class="small" x="40" y="322">requirements · test cases</text>
+  <text class="small" x="40" y="340">links · automated_by patterns</text>
+  <text class="small" x="40" y="358">criticality · feature · platform</text>
+
+  <rect class="box src" x="24" y="398" width="220" height="92" rx="10"/>
+  <text class="title" x="40" y="424">Gate file</text>
+  <text class="text" x="40" y="448">release.toml</text>
+  <text class="small" x="40" y="470">optional thresholds · scope</text>
+
+  <!-- core -->
+  <rect class="box core" x="300" y="52" width="210" height="108" rx="10"/>
+  <text class="title" x="316" y="78">ingest</text>
+  <text class="text" x="316" y="100">parse, normalise outcomes,</text>
+  <text class="text" x="316" y="118">reruns, timestamps, context</text>
+  <text class="small" x="316" y="142">bad file → error (never ignored)</text>
+
+  <rect class="box core" x="300" y="190" width="210" height="96" rx="10"/>
+  <text class="title" x="316" y="216">models</text>
+  <text class="text" x="316" y="238">TestRun · TestResult ·</text>
+  <text class="text" x="316" y="256">Requirement · TestCase · Ratio</text>
+
+  <rect class="box core" x="560" y="52" width="210" height="128" rx="10"/>
+  <text class="title" x="576" y="78">traceability</text>
+  <text class="text" x="576" y="100">match results → test cases</text>
+  <text class="text" x="576" y="118">coverage metrics · gaps</text>
+  <text class="text" x="576" y="136">snapshot: latest run per</text>
+  <text class="text" x="576" y="154">context → status per req.</text>
+
+  <rect class="box core" x="560" y="210" width="210" height="128" rx="10"/>
+  <text class="title" x="576" y="236">history</text>
+  <text class="text" x="576" y="258">SQLite store (all SQL here)</text>
+  <text class="text" x="576" y="276">stability classes · flaky</text>
+  <text class="text" x="576" y="294">candidates · recurring</text>
+  <text class="text" x="576" y="312">failures · slow-downs · trends</text>
+
+  <rect class="box core" x="560" y="368" width="210" height="122" rx="10"/>
+  <text class="title" x="576" y="394">gates</text>
+  <text class="text" x="576" y="416">evaluate configured rules</text>
+  <text class="text" x="576" y="434">passed · failed · incomplete</text>
+  <text class="small" x="576" y="458">missing input → incomplete,</text>
+  <text class="small" x="576" y="476">never passed</text>
+
+  <!-- outputs -->
+  <rect class="box out" x="816" y="52" width="200" height="108" rx="10"/>
+  <text class="title" x="832" y="78">qi coverage / history</text>
+  <text class="text" x="832" y="100">text reports in the</text>
+  <text class="text" x="832" y="118">terminal and CI log</text>
+
+  <rect class="box out" x="816" y="190" width="200" height="148" rx="10"/>
+  <text class="title" x="832" y="216">dashboard</text>
+  <text class="text" x="832" y="238">FastAPI JSON API</text>
+  <text class="text" x="832" y="256">+ static HTML/JS</text>
+  <text class="small" x="832" y="282">overview · requirements</text>
+  <text class="small" x="832" y="300">tests · runs · stability</text>
+  <text class="small" x="832" y="318">read-only</text>
+
+  <rect class="box out" x="816" y="368" width="200" height="122" rx="10"/>
+  <text class="title" x="832" y="394">qi gate</text>
+  <text class="text" x="832" y="416">JSON · HTML · Markdown</text>
+  <text class="text" x="832" y="434">exit code 0 / 1 / 3</text>
+  <text class="small" x="832" y="458">CI decides on the exit code</text>
+
+  <!-- flows -->
+  <path class="flow" d="M244,136 L296,106"/>
+  <path class="flow" d="M405,160 L405,186"/>
+  <path class="flow" d="M244,309 C272,309 272,250 296,246"/>
+  <path class="flow" d="M510,106 L556,106"/>
+  <path class="flow" d="M510,238 C534,238 534,150 556,140"/>
+  <path class="flow" d="M510,258 L556,262"/>
+  <path class="flow" d="M665,180 L665,206"/>
+  <path class="flow" d="M560,160 C534,172 534,408 556,416"/>
+  <path class="flow" d="M244,444 L556,430"/>
+  <path class="flow" d="M770,106 L812,106"/>
+  <path class="flow" d="M770,140 C792,160 792,240 812,250"/>
+  <path class="flow" d="M770,274 L812,274"/>
+  <path class="flow" d="M770,430 L812,430"/>
+</svg>

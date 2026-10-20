@@ -1,7 +1,6 @@
 # Architecture
 
-Status: updated with each milestone. This page describes the target design; each section says
-which milestone builds it. Nothing below is claimed as working until its milestone is done.
+Status: release 1.0.0, all eight milestones done. Each section names the milestone that built it.
 
 ## Purpose
 
@@ -18,17 +17,12 @@ not run tests itself and does not replace any framework.
 
 ## Data flow
 
-```
- requirements.yaml ─┐                                       ┌─> JSON report  (machines, CI)
- (synthetic set)    │                                       │
-                    ▼                                       │
- JUnit XML ──> ingest ──> models ──> traceability ──> gates ┼─> HTML report  (people)
- (any framework)   │                    ▲                   │
-                   ▼                    │                   └─> exit code 0 / 1 (pipeline)
-                history (SQLite) ───────┘
-                   │
-                   └──> dashboard (FastAPI + HTML/JS, read-only view)
-```
+![Data flow](images/data-flow.svg)
+
+Result files and the catalog are read by `ingest` into the typed `models`; `traceability`
+matches results to test cases and computes coverage and execution status; `history` stores runs
+and analyses them over time; `gates` turn the numbers into passed / failed / incomplete. The
+command line and the dashboard only present what the core computed.
 
 ## Layers and the dependency rule
 
@@ -43,6 +37,8 @@ not run tests itself and does not replace any framework.
 | `qualityintel.gates` | Release criteria, JSON/HTML reports, pipeline exit status | 7 |
 | `qualityintel.config` | Settings from `QI_*` environment variables | 1 |
 | `qualityintel.cli` | The `qi` command | 1 |
+
+![Package layers](images/architecture.svg)
 
 **Rule:** dependencies point towards `models`. No core package imports `dashboard` or a web
 framework; only `dashboard` and `cli` may. `tests/architecture/test_layering.py` checks this on

@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" width="960" height="470" font-family="Segoe UI, Roboto, Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">Package layers and the dependency rule</title>
+  <desc id="d">The cli and dashboard depend on workspace, gates, history and traceability, which depend on ingest and models. No core package depends on the dashboard; a test parses every import to enforce it.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5b6676"/>
+    </marker>
+    <style>
+      .entry { fill: #fff7e8; stroke: #e6c98d; stroke-width: 1.2; }
+      .core { fill: #f2f8f4; stroke: #a8d1b6; stroke-width: 1.2; }
+      .base { fill: #eef3ff; stroke: #a9bdf0; stroke-width: 1.2; }
+      .name { font-size: 15px; font-weight: 650; fill: #1c2430; }
+      .text { font-size: 12px; fill: #3c4757; }
+      .lane { font-size: 12px; font-weight: 700; fill: #5b6676; letter-spacing: .06em; }
+      .dep { stroke: #5b6676; stroke-width: 1.4; fill: none; marker-end: url(#arrow); }
+      .rule { fill: #fde8e6; stroke: #e7a29a; stroke-width: 1.2; }
+      .ruletext { font-size: 12.5px; fill: #8a1f15; }
+    </style>
+  </defs>
+  <rect width="960" height="470" fill="#ffffff"/>
+
+  <text class="lane" x="24" y="34">ENTRY POINTS (may use web frameworks)</text>
+  <rect class="entry" x="24" y="48" width="260" height="70" rx="10"/>
+  <text class="name" x="40" y="74">cli  (qi …)</text>
+  <text class="text" x="40" y="96">parses arguments, prints, exit codes</text>
+  <rect class="entry" x="320" y="48" width="300" height="70" rx="10"/>
+  <text class="name" x="336" y="74">dashboard</text>
+  <text class="text" x="336" y="96">FastAPI routes → workspace; static HTML/JS</text>
+
+  <text class="lane" x="560" y="160">CORE (no web framework, no dashboard import)</text>
+  <rect class="core" x="24" y="174" width="170" height="78" rx="10"/>
+  <text class="name" x="40" y="200">workspace</text>
+  <text class="text" x="40" y="222">view models for every</text>
+  <text class="text" x="40" y="238">dashboard page</text>
+  <rect class="core" x="214" y="174" width="150" height="78" rx="10"/>
+  <text class="name" x="230" y="200">gates</text>
+  <text class="text" x="230" y="222">rules, verdict</text>
+  <rect class="core" x="384" y="174" width="150" height="78" rx="10"/>
+  <text class="name" x="400" y="200">reporting</text>
+  <text class="text" x="400" y="222">text · JSON · HTML</text>
+  <text class="text" x="400" y="238">formatting only</text>
+  <rect class="core" x="554" y="174" width="160" height="78" rx="10"/>
+  <text class="name" x="570" y="200">history</text>
+  <text class="text" x="570" y="222">SQLite + analysis</text>
+  <rect class="core" x="734" y="174" width="200" height="78" rx="10"/>
+  <text class="name" x="750" y="200">traceability</text>
+  <text class="text" x="750" y="222">matching · coverage ·</text>
+  <text class="text" x="750" y="238">execution status</text>
+
+  <rect class="base" x="214" y="300" width="320" height="70" rx="10"/>
+  <text class="name" x="230" y="326">ingest</text>
+  <text class="text" x="230" y="348">JUnit XML · catalog TOML · batch, errors</text>
+  <rect class="base" x="554" y="300" width="380" height="70" rx="10"/>
+  <text class="name" x="570" y="326">models  ·  config</text>
+  <text class="text" x="570" y="348">typed, immutable, validated (pydantic) · QI_* settings</text>
+
+  <!-- dependencies (arrow = "imports") -->
+  <path class="dep" d="M154,118 L110,170"/>
+  <path class="dep" d="M200,118 L270,170"/>
+  <path class="dep" d="M470,118 L130,170"/>
+  <path class="dep" d="M110,252 C120,276 380,276 600,256"/>
+  <path class="dep" d="M110,252 C120,290 700,290 820,256"/>
+  <path class="dep" d="M289,252 L320,296"/>
+  <path class="dep" d="M634,252 L700,296"/>
+  <path class="dep" d="M834,252 L800,296"/>
+  <path class="dep" d="M459,252 L440,296"/>
+  <path class="dep" d="M534,335 L550,335"/>
+
+  <rect class="rule" x="24" y="394" width="910" height="56" rx="10"/>
+  <text class="ruletext" x="40" y="418">Rule (ADR 0001, docs/architecture.md): arrows point towards models. No core package may import the dashboard or FastAPI /</text>
+  <text class="ruletext" x="40" y="436">Starlette / Uvicorn / Jinja2. tests/architecture/test_layering.py parses every import and fails the build otherwise.</text>
+</svg>

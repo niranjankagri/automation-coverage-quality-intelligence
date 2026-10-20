@@ -13,4 +13,4 @@ Layers (see docs/architecture.md):
 - ``dashboard``: thin web layer over the packages above; nothing else imports it.
 """
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
