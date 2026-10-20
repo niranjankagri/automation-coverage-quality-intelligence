@@ -101,3 +101,62 @@ def _write(tmp_path: Path, text: str) -> Path:
     path = tmp_path / "catalog.toml"
     path.write_text(text, encoding="utf-8")
     return path
+
+
+REQUIREMENTS_ONLY = """
+[[requirement]]
+id = "R-9"
+title = "Imported requirement"
+criticality = "high"
+"""
+
+
+def test_include_adds_the_entries_of_another_file(tmp_path: Path) -> None:
+    """A generated requirements file next to hand-written test cases forms one catalog."""
+    (tmp_path / "requirements.toml").write_text(REQUIREMENTS_ONLY, encoding="utf-8")
+    main = 'include = ["requirements.toml"]\n' + VALID.replace(
+        'requirements = ["R-2", "R-2"]', 'requirements = ["R-9"]'
+    )
+
+    catalog = load_catalog(_write(tmp_path, main))
+
+    assert [r.id for r in catalog.requirements] == ["R-1", "R-2", "R-9"]
+    assert ("R-9", "TC-2") in [(link.requirement_id, link.test_case_id) for link in catalog.links]
+
+
+def test_catalog_made_only_of_includes(tmp_path: Path) -> None:
+    """The main file may hold test cases only; requirements come from the include."""
+    (tmp_path / "requirements.toml").write_text(REQUIREMENTS_ONLY, encoding="utf-8")
+
+    catalog = load_catalog(_write(tmp_path, 'include = ["requirements.toml"]\n'))
+
+    assert [r.id for r in catalog.requirements] == ["R-9"]
+
+
+@pytest.mark.parametrize(
+    ("include", "included", "message"),
+    [
+        ('include = "requirements.toml"', None, r"include must be a list of file names"),
+        ('include = ["missing.toml"]', None, r"^missing\.toml: cannot be read"),
+        ('include = ["../outside.toml"]', None, r"must be a file name or a path inside"),
+        (
+            'include = ["requirements.toml"]',
+            'include = ["more.toml"]\n' + REQUIREMENTS_ONLY,
+            r"cannot include further files",
+        ),
+        (
+            'include = ["requirements.toml"]',
+            REQUIREMENTS_ONLY.replace("R-9", "R-1"),
+            r"requirement R-1 is also defined in catalog\.toml",
+        ),
+        ('include = ["requirements.toml"]', "[[requirement]]\nid = ", r"^requirements\.toml: not valid TOML"),
+    ],
+    ids=["not-a-list", "missing", "outside-folder", "nested", "duplicate-across-files", "broken-include"],
+)
+def test_bad_includes_are_reported(tmp_path: Path, include: str, included: str | None, message: str) -> None:
+    """Every include problem names the file that has it."""
+    if included is not None:
+        (tmp_path / "requirements.toml").write_text(included, encoding="utf-8")
+
+    with pytest.raises(CatalogFileError, match=message):
+        load_catalog(_write(tmp_path, include + "\n" + VALID))
