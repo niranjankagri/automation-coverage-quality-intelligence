@@ -17,6 +17,9 @@
 - **Release status on the overview** ([docs/readiness.md](docs/readiness.md)): Ready / At risk /
   Blocked / Unknown from the release gate given with `qi dashboard --gate` plus flaky candidates,
   incomplete pipelines and stale data; unknown evidence is never ready; `/api/readiness`.
+- **TestNG retries in Surefire XML**: a retried attempt (written as a skipped test case) is a
+  retry of the final result when the suite's `tests` count proves it; found in appium-framework's
+  CI, where one flaky test showed as 40 passed + 1 skipped instead of 40 passed with a retry.
 - **Hosted demonstration (M3)**: Docker image (pinned base, non-root, health check), Render
   blueprint deploying `main` after CI passed, `qi history fetch` (verified, atomic, ETag), the
   collection publishes the history as a release asset, JSON access log (`QI_ACCESS_LOG`),

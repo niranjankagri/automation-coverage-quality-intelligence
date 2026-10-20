@@ -319,3 +319,56 @@ def test_oversized_file_is_rejected_before_reading(tmp_path: Path, monkeypatch: 
 def test_timestamp_formats_seen_in_real_files(raw: str, expected: datetime | None) -> None:
     """Every producer's timestamp style ends up as an aware UTC datetime."""
     assert parse_timestamp(raw) == expected
+
+
+# TestNG's retry analyzer under Surefire, as appium-framework's CI wrote it on 2026-10-20 (run
+# 39489105200): the failed first attempt is a skipped <testcase>, the suite counts the test once.
+TESTNG_RETRY = """<testsuite name="TestSuite" tests="3" skipped="0" failures="0" errors="0">
+  <testcase name="lockedUserIsRefused" classname="tests.LoginTest" time="0.0">
+    <skipped message="Expected condition failed: waiting for visibility of element"/>
+  </testcase>
+  <testcase name="lockedUserIsRefused" classname="tests.LoginTest" time="12.951"/>
+  <testcase name="passwordIsRequired" classname="tests.LoginTest" time="13.311"/>
+  <testcase name="skippedOnPurpose" classname="tests.LoginTest" time="0.0"><skipped/></testcase>
+</testsuite>"""
+
+
+def test_testng_retried_attempts_become_retries_of_the_final_result() -> None:
+    """Three tests as Surefire counts them: the retried one passed after one retry (flaky evidence)."""
+    results, _ = parse(TESTNG_RETRY)
+
+    assert [(r.name, r.outcome, r.retries) for r in results] == [
+        ("lockedUserIsRefused", Outcome.PASSED, 1),
+        ("passwordIsRequired", Outcome.PASSED, 0),
+        ("skippedOnPurpose", Outcome.SKIPPED, 0),
+    ]
+
+
+def test_a_retry_that_failed_again_keeps_the_failure() -> None:
+    """Two skipped attempts, then a failure: one failed test with two retries."""
+    xml = """<testsuite name="S" tests="1">
+      <testcase name="t" classname="C"><skipped message="attempt 1"/></testcase>
+      <testcase name="t" classname="C"><skipped message="attempt 2"/></testcase>
+      <testcase name="t" classname="C"><failure message="attempt 3"/></testcase>
+    </testsuite>"""
+    results, _ = parse(xml)
+
+    assert [(r.outcome, r.retries, r.failure.message if r.failure else None) for r in results] == [
+        (Outcome.FAILED, 2, "attempt 3")
+    ]
+
+
+@pytest.mark.parametrize(
+    "declared",
+    ['tests="2"', 'tests="5"', ""],
+    ids=["count-says-two-tests", "count-does-not-fit", "no-count"],
+)
+def test_same_named_cases_stay_separate_unless_the_count_proves_a_retry(declared: str) -> None:
+    """Without the declared count of one test, a skipped and a passed case are two results."""
+    xml = f"""<testsuite name="S" {declared}>
+      <testcase name="t" classname="C"><skipped/></testcase>
+      <testcase name="t" classname="C"/>
+    </testsuite>"""
+    results, _ = parse(xml)
+
+    assert [(r.outcome, r.retries) for r in results] == [(Outcome.SKIPPED, 0), (Outcome.PASSED, 0)]

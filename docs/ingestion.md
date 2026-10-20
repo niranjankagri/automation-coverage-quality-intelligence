@@ -43,6 +43,7 @@ namespaced elements.
 | no child / `<failure>` / `<error>` / `<skipped>` | outcome `passed` / `failed` / `error` / `skipped`; several children: error > failure > skipped |
 | `message`, `type`, body text of that child | `FailureDetails` (text cut to 4,000 characters, marked `... [truncated]`) |
 | `<flakyFailure>`, `<flakyError>`, `<rerunFailure>`, `<rerunError>` | `TestResult.retries` (one per element) |
+| TestNG retry analyzer under Surefire: skipped `<testcase>` attempts before the final one of the same test | `TestResult.retries` of the final result, only when the suite's `tests` count equals the cases minus those attempts (otherwise kept as separate results) |
 | `<testcase time>` | `duration_seconds`; missing = unknown; invalid (`abc`, negative, `1,234`) = unknown + warning |
 | `<testsuite timestamp>` | earliest one = `TestRun.started_at`; no offset = UTC |
 | testcase property `test_id` / `test_case_id`, `[TC-101]` in the name (upper-case prefix, so pytest ids like `[over-100]` do not count) | `TestResult.test_ids` (explicit link to a catalog test case) |

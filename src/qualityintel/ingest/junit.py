@@ -7,6 +7,9 @@ variants seen in real files (see docs/ingestion.md for the producers it is teste
 - per ``<testcase>``: ``<failure>``, ``<error>`` or ``<skipped>`` child, or none = passed;
 - Maven Surefire rerun elements: ``<flakyFailure>``/``<flakyError>`` (passed after a retry)
   and ``<rerunFailure>``/``<rerunError>`` (failed again on the retry);
+- TestNG's retry analyzer under Surefire: a retried attempt is written as its own ``<testcase>``
+  marked skipped, before the final attempt; when the suite's ``tests`` count proves it (it
+  counts the test once), those attempts become retries of the final result;
 - suite timestamps in ISO 8601 with or without offset, and TestNG's ``... UTC`` form.
 
 What is deliberately *not* read: ``<system-out>``/``<system-err>`` (logs can hold secrets and
@@ -207,14 +210,47 @@ class _Collector:
 
     def walk(self, element: ET.Element, suite_name: str) -> None:
         """Visit a suite element: read its timestamp and properties, then its children."""
-        if _local(element.tag) == "testsuite":
+        is_suite = _local(element.tag) == "testsuite"
+        if is_suite:
             self._read_suite_attributes(element)
+        direct: list[int] = []  # positions of this suite's own test cases in self.results
         for child in element:
             tag = _local(child.tag)
             if tag == "testsuite":
                 self.walk(child, suite_name=child.get("name", ""))
             elif tag == "testcase":
+                direct.append(len(self.results))
                 self.results.append(self._read_testcase(child, suite_name))
+        if is_suite:
+            self._fold_testng_retries(element, direct)
+
+    def _fold_testng_retries(self, suite: ET.Element, positions: list[int]) -> None:
+        """Turn TestNG's retried attempts into retries of the final result of the same test.
+
+        TestNG's retry analyzer marks every attempt but the last as skipped, and Surefire writes
+        each attempt as a ``<testcase>`` while counting the test once in the suite's ``tests``.
+        A skipped case followed by a later case of the same test is folded only when the count
+        of cases minus the folded ones equals that declared count; otherwise (two different
+        tests sharing a name, a declared count that does not fit) every case stays as written.
+        """
+        declared = (suite.get("tests") or "").strip()
+        if not declared.isdigit() or len(positions) == int(declared):
+            return
+        later: dict[str, int] = {}  # test key -> position of its final case seen so far
+        folds: list[tuple[int, int]] = []  # (retried attempt, final case)
+        for position in reversed(positions):
+            result = self.results[position]
+            if result.key in later and result.outcome is Outcome.SKIPPED:
+                folds.append((position, later[result.key]))
+            else:
+                later[result.key] = position
+        if not folds or len(positions) - len(folds) != int(declared):
+            return
+        for _, final in folds:
+            result = self.results[final]
+            self.results[final] = result.model_copy(update={"retries": result.retries + 1})
+        dropped = {attempt for attempt, _ in folds}
+        self.results = [r for i, r in enumerate(self.results) if i not in dropped]
 
     def _read_suite_attributes(self, suite: ET.Element) -> None:
         """Collect the suite timestamp and allow-listed properties."""
