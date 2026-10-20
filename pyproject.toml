@@ -16,6 +16,11 @@ authors = [{ name = "Niranjan Kumar Agri" }]
 requires-python = ">=3.12"
 dependencies = [
     "pydantic==2.13.5",
+    # dashboard (Milestone 5): JSON API and a static single-page front end
+    "fastapi==0.142.2",
+    "uvicorn==0.54.0",
+    # pinned: FastAPI only sets a lower bound, and newer releases change the test client
+    "starlette==1.7.0",
 ]
 
 [project.optional-dependencies]
@@ -25,6 +30,12 @@ dev = [
     "pytest-cov==7.1.0",
     "ruff==0.16.10",
     "mypy==2.4.0",
+    # HTTP client behind FastAPI's TestClient (starlette deprecated plain httpx for it)
+    "httpx2==2.13.1",
+]
+# Browser tests of the dashboard (tests/e2e); needs `playwright install chromium` once
+e2e = [
+    "playwright==1.63.0",
 ]
 
 [project.scripts]
@@ -38,7 +49,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 # py.typed tells type checkers that the package ships its own type hints
-qualityintel = ["py.typed"]
+qualityintel = ["py.typed", "dashboard/static/*"]
 
 # ruff: linter and formatter, run in CI before any test
 [tool.ruff]
@@ -79,11 +90,12 @@ init_forbid_extra = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 # -ra lists every non-passing test at the end; strict options turn typos in markers/config into errors
-addopts = ["-ra", "--strict-markers", "--strict-config"]
+addopts = ["-ra", "--strict-markers", "--strict-config", "-m", "not e2e"]
 xfail_strict = true
 markers = [
     "unit: fast tests of one module, no files or processes outside tmp_path",
     "integration: tests that run the installed package as a separate process",
+    "e2e: dashboard tests in a real browser (deselected unless -m e2e is given)",
 ]
 
 [tool.coverage.run]
