@@ -1,43 +1,43 @@
-id,title,description,component,priority,criticality,risk,platforms
-NOTES-001,Visitors can register an account; invalid or taken data is refused,,Notes / Accounts,P1,high,medium,api
-NOTES-002,Users log in with email and password and get a session; failures do not reveal which part was wrong,Login with e-mail and password returns a session token. A failed login gives the same message for an unknown user and a wrong password.,Notes / Accounts,P1,critical,high,web;api
-NOTES-003,Logging out ends the session token,,Notes / Accounts,P1,high,medium,api
-NOTES-004,Users can change their password; the old password stops working,,Notes / Accounts,P2,high,medium,api
-NOTES-005,Users can view and update their profile; the phone number is validated,,Notes / Accounts,P3,medium,low,api
-NOTES-006,"Users can create notes in the categories Home, Work and Personal; invalid notes are refused","A note has a title (4-100 characters), a description (4-1000) and one of the categories Home, Work, Personal.",Notes / Notes,P1,critical,medium,web;api
-NOTES-007,Users can edit notes and mark them completed; progress is shown,,Notes / Notes,P1,high,medium,web;api
-NOTES-008,Users can delete notes after confirming,,Notes / Notes,P2,high,low,web;api
-NOTES-009,Users can only see and change their own notes,"No user can read, change or delete another user's notes; requests without a valid token are rejected.",Notes / Security,P1,critical,high,api
-NOTES-010,Users can search notes and filter them by category,,Notes / Notes,P2,medium,low,web
-NOTES-011,Users can reset a forgotten password by email,,Notes / Accounts,P2,high,high,web
-NOTES-012,Notes created offline are saved when the connection returns,,Notes / Notes,P4,low,medium,web
-SHOP-001,Customers can browse the product catalogue and filter it by category,,Toolshop / Catalogue,P1,high,medium,web
-SHOP-002,Customers can search products; no match is stated clearly,,Toolshop / Catalogue,P2,medium,low,web
-SHOP-003,Customers can sort products by name and price,,Toolshop / Catalogue,P3,low,low,web
-SHOP-004,Product details match the catalogue and products can be added to the cart in any quantity,,Toolshop / Cart,P1,high,medium,web
-SHOP-005,Customers can log in and out; wrong or missing credentials are reported,Customers sign in and out; wrong or missing credentials show a message per field.,Toolshop / Accounts,P1,critical,medium,web
-SHOP-006,Customers can check out and place an order with correct totals; guests are asked to sign in,Logged-in customers can order; line prices and the total add up; guests are asked to sign in at checkout.,Toolshop / Checkout,P1,critical,high,web
-SHOP-007,The shop stays usable when the product API fails or returns nothing,,Toolshop / Resilience,P2,medium,medium,web
-SHOP-008,Customers can pay by credit card,"Payment by credit card through the payment provider, including 3-D Secure.",Toolshop / Checkout,P1,critical,high,web
-SHOP-009,Customers can download an invoice as PDF,,Toolshop / Checkout,P3,medium,low,web
-SHOP-010,Checkout meets WCAG 2.2 AA,,Toolshop / Checkout,P2,high,medium,web
-SAUCE-001,Shoppers can log in and out; locked-out and invalid users see the right error,Standard users log in; locked-out and invalid users see the matching error message.,Swag Labs / Accounts,P1,critical,medium,web
-SAUCE-002,The inventory lists all products and can be sorted,,Swag Labs / Inventory,P2,medium,low,web
-SAUCE-003,The cart keeps added products and its badge follows changes,,Swag Labs / Cart,P1,high,medium,web
-SAUCE-004,Shoppers can buy products; totals include 8 % tax and customer details are required,"Two products can be bought; the overview adds 8 % tax; first name, last name and postal code are required.",Swag Labs / Checkout,P1,critical,high,web
-SAUCE-005,The API issues tokens and protects the current-user endpoint,,Swag Labs / API,P1,high,medium,api
-SAUCE-006,"The product API supports read, search, paging, field selection and changes",,Swag Labs / API,P2,medium,low,api
-SAUCE-007,The cart API returns a user's carts with correct line totals,,Swag Labs / API,P2,medium,medium,api
-SAUCE-008,The shop is usable on a phone-sized screen,,Swag Labs / Inventory,P3,medium,medium,mobile-web
-ADMIN-001,Staff sign in with a role; viewers can read but not change; failures reveal nothing,Admins and viewers sign in with their role; viewers can read but not change; failed sign-ins do not reveal which part was wrong.,Admin / Access,P1,critical,high,web;api
-ADMIN-002,Every request can be traced by the caller's request id,,Admin / Operations,P3,low,low,api
-ADMIN-003,"Admins can create, edit, search and delete customers; every invalid field is reported",,Admin / Customers,P1,high,medium,web;api
-ADMIN-004,"Orders compute totals, reserve and release stock and follow the allowed status flow",Placing an order computes the totals and reserves stock; cancelling gives it back; the status follows the allowed flow.,Admin / Orders,P1,critical,high,web;api
-ADMIN-005,Admins manage the product catalogue; deleting deactivates instead of removing,,Admin / Products,P2,high,medium,web;api
-ADMIN-006,Admins manage user accounts and roles,,Admin / Access,P2,high,medium,api
-ADMIN-007,Data changed through the UI or API is stored exactly and consistently,Changes made in the UI or through the API are stored exactly as sent and are visible in both.,Admin / Data,P1,critical,high,web;api;database
-ADMIN-008,Passwords are stored hashed and salted,"Passwords are stored as salted hashes, never in clear text.",Admin / Access,P1,critical,medium,database
-ADMIN-009,Admins can export orders as CSV,,Admin / Orders,P3,medium,low,web
-ADMIN-010,Changes made by admins are written to an audit log,,Admin / Operations,P2,high,medium,api
-ADMIN-011,The order list answers within 2 s for 50 concurrent admins,,Admin / Orders,P2,high,medium,api
-ADMIN-012,Admins must confirm sign-in with a second factor,Admins confirm every sign-in with a second factor (authenticator app).,Admin / Access,P1,critical,high,web
+id,title,description,component,priority,criticality,risk,platforms,owner
+NOTES-001,Visitors can register an account; invalid or taken data is refused,,Notes / Accounts,P1,high,medium,api,Notes API team
+NOTES-002,Users log in with email and password and get a session; failures do not reveal which part was wrong,Login with e-mail and password returns a session token. A failed login gives the same message for an unknown user and a wrong password.,Notes / Accounts,P1,critical,high,web;api,Notes API team
+NOTES-003,Logging out ends the session token,,Notes / Accounts,P1,high,medium,api,Notes API team
+NOTES-004,Users can change their password; the old password stops working,,Notes / Accounts,P2,high,medium,api,Notes API team
+NOTES-005,Users can view and update their profile; the phone number is validated,,Notes / Accounts,P3,medium,low,api,Notes API team
+NOTES-006,"Users can create notes in the categories Home, Work and Personal; invalid notes are refused","A note has a title (4-100 characters), a description (4-1000) and one of the categories Home, Work, Personal.",Notes / Notes,P1,critical,medium,web;api,Notes API team
+NOTES-007,Users can edit notes and mark them completed; progress is shown,,Notes / Notes,P1,high,medium,web;api,Notes API team
+NOTES-008,Users can delete notes after confirming,,Notes / Notes,P2,high,low,web;api,Notes API team
+NOTES-009,Users can only see and change their own notes,"No user can read, change or delete another user's notes; requests without a valid token are rejected.",Notes / Security,P1,critical,high,api,Notes API team
+NOTES-010,Users can search notes and filter them by category,,Notes / Notes,P2,medium,low,web,Notes API team
+NOTES-011,Users can reset a forgotten password by email,,Notes / Accounts,P2,high,high,web,Notes API team
+NOTES-012,Notes created offline are saved when the connection returns,,Notes / Notes,P4,low,medium,web,Notes API team
+SHOP-001,Customers can browse the product catalogue and filter it by category,,Toolshop / Catalogue,P1,high,medium,web,Toolshop team
+SHOP-002,Customers can search products; no match is stated clearly,,Toolshop / Catalogue,P2,medium,low,web,Toolshop team
+SHOP-003,Customers can sort products by name and price,,Toolshop / Catalogue,P3,low,low,web,Toolshop team
+SHOP-004,Product details match the catalogue and products can be added to the cart in any quantity,,Toolshop / Cart,P1,high,medium,web,Toolshop team
+SHOP-005,Customers can log in and out; wrong or missing credentials are reported,Customers sign in and out; wrong or missing credentials show a message per field.,Toolshop / Accounts,P1,critical,medium,web,Toolshop team
+SHOP-006,Customers can check out and place an order with correct totals; guests are asked to sign in,Logged-in customers can order; line prices and the total add up; guests are asked to sign in at checkout.,Toolshop / Checkout,P1,critical,high,web,Toolshop team
+SHOP-007,The shop stays usable when the product API fails or returns nothing,,Toolshop / Resilience,P2,medium,medium,web,Toolshop team
+SHOP-008,Customers can pay by credit card,"Payment by credit card through the payment provider, including 3-D Secure.",Toolshop / Checkout,P1,critical,high,web,Toolshop team
+SHOP-009,Customers can download an invoice as PDF,,Toolshop / Checkout,P3,medium,low,web,Toolshop team
+SHOP-010,Checkout meets WCAG 2.2 AA,,Toolshop / Checkout,P2,high,medium,web,Toolshop team
+SAUCE-001,Shoppers can log in and out; locked-out and invalid users see the right error,Standard users log in; locked-out and invalid users see the matching error message.,Swag Labs / Accounts,P1,critical,medium,web,Storefront team
+SAUCE-002,The inventory lists all products and can be sorted,,Swag Labs / Inventory,P2,medium,low,web,Storefront team
+SAUCE-003,The cart keeps added products and its badge follows changes,,Swag Labs / Cart,P1,high,medium,web,Storefront team
+SAUCE-004,Shoppers can buy products; totals include 8 % tax and customer details are required,"Two products can be bought; the overview adds 8 % tax; first name, last name and postal code are required.",Swag Labs / Checkout,P1,critical,high,web,Storefront team
+SAUCE-005,The API issues tokens and protects the current-user endpoint,,Swag Labs / API,P1,high,medium,api,Storefront team
+SAUCE-006,"The product API supports read, search, paging, field selection and changes",,Swag Labs / API,P2,medium,low,api,Storefront team
+SAUCE-007,The cart API returns a user's carts with correct line totals,,Swag Labs / API,P2,medium,medium,api,Storefront team
+SAUCE-008,The shop is usable on a phone-sized screen,,Swag Labs / Inventory,P3,medium,medium,mobile-web,Storefront team
+ADMIN-001,Staff sign in with a role; viewers can read but not change; failures reveal nothing,Admins and viewers sign in with their role; viewers can read but not change; failed sign-ins do not reveal which part was wrong.,Admin / Access,P1,critical,high,web;api,Admin team
+ADMIN-002,Every request can be traced by the caller's request id,,Admin / Operations,P3,low,low,api,Admin team
+ADMIN-003,"Admins can create, edit, search and delete customers; every invalid field is reported",,Admin / Customers,P1,high,medium,web;api,Admin team
+ADMIN-004,"Orders compute totals, reserve and release stock and follow the allowed status flow",Placing an order computes the totals and reserves stock; cancelling gives it back; the status follows the allowed flow.,Admin / Orders,P1,critical,high,web;api,Admin team
+ADMIN-005,Admins manage the product catalogue; deleting deactivates instead of removing,,Admin / Products,P2,high,medium,web;api,Admin team
+ADMIN-006,Admins manage user accounts and roles,,Admin / Access,P2,high,medium,api,Admin team
+ADMIN-007,Data changed through the UI or API is stored exactly and consistently,Changes made in the UI or through the API are stored exactly as sent and are visible in both.,Admin / Data,P1,critical,high,web;api;database,Admin team
+ADMIN-008,Passwords are stored hashed and salted,"Passwords are stored as salted hashes, never in clear text.",Admin / Access,P1,critical,medium,database,Admin team
+ADMIN-009,Admins can export orders as CSV,,Admin / Orders,P3,medium,low,web,Admin team
+ADMIN-010,Changes made by admins are written to an audit log,,Admin / Operations,P2,high,medium,api,Admin team
+ADMIN-011,The order list answers within 2 s for 50 concurrent admins,,Admin / Orders,P2,high,medium,api,Admin team
+ADMIN-012,Admins must confirm sign-in with a second factor,Admins confirm every sign-in with a second factor (authenticator app).,Admin / Access,P1,critical,high,web,Admin team

@@ -204,3 +204,15 @@ def test_hand_written_files_are_recognised(tmp_path: Path) -> None:
     assert is_generated(generated)
     assert is_generated(tmp_path / "new.toml")
     assert not is_generated(hand_written)
+
+
+def test_owner_column_is_imported_and_written_after_the_feature() -> None:
+    """Owner from the CSV ("Owner" works too), empty = not given; the generated TOML keeps it."""
+    parsed = parse_requirements_csv(
+        "id,title,component,Owner\nR-1,Pay,Checkout,Payments team\nR-2,Ship,Checkout,\n"
+    )
+    first, second = parsed.requirements
+    rendered = render_requirements_toml(parsed.requirements, "export.csv")
+
+    assert (first.owner, second.owner) == ("Payments team", None)
+    assert 'feature = "Checkout"\nowner = "Payments team"\n' in rendered

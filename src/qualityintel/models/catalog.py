@@ -34,13 +34,15 @@ class Requirement(_Frozen):
     """Something the product must do, as agreed with the business.
 
     Optional fields may be missing in real catalogs; analysis groups them under
-    "unspecified" instead of guessing a value.
+    "unspecified" instead of guessing a value. ``owner`` is who answers for the requirement
+    (a team or a person), so a gap in coverage has someone to go to.
     """
 
     id: Identifier
     title: Text
     description: LongText | None = None
     feature: Text | None = None
+    owner: Text | None = None
     criticality: Criticality | None = None
     priority: Priority | None = None
     risk: Risk | None = None

@@ -465,3 +465,18 @@ def test_the_access_log_is_one_json_line_per_request_without_queries_or_logins(
         ("GET", "/api/health", 401),
     ]
     assert all(set(e) == {"time", "method", "path", "status", "ms"} for e in lines)
+
+
+def test_requirements_have_owners_to_filter_and_group_by(client: TestClient) -> None:
+    """Owner: a facet, a filter that narrows every view, a matrix grouping; counts add up to 42."""
+    owners = client.get("/api/facets").json()["owners"]
+    by_owner = {r["group"]: r["total"] for r in client.get("/api/requirements/matrix").json()["by_owner"]}
+    admin = client.get("/api/requirements", params={"owner": "Admin team"}).json()
+    summary = client.get("/api/summary", params={"owner": "Admin team"}).json()
+
+    assert owners == ["Admin team", "Notes API team", "Storefront team", "Toolshop team"]
+    assert sum(by_owner.values()) == 42
+    assert len(admin) == by_owner["Admin team"] == 12
+    assert {r["owner"] for r in admin} == {"Admin team"}
+    assert summary["requirements_total"] == 12
+    assert client.get("/api/requirements/SHOP-006").json()["requirement"]["owner"] == "Toolshop team"

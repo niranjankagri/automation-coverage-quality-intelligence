@@ -134,7 +134,7 @@ def test_values_are_parsed_into_enums_and_text_is_trimmed() -> None:
         {"id": "-REQ", "title": "x"},
         {"id": "REQ-1", "title": ""},
         {"id": "REQ-1", "title": "x", "criticality": "urgent"},
-        {"id": "REQ-1", "title": "x", "owner": "someone"},
+        {"id": "REQ-1", "title": "x", "ownr": "someone"},  # a typo of owner
     ],
     ids=["empty-id", "space-in-id", "leading-dash", "empty-title", "unknown-criticality", "unknown-field"],
 )

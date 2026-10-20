@@ -514,3 +514,15 @@ def test_moving_to_another_page_puts_the_focus_on_its_heading(page: Page) -> Non
     page.get_by_role("link", name="Runs", exact=True).click()
 
     expect(page.get_by_role("heading", name="Runs", exact=True)).to_be_focused()
+
+
+def test_the_owner_filter_narrows_requirements_and_the_matrix_groups_by_owner(page: Page) -> None:
+    """Owner = Admin team: 12 requirements, a chip, the address; the matrix has a By owner table."""
+    page.goto("/#/requirements")
+    expect(page.get_by_role("heading", name="By owner")).to_be_visible()
+    page.locator('#filters select[name="owner"]').select_option("Admin team")
+
+    expect(page).to_have_url(re.compile(r"owner=Admin\+team|owner=Admin%20team"))
+    rows = page.get_by_role("region", name="Requirement list").locator("tbody tr")
+    expect(rows).to_have_count(12)
+    expect(page.locator("#active-filters")).to_contain_text("Owner: Admin team")

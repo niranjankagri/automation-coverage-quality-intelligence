@@ -678,6 +678,14 @@
             "title": "Jobs",
             "type": "array"
           },
+          "owners": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Owners",
+            "type": "array"
+          },
           "platforms": {
             "items": {
               "type": "string"
@@ -1503,7 +1511,7 @@
         "type": "object"
       },
       "RequirementMatrix": {
-        "description": "Requirements by criticality and by feature (docs/dashboard.md, Requirements).",
+        "description": "Requirements by criticality, feature and owner (docs/dashboard.md, Requirements).",
         "properties": {
           "by_criticality": {
             "items": {
@@ -1517,6 +1525,14 @@
               "$ref": "#/components/schemas/MatrixRow"
             },
             "title": "By Feature",
+            "type": "array"
+          },
+          "by_owner": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/MatrixRow"
+            },
+            "title": "By Owner",
             "type": "array"
           },
           "stale_days": {
@@ -1581,6 +1597,11 @@
               }
             ],
             "title": "Last Executed At"
+          },
+          "owner": {
+            "default": "unspecified",
+            "title": "Owner",
+            "type": "string"
           },
           "platforms": {
             "items": {
@@ -3171,6 +3192,25 @@
           },
           {
             "in": "query",
+            "name": "owner",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Owner"
+            }
+          },
+          {
+            "in": "query",
             "name": "criticality",
             "required": false,
             "schema": {
@@ -3445,6 +3485,25 @@
           },
           {
             "in": "query",
+            "name": "owner",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Owner"
+            }
+          },
+          {
+            "in": "query",
             "name": "criticality",
             "required": false,
             "schema": {
@@ -3703,6 +3762,25 @@
                 }
               ],
               "title": "Feature"
+            }
+          },
+          {
+            "in": "query",
+            "name": "owner",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Owner"
             }
           },
           {
@@ -4633,6 +4711,25 @@
           },
           {
             "in": "query",
+            "name": "owner",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Owner"
+            }
+          },
+          {
+            "in": "query",
             "name": "criticality",
             "required": false,
             "schema": {
@@ -5281,6 +5378,25 @@
                 }
               ],
               "title": "Feature"
+            }
+          },
+          {
+            "in": "query",
+            "name": "owner",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Owner"
             }
           },
           {

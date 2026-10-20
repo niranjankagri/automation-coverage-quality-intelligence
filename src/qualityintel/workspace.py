@@ -209,6 +209,7 @@ class RequirementRow(View):
     platforms: tuple[str, ...]
     test_cases: int
     automated_test_cases: int
+    owner: str = UNSPECIFIED
     coverage_status: str
     execution_status: str
     last_executed_at: datetime | None = None
@@ -366,10 +367,11 @@ class MatrixRow(View):
 
 
 class RequirementMatrix(View):
-    """Requirements by criticality and by feature (docs/dashboard.md, Requirements)."""
+    """Requirements by criticality, feature and owner (docs/dashboard.md, Requirements)."""
 
     by_criticality: tuple[MatrixRow, ...]
     by_feature: tuple[MatrixRow, ...]
+    by_owner: tuple[MatrixRow, ...] = ()
     stale_days: int
 
 
@@ -494,6 +496,7 @@ class Facets(View):
     criticalities: tuple[str, ...]
     platforms: tuple[str, ...]
     test_types: tuple[str, ...]
+    owners: tuple[str, ...] = ()
     frameworks: tuple[str, ...]
     environments: tuple[str, ...]
     browsers: tuple[str, ...]
@@ -547,6 +550,7 @@ class Workspace:
         reqs, cases = self.catalog.requirements, self.catalog.test_cases
         return Facets(
             features=_sorted(r.feature or UNSPECIFIED for r in reqs),
+            owners=_sorted(r.owner or UNSPECIFIED for r in reqs),
             criticalities=_sorted(_text(r.criticality) for r in reqs),
             platforms=_sorted(p for r in reqs for p in (r.platforms or (UNSPECIFIED,))),
             test_types=_sorted(_text(c.test_type) for c in cases),
@@ -1070,7 +1074,7 @@ class Workspace:
         return {key: tuple(sorted(ids)) for key, ids in found.items()}
 
     def requirement_matrix(self, scope: Scope = EVERYTHING, now: datetime | None = None) -> RequirementMatrix:
-        """Requirements in scope counted by criticality and by feature, with coverage and execution status."""
+        """Requirements in scope counted by criticality, feature and owner, with coverage and execution."""
         report = self._report(scope)
         rows = [self._row(row.requirement, report, now) for row in report.coverage.requirements]
 
@@ -1098,7 +1102,10 @@ class Workspace:
             return tuple(result)
 
         return RequirementMatrix(
-            by_criticality=group("criticality"), by_feature=group("feature"), stale_days=self.stale_days
+            by_criticality=group("criticality"),
+            by_feature=group("feature"),
+            by_owner=group("owner"),
+            stale_days=self.stale_days,
         )
 
     def _row(
@@ -1124,6 +1131,7 @@ class Workspace:
             title=requirement.title,
             description=requirement.description,
             feature=requirement.feature or UNSPECIFIED,
+            owner=requirement.owner or UNSPECIFIED,
             criticality=_text(requirement.criticality),
             priority=_text(requirement.priority),
             risk=_text(requirement.risk),

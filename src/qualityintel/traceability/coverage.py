@@ -22,13 +22,14 @@ UNSPECIFIED = "unspecified"
 class Filters:
     """Scope of an analysis; ``None`` or empty = no restriction on that dimension.
 
-    Requirement filters (feature, criticality, platform) choose the requirements in scope.
+    Requirement filters (feature, owner, criticality, platform) choose the requirements in scope.
     Test case filters (test type, framework) choose which linked test cases count; a
     requirement whose linked cases are all filtered out counts as having no tests *in this
     scope*.
     """
 
     features: frozenset[str] = frozenset()
+    owners: frozenset[str] = frozenset()
     criticalities: frozenset[str] = frozenset()
     platforms: frozenset[str] = frozenset()
     test_types: frozenset[str] = frozenset()
@@ -38,6 +39,7 @@ class Filters:
         """True when the requirement is in scope."""
         return (
             _allowed(self.features, [requirement.feature or UNSPECIFIED])
+            and _allowed(self.owners, [requirement.owner or UNSPECIFIED])
             and _allowed(self.criticalities, [_value(requirement.criticality)])
             and _allowed(self.platforms, list(requirement.platforms) or [UNSPECIFIED])
         )

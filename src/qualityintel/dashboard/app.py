@@ -93,6 +93,7 @@ def run_scope(
 
 def full_scope(
     feature: ListQuery = None,
+    owner: ListQuery = None,
     criticality: ListQuery = None,
     platform: ListQuery = None,
     test_type: ListQuery = None,
@@ -112,6 +113,7 @@ def full_scope(
     return Scope(
         filters=Filters(
             features=frozenset(feature or ()),
+            owners=frozenset(owner or ()),
             criticalities=frozenset(criticality or ()),
             platforms=frozenset(platform or ()),
             test_types=frozenset(test_type or ()),

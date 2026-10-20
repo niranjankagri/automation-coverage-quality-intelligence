@@ -3,9 +3,9 @@
 // All text is set with textContent (test names contain quotes, brackets and < >).
 "use strict";
 
-const FILTERS = ["repository", "feature", "criticality", "test_type", "framework", "environment", "browser", "build", "job", "since", "until"];
+const FILTERS = ["repository", "feature", "owner", "criticality", "test_type", "framework", "environment", "browser", "build", "job", "since", "until"];
 const RUN_FILTERS = ["repository", "framework", "environment", "browser", "build", "job", "since", "until"];
-const FILTER_NAMES = { repository: "Repository", feature: "Feature", criticality: "Criticality", test_type: "Test type", framework: "Framework", environment: "Environment", browser: "Browser", build: "Build", job: "Job", since: "From", until: "To" };
+const FILTER_NAMES = { repository: "Repository", feature: "Feature", owner: "Owner", criticality: "Criticality", test_type: "Test type", framework: "Framework", environment: "Environment", browser: "Browser", build: "Build", job: "Job", since: "From", until: "To" };
 const OUTCOMES = ["passed", "failed", "error", "skipped"];
 const view = document.getElementById("view");
 const statusLine = document.getElementById("status");
@@ -448,7 +448,8 @@ async function overview() {
   ];
 }
 
-function matrixTable(title, rows) {
+/** One matrix table; ``param`` is the filter a coverage count's link sets to the row's group. */
+function matrixTable(title, rows, param) {
   const coverage = ["no tests", "not automated", "automated"];
   const execution = ["failing", "not run", "skipped", "passing"];
   return [
@@ -461,7 +462,7 @@ function matrixTable(title, rows) {
           {},
           h("td", {}, r.group),
           h("td", { class: "num" }, String(r.total)),
-          coverage.map((c) => h("td", { class: "num" }, r.coverage[c] ? h("a", { href: link("/requirements", { status: c, [title === "By criticality" ? "criticality" : "feature"]: r.group }) }, String(r.coverage[c])) : "0")),
+          coverage.map((c) => h("td", { class: "num" }, r.coverage[c] ? h("a", { href: link("/requirements", { status: c, [param]: r.group }) }, String(r.coverage[c])) : "0")),
           execution.map((e) => h("td", { class: "num" }, String(r.execution[e] ?? 0))),
           h("td", { class: "num" }, String(r.stale)),
         ),
@@ -484,10 +485,11 @@ async function requirementsView() {
     h(
       "details",
       { class: "matrix", open: status ? null : "" },
-      h("summary", {}, "Coverage by criticality and feature"),
+      h("summary", {}, "Coverage by criticality, feature and owner"),
       h("p", { class: "sub" }, `Counts come from the API for the scope above. Evidence is stale when the latest execution of a requirement's tests is older than ${matrix.stale_days} days. Click a coverage count to list those requirements.`),
-      matrixTable("By criticality", matrix.by_criticality),
-      matrixTable("By feature", matrix.by_feature),
+      matrixTable("By criticality", matrix.by_criticality, "criticality"),
+      matrixTable("By feature", matrix.by_feature, "feature"),
+      matrixTable("By owner", matrix.by_owner, "owner"),
     ),
     h(
       "div",
@@ -497,13 +499,14 @@ async function requirementsView() {
     ),
     h("h2", { id: "requirement-list", class: "visually-hidden" }, "Requirement list"),
     h("section", { "aria-labelledby": "requirement-list" }, table(
-      ["Requirement", "Feature", "Criticality", { label: "Automated / cases", num: true }, "Coverage", "Execution", "Latest evidence"],
+      ["Requirement", "Feature", "Owner", "Criticality", { label: "Automated / cases", num: true }, "Coverage", "Execution", "Latest evidence"],
       rows.map((r) =>
         h(
           "tr",
           {},
           h("td", {}, h("a", { href: link(`/requirement/${encodeURIComponent(r.id)}`) }, r.id), h("span", { class: "sub" }, r.title)),
           h("td", {}, r.feature),
+          h("td", {}, r.owner),
           h("td", {}, r.criticality === "critical" ? badge("critical") : r.criticality),
           h("td", { class: "num" }, `${r.automated_test_cases} / ${r.test_cases}`),
           h("td", {}, badge(r.coverage_status)),
@@ -552,7 +555,7 @@ async function requirementDetail(id) {
     h("p", {}, h("a", { href: link("/requirements") }, "← Requirements")),
     h("h1", {}, `${r.id}: ${r.title}`),
     r.description ? h("p", { class: "lead" }, r.description) : null,
-    h("dl", { class: "meta" }, h("dt", {}, "Feature"), h("dd", {}, r.feature), h("dt", {}, "Criticality"), h("dd", {}, r.criticality), h("dt", {}, "Priority / risk"), h("dd", {}, `${r.priority} / ${r.risk}`), h("dt", {}, "Platforms"), h("dd", {}, r.platforms.join(", ") || "unspecified"), h("dt", {}, "Coverage"), h("dd", {}, badge(r.coverage_status)), h("dt", {}, "Execution"), h("dd", {}, badge(r.execution_status))),
+    h("dl", { class: "meta" }, h("dt", {}, "Feature"), h("dd", {}, r.feature), h("dt", {}, "Owner"), h("dd", {}, r.owner), h("dt", {}, "Criticality"), h("dd", {}, r.criticality), h("dt", {}, "Priority / risk"), h("dd", {}, `${r.priority} / ${r.risk}`), h("dt", {}, "Platforms"), h("dd", {}, r.platforms.join(", ") || "unspecified"), h("dt", {}, "Coverage"), h("dd", {}, badge(r.coverage_status)), h("dt", {}, "Execution"), h("dd", {}, badge(r.execution_status))),
     h("h2", {}, `Test cases (${d.test_cases.length})`),
     d.test_cases.length
       ? d.test_cases.map((c) => [
