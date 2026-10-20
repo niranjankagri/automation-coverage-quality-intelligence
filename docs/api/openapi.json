@@ -49,6 +49,215 @@
         "title": "AttemptView",
         "type": "object"
       },
+      "BuildComparisonView": {
+        "description": "Two builds side by side (docs/history.md, \"Comparing builds\").",
+        "properties": {
+          "base": {
+            "$ref": "#/components/schemas/BuildSideView"
+          },
+          "category_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Category Counts",
+            "type": "object"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/ChangeRow"
+            },
+            "title": "Changes",
+            "type": "array"
+          },
+          "comparable": {
+            "title": "Comparable",
+            "type": "boolean"
+          },
+          "compared_contexts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Compared Contexts",
+            "type": "array"
+          },
+          "head": {
+            "$ref": "#/components/schemas/BuildSideView"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "only_in_base": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Only In Base",
+            "type": "array"
+          },
+          "only_in_head": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Only In Head",
+            "type": "array"
+          }
+        },
+        "required": [
+          "base",
+          "head",
+          "comparable",
+          "compared_contexts",
+          "only_in_base",
+          "only_in_head",
+          "changes",
+          "category_counts",
+          "notes"
+        ],
+        "title": "BuildComparisonView",
+        "type": "object"
+      },
+      "BuildSideView": {
+        "description": "One build in a comparison.",
+        "properties": {
+          "automated_requirement_coverage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RatioView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "build": {
+            "title": "Build",
+            "type": "string"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/Outcome"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "last_started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Started At"
+          },
+          "pass_rate": {
+            "$ref": "#/components/schemas/RatioView"
+          },
+          "requirement_coverage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RatioView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "runs": {
+            "title": "Runs",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "build",
+          "runs",
+          "counts",
+          "pass_rate",
+          "last_started_at",
+          "requirement_coverage",
+          "automated_requirement_coverage"
+        ],
+        "title": "BuildSideView",
+        "type": "object"
+      },
+      "ChangeRow": {
+        "description": "One test that changed between two builds, in one comparable suite.",
+        "properties": {
+          "base_outcome": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Outcome"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "base_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Seconds"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "context": {
+            "title": "Context",
+            "type": "string"
+          },
+          "head_outcome": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Outcome"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "head_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Head Seconds"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "category",
+          "key",
+          "context",
+          "base_outcome",
+          "head_outcome",
+          "base_seconds",
+          "head_seconds"
+        ],
+        "title": "ChangeRow",
+        "type": "object"
+      },
       "CollectionHealthView": {
         "description": "Health of CI collection per repository (docs/collection.md).",
         "properties": {
@@ -320,6 +529,17 @@
       "ExecutionView": {
         "description": "One execution of one test, with the run it belongs to.",
         "properties": {
+          "ci_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ci Url"
+          },
           "context": {
             "$ref": "#/components/schemas/RunContext"
           },
@@ -354,6 +574,16 @@
           },
           "outcome": {
             "$ref": "#/components/schemas/Outcome"
+          },
+          "pipeline": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PipelineJob"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "retries": {
             "title": "Retries",
@@ -1812,9 +2042,27 @@
             "title": "Executions",
             "type": "array"
           },
+          "failed": {
+            "default": 0,
+            "title": "Failed",
+            "type": "integer"
+          },
           "key": {
             "title": "Key",
             "type": "string"
+          },
+          "passed": {
+            "default": 0,
+            "title": "Passed",
+            "type": "integer"
+          },
+          "requirements": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Requirements",
+            "type": "array"
           },
           "test_cases": {
             "items": {
@@ -2065,6 +2313,173 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/builds": {
+      "get": {
+        "description": "Builds in scope in the order they first ran (the build filter itself is ignored).",
+        "operationId": "builds_api_builds_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "framework",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Framework"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment"
+            }
+          },
+          {
+            "in": "query",
+            "name": "browser",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Browser"
+            }
+          },
+          {
+            "in": "query",
+            "name": "build",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Build"
+            }
+          },
+          {
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "in": "query",
+            "name": "until",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Until"
+            }
+          },
+          {
+            "in": "query",
+            "name": "repository",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repository"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Response Builds Api Builds Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Builds",
+        "tags": [
+          "history"
+        ]
+      }
+    },
     "/api/collection": {
       "get": {
         "description": "Per repository: last collection, freshness against the expected schedule, problems.",
@@ -2084,6 +2499,191 @@
         "summary": "Collection",
         "tags": [
           "executions"
+        ]
+      }
+    },
+    "/api/compare": {
+      "get": {
+        "description": "Changes from build ``base`` to build ``head`` where both ran the same suite.",
+        "operationId": "compare_api_compare_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "base",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Base",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "head",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Head",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "framework",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Framework"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment"
+            }
+          },
+          {
+            "in": "query",
+            "name": "browser",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Browser"
+            }
+          },
+          {
+            "in": "query",
+            "name": "build",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Build"
+            }
+          },
+          {
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "in": "query",
+            "name": "until",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Until"
+            }
+          },
+          {
+            "in": "query",
+            "name": "repository",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repository"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuildComparisonView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Compare",
+        "tags": [
+          "history"
         ]
       }
     },

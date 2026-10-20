@@ -213,4 +213,13 @@ p.links { font-size: 13px; color: var(--muted); }
 .badge.success, .badge.complete, .badge.fresh { background: var(--good-bg); color: var(--good); }
 .badge.failure, .badge.incomplete, .badge.overdue { background: var(--bad-bg); color: var(--bad); }
 .badge.cancelled { background: var(--warn-bg); color: var(--warn); }
+ol.pattern { display: inline-flex; flex-wrap: wrap; gap: 3px; list-style: none; padding: 0; margin: 0 8px 0 0; }
+ol.pattern .dot { width: 18px; height: 18px; border-radius: 4px; font-size: 11px; line-height: 18px; text-align: center; font-weight: 700; }
+.dot.passed { background: var(--good-bg); color: var(--good); }
+.dot.failed, .dot.error { background: var(--bad-bg); color: var(--bad); }
+.dot.skipped { background: var(--warn-bg); color: var(--warn); }
+.badge.newly-failing, .badge.still-failing { background: var(--bad-bg); color: var(--bad); }
+.badge.recovered, .badge.new-test { background: var(--good-bg); color: var(--good); }
+.badge.slower, .badge.newly-flaky, .badge.removed-test { background: var(--warn-bg); color: var(--warn); }
+button.copy { margin-right: 8px; }
 

@@ -28,6 +28,7 @@ from qualityintel.models.enums import Criticality, Outcome, TestType
 from qualityintel.traceability.coverage import UNSPECIFIED, Filters
 from qualityintel.traceability.report import RunFilters
 from qualityintel.workspace import (
+    BuildComparisonView,
     CollectionHealthView,
     Facets,
     PipelinesView,
@@ -314,6 +315,27 @@ def create_app(
             return current().test_history(key, chosen)
         except KeyError:
             raise HTTPException(status_code=404, detail=f"no executions of {key!r}") from None
+
+    @app.get("/api/builds", tags=["history"])
+    def builds(chosen: RunScope) -> tuple[str, ...]:
+        """Builds in scope in the order they first ran (the build filter itself is ignored)."""
+        return current().builds(chosen)
+
+    @app.get("/api/compare", tags=["history"])
+    def compare(
+        base: Annotated[str, Query(min_length=1, max_length=200)],
+        head: Annotated[str, Query(min_length=1, max_length=200)],
+        chosen: RunScope,
+    ) -> BuildComparisonView:
+        """Changes from build ``base`` to build ``head`` where both ran the same suite."""
+        if base == head:
+            raise HTTPException(status_code=422, detail="choose two different builds")
+        try:
+            return current().compare_builds(base, head, chosen)
+        except KeyError as error:
+            raise HTTPException(
+                status_code=404, detail=f"no runs of build {error.args[0]!r} in this scope"
+            ) from None
 
     @app.get("/api/stability", tags=["history"])
     def stability(

@@ -347,14 +347,121 @@ async function testsView() {
   ];
 }
 
+/** A button that copies text; says "Copied" (or how to copy by hand when the browser refuses). */
+function copyButton(label, text) {
+  const button = h("button", { type: "button", class: "ghost copy" }, label);
+  button.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      button.textContent = "Copied";
+    } catch (_) {
+      button.textContent = "Copy failed: select the text and press Ctrl+C";
+    }
+    setTimeout(() => (button.textContent = label), 2500);
+  });
+  return button;
+}
+
 async function testHistory() {
   const key = route().params.get("key") ?? "";
   const d = await api(`/api/tests/history${apiQuery(RUN_FILTERS, { key })}`);
+  const latest = d.executions[0];
+  const oldestFirst = [...d.executions].reverse();
+  const labels = oldestFirst.map((e) => `${formatDate(e.started_at)} · ${e.context.build ?? "–"}`);
+  const durations = oldestFirst.map((e) => e.duration_seconds);
+  const shareLink = `${location.origin}${location.pathname}${link("/test", { key })}`;
   return [
     h("p", {}, h("a", { href: link("/tests") }, "← Tests")),
     h("h1", { class: "key" }, d.key),
-    h("p", { class: "lead" }, `Test case: ${d.test_cases.join(", ") || "none (unmatched)"} · ${d.executions.length} execution(s), newest first.`),
-    table(EXECUTION_HEADERS.slice(1), executionRows(d.executions, false), "No executions."),
+    h("div", { class: "toolbar" }, copyButton("Copy test identifier", d.key), copyButton("Copy investigation link", shareLink)),
+    h(
+      "dl",
+      { class: "meta" },
+      h("dt", {}, "Latest result"),
+      h("dd", {}, badge(latest.outcome), " ", formatDate(latest.started_at), latest.retries ? ` after ${latest.retries} retr${latest.retries === 1 ? "y" : "ies"}` : ""),
+      h("dt", {}, "Context"),
+      h("dd", {}, [latest.context.framework, latest.context.environment, latest.context.browser, latest.context.platform].map((v) => v ?? "–").join(" / "), ` · build ${latest.context.build ?? "–"}`),
+      h("dt", {}, "Source"),
+      h("dd", {}, h("a", { href: link(`/run/${latest.run_id}`) }, latest.source), latest.pipeline ? ` · pipeline ${pipelineLabel(latest.pipeline)}` : "", latest.ci_url ? [" · ", external(latest.ci_url, "CI run on GitHub")] : null),
+      h("dt", {}, "Requirements"),
+      h("dd", {}, d.requirements.length ? d.requirements.map((rid, i) => [i ? ", " : "", h("a", { href: link(`/requirement/${encodeURIComponent(rid)}`) }, rid)]) : "none linked"),
+      h("dt", {}, "Test cases"),
+      h("dd", {}, d.test_cases.join(", ") || "none (unmatched)"),
+      h("dt", {}, "Pattern"),
+      h("dd", {}, h("ol", { class: "pattern", "aria-label": `${d.passed} passed, ${d.failed} failed or errored, oldest first` }, oldestFirst.map((e) => h("li", { class: `dot ${e.outcome}`, title: `${formatDate(e.started_at)}: ${e.outcome}` }, e.outcome[0].toUpperCase()))), h("span", { class: "sub" }, `${d.passed} passed, ${d.failed} failed or errored of ${d.executions.length}, oldest first`)),
+    ),
+    latest.failure ? [h("h2", {}, "Latest failure"), failureDetails(latest.failure)] : null,
+    durations.some((v) => v !== null)
+      ? chartFigure("Duration per execution", lineChart(labels, [{ name: "duration", cls: "s-rate", values: durations }], { unit: "s" }), [{ name: "duration", cls: "s-rate", values: durations }], labels, "oldest first", (v) => formatSeconds(v))
+      : null,
+    h(
+      "section",
+      { "aria-labelledby": "executions-title" },
+      h("h2", { id: "executions-title" }, `Executions (${d.executions.length}, newest first)`),
+      table(EXECUTION_HEADERS.slice(1), executionRows(d.executions, false), "No executions."),
+    ),
+  ];
+}
+
+async function compareView() {
+  const params = route().params;
+  const builds = await api(`/api/builds${apiQuery(RUN_FILTERS)}`);
+  const head = params.get("head") ?? builds[builds.length - 1] ?? "";
+  const base = params.get("base") ?? builds[builds.length - 2] ?? "";
+  const pick = (id, value, other) => {
+    const select = h("select", { id }, builds.map((b) => h("option", { value: b }, b)));
+    select.value = value;
+    select.addEventListener("change", () => (location.hash = link("/compare", other === "base" ? { base: select.value, head } : { base, head: select.value })));
+    return select;
+  };
+  const header = [
+    h("h1", {}, "Compare builds"),
+    h("p", { class: "lead" }, "Builds are compared only where both ran the same suite (context and job). Builds are listed in the order they first ran."),
+    h("div", { class: "toolbar" }, h("label", { for: "base-build" }, "Baseline build", pick("base-build", base, "base")), h("label", { for: "head-build" }, "Comparison build", pick("head-build", head, "head"))),
+  ];
+  if (builds.length < 2) return [...header, h("p", { class: "empty" }, "At least two builds are needed in this scope.")];
+  if (base === head) return [...header, h("p", { class: "empty" }, "Choose two different builds.")];
+  const d = await api(`/api/compare${apiQuery(RUN_FILTERS, { base, head })}`);
+  const side = (title, b) =>
+    h(
+      "div",
+      { class: "card" },
+      h("div", { class: "label" }, title),
+      h("div", { class: "value" }, b.build),
+      h("div", { class: "detail" }, `${b.runs} run(s) · pass rate ${b.pass_rate.text}`),
+      h("div", { class: "detail" }, `${b.counts.passed} passed, ${b.counts.failed} failed, ${b.counts.error} errors, ${b.counts.skipped} skipped`),
+      h("div", { class: "detail" }, b.requirement_coverage ? `requirement coverage ${b.requirement_coverage.text}` : "no coverage snapshot before this build"),
+      h("div", { class: "detail" }, `last run ${formatDate(b.last_started_at)}`),
+    );
+  const category = params.get("change") ?? "";
+  const shown = d.changes.filter((c) => !category || c.category === category);
+  return [
+    ...header,
+    h("div", { class: "cards" }, side("Baseline", d.base), side("Comparison", d.head)),
+    d.notes.length ? h("div", { class: "notice", role: "note" }, d.notes.map((n) => h("p", {}, n))) : null,
+    h("p", { class: "sub" }, `Compared suites: ${d.compared_contexts.join(", ") || "none"}`, d.only_in_base.length ? ` · only in the baseline: ${d.only_in_base.join(", ")}` : "", d.only_in_head.length ? ` · only in the comparison: ${d.only_in_head.join(", ")}` : ""),
+    h(
+      "nav",
+      { class: "status-filter", "aria-label": "Change type" },
+      h("a", { href: link("/compare", { base, head }), "aria-current": category ? null : "true" }, `All changes (${d.changes.length})`),
+      Object.entries(d.category_counts).map(([c, n]) => h("a", { href: link("/compare", { base, head, change: c }), "aria-current": category === c ? "true" : null }, `${c} (${n})`)),
+    ),
+    table(
+      ["Change", "Test", "Suite", "Baseline", "Comparison", { label: "Duration", num: true }],
+      shown.map((c) =>
+        h(
+          "tr",
+          {},
+          h("td", {}, badge(c.category)),
+          h("td", {}, h("a", { class: "key", href: link("/test", { key: c.key }) }, c.key)),
+          h("td", {}, c.context),
+          h("td", {}, c.base_outcome ? badge(c.base_outcome) : "–"),
+          h("td", {}, c.head_outcome ? badge(c.head_outcome) : "–"),
+          h("td", { class: "num nowrap" }, c.base_seconds !== null || c.head_seconds !== null ? `${formatSeconds(c.base_seconds)} → ${formatSeconds(c.head_seconds)}` : "–"),
+        ),
+      ),
+      d.comparable ? "No test changed between these builds." : "Nothing to compare: the builds share no suite.",
+    ),
   ];
 }
 
@@ -761,6 +868,7 @@ const VIEWS = {
   run: (parts) => runDetail(parts[1]),
   pipelines: pipelinesView,
   collection: collectionView,
+  compare: compareView,
   stability: stabilityView,
   trends: trendsView,
 };

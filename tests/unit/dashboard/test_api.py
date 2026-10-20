@@ -154,6 +154,8 @@ def test_openapi_documentation_lists_every_route(client: TestClient) -> None:
         "/api/pipelines",
         "/api/collection",
         "/api/runs/{run_id}",
+        "/api/builds",
+        "/api/compare",
         "/api/stability",
         "/api/trends",
     }
@@ -299,3 +301,55 @@ def test_readiness_follows_the_chosen_scope(client: TestClient) -> None:
     body = client.get("/api/readiness", params={"framework": "robot-framework"}).json()
 
     assert body["executions"] == 30
+
+
+def test_builds_are_listed_in_the_order_they_first_ran(client: TestClient) -> None:
+    """The comparison selectors: builds by first run; the build filter itself is ignored."""
+    assert client.get("/api/builds", params={"framework": "testng"}).json() == [
+        "f5a40d5",
+        "1d03232",
+        "e30ab76",
+    ]
+    assert (
+        client.get("/api/builds", params={"framework": "testng", "build": "e30ab76"}).json()[0] == "f5a40d5"
+    )
+
+
+def test_comparing_two_real_testng_builds(client: TestClient) -> None:
+    """Same suite (TestNG on Firefox) in both: compared test by test; 10 tests got slower."""
+    body = client.get(
+        "/api/compare", params={"framework": "testng", "base": "f5a40d5", "head": "1d03232"}
+    ).json()
+
+    assert body["comparable"] is True
+    assert body["compared_contexts"] == ["testng/ci/firefox/linux"]
+    assert body["category_counts"] == {"slower": 10}
+    assert all(c["head_seconds"] > c["base_seconds"] for c in body["changes"])
+    assert body["base"]["pass_rate"]["text"] == "100.0 % (121/121)"
+
+
+def test_builds_of_different_suites_are_not_compared(client: TestClient) -> None:
+    """A Robot build and a TestNG build share no suite: listed, nothing counted as a change."""
+    body = client.get("/api/compare", params={"base": "b378a19", "head": "e30ab76"}).json()
+
+    assert body["comparable"] is False
+    assert body["changes"] == []
+    assert body["only_in_base"]
+    assert body["only_in_head"]
+    assert any("share no suite" in n for n in body["notes"])
+
+
+def test_comparison_input_errors(client: TestClient) -> None:
+    """The same build twice is a client error; an unknown build is not found."""
+    assert client.get("/api/compare", params={"base": "e30ab76", "head": "e30ab76"}).status_code == 422
+    assert client.get("/api/compare", params={"base": "nope", "head": "e30ab76"}).status_code == 404
+
+
+def test_test_history_lists_requirements_and_counts(client: TestClient) -> None:
+    """The investigation panel's data: requirements of the linked test cases, pass/fail counts."""
+    key = next(t["key"] for t in client.get("/api/tests").json() if "adminEditsACustomer" in t["key"])
+    body = client.get("/api/tests/history", params={"key": key}).json()
+
+    assert (body["passed"], body["failed"]) == (12, 1)
+    assert body["requirements"]
+    assert body["executions"][0]["pipeline"] is None  # sample files are not pipeline runs

@@ -8,7 +8,7 @@ only turns these view models into JSON and HTML.
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
@@ -24,6 +24,7 @@ from qualityintel.history.analysis import (
     stability_report,
     trend,
 )
+from qualityintel.history.builds import BuildSide, builds_in_order, compare_builds
 from qualityintel.history.trends import CoverageSnapshot, coverage_changes, daily_trend
 from qualityintel.ingest.batch import Batch, import_results
 from qualityintel.ingest.catalog_file import load_catalog
@@ -189,6 +190,8 @@ class ExecutionView(View):
     source: str
     started_at: datetime | None
     context: RunContext
+    pipeline: PipelineJob | None = None
+    ci_url: str | None = None
 
 
 class RequirementRow(View):
@@ -279,6 +282,47 @@ class TestHistory(View):
     key: str
     test_cases: tuple[str, ...]
     executions: tuple[ExecutionView, ...]
+    requirements: tuple[str, ...] = ()
+    passed: int = 0
+    failed: int = 0
+
+
+class BuildSideView(View):
+    """One build in a comparison."""
+
+    build: str
+    runs: int
+    counts: dict[Outcome, int]
+    pass_rate: RatioView
+    last_started_at: datetime | None
+    requirement_coverage: RatioView | None
+    automated_requirement_coverage: RatioView | None
+
+
+class ChangeRow(View):
+    """One test that changed between two builds, in one comparable suite."""
+
+    category: str
+    key: str
+    context: str
+    base_outcome: Outcome | None
+    head_outcome: Outcome | None
+    base_seconds: float | None
+    head_seconds: float | None
+
+
+class BuildComparisonView(View):
+    """Two builds side by side (docs/history.md, "Comparing builds")."""
+
+    base: BuildSideView
+    head: BuildSideView
+    comparable: bool
+    compared_contexts: tuple[str, ...]
+    only_in_base: tuple[str, ...]
+    only_in_head: tuple[str, ...]
+    changes: tuple[ChangeRow, ...]
+    category_counts: dict[str, int]
+    notes: tuple[str, ...]
 
 
 class RunDetail(View):
@@ -633,15 +677,99 @@ class Workspace:
         return tuple(rows)
 
     def test_history(self, key: str, scope: Scope = EVERYTHING) -> TestHistory:
-        """All executions of one test key, newest first (``KeyError`` if it never ran)."""
+        """All executions of one test key, newest first, with its requirements (``KeyError``: never ran)."""
         runs = self._runs(scope)
-        executions = [_execution_view(run, r) for run in runs for r in run.results if r.key == key]
+        urls = {c.pipeline_id: c.url for c in self.collections if c.url.startswith("https://github.com/")}
+        executions = [_execution_view(run, r, urls) for run in runs for r in run.results if r.key == key]
         if not executions:
             raise KeyError(key)
+        cases = self._case_ids_by_key(runs).get(key, ())
+        requirements = sorted(
+            {rid for case in self.catalog.test_cases if case.id in cases for rid in case.requirements}
+        )
         return TestHistory(
             key=key,
-            test_cases=self._case_ids_by_key(runs).get(key, ()),
+            test_cases=cases,
             executions=tuple(reversed(executions)),
+            requirements=tuple(requirements),
+            passed=sum(e.outcome is Outcome.PASSED for e in executions),
+            failed=sum(e.outcome in (Outcome.FAILED, Outcome.ERROR) for e in executions),
+        )
+
+    def builds(self, scope: Scope = EVERYTHING) -> tuple[str, ...]:
+        """Builds in scope, in the order in which they first ran (for the comparison selectors)."""
+        return tuple(builds_in_order(self._runs(_without_builds(scope))))
+
+    def compare_builds(self, base: str, head: str, scope: Scope = EVERYTHING) -> BuildComparisonView:
+        """Changes from build ``base`` to ``head`` where both ran the same suite (KeyError: unknown)."""
+        runs = self._runs(_without_builds(scope))
+        comparison = compare_builds(runs, base, head, self.snapshots)
+        changes: list[ChangeRow] = []
+        for pair in comparison.compared:
+            before = {r.key: r for r in pair.base_run.results}
+            after = {r.key: r for r in pair.head_run.results}
+            groups = (
+                ("newly failing", pair.changes.newly_failing),
+                ("recovered", pair.changes.fixed),
+                ("still failing", pair.changes.still_failing),
+                ("new test", pair.changes.added),
+                ("removed test", pair.changes.removed),
+                ("slower", [key for key, _old, _new in pair.changes.slower]),
+            )
+            for category, keys in groups:
+                for key in keys:
+                    old, new = before.get(key), after.get(key)
+                    changes.append(
+                        ChangeRow(
+                            category=category,
+                            key=key,
+                            context=pair.label,
+                            base_outcome=old.outcome if old else None,
+                            head_outcome=new.outcome if new else None,
+                            base_seconds=old.duration_seconds if old else None,
+                            head_seconds=new.duration_seconds if new else None,
+                        )
+                    )
+        changes += [
+            ChangeRow(
+                category="newly flaky",
+                key=key,
+                context=context,
+                base_outcome=None,
+                head_outcome=None,
+                base_seconds=None,
+                head_seconds=None,
+            )
+            for key, context in comparison.newly_flaky
+        ]
+        counts: dict[str, int] = {}
+        for change in changes:
+            counts[change.category] = counts.get(change.category, 0) + 1
+        notes = []
+        if not comparison.comparable:
+            notes.append(
+                "The two builds share no suite (same context and job): nothing can be compared test by test."
+            )
+        if comparison.only_in_base or comparison.only_in_head:
+            notes.append(
+                "Suites that ran in one build only are listed, not compared: "
+                "their tests are neither new nor removed."
+            )
+        if comparison.base.coverage is None or comparison.head.coverage is None:
+            notes.append(
+                "No coverage snapshot was recorded before one of the builds "
+                "(qi history import --catalog records them)."
+            )
+        return BuildComparisonView(
+            base=_side_view(comparison.base),
+            head=_side_view(comparison.head),
+            comparable=comparison.comparable,
+            compared_contexts=tuple(pair.label for pair in comparison.compared),
+            only_in_base=comparison.only_in_base,
+            only_in_head=comparison.only_in_head,
+            changes=tuple(changes),
+            category_counts=counts,
+            notes=tuple(notes),
         )
 
     def run_list(self, scope: Scope = EVERYTHING) -> tuple[RunView, ...]:
@@ -1027,8 +1155,29 @@ def _pipeline_view(execution: PipelineExecution, records: Sequence[PipelineColle
     )
 
 
-def _execution_view(run: TestRun, result: TestResult) -> ExecutionView:
-    """One execution with its run."""
+def _without_builds(scope: Scope) -> Scope:
+    """The scope without its build filter (a build comparison chooses its builds itself)."""
+    return Scope(filters=scope.filters, run_filters=replace(scope.run_filters, builds=frozenset()))
+
+
+def _side_view(side: BuildSide) -> BuildSideView:
+    """One build of a comparison."""
+    coverage = side.coverage
+    return BuildSideView(
+        build=side.build,
+        runs=len(side.runs),
+        counts=side.counts,
+        pass_rate=RatioView.of(side.pass_rate),
+        last_started_at=side.last_started_at,
+        requirement_coverage=RatioView.of(coverage.requirement_coverage) if coverage else None,
+        automated_requirement_coverage=RatioView.of(coverage.automated_requirement_coverage)
+        if coverage
+        else None,
+    )
+
+
+def _execution_view(run: TestRun, result: TestResult, ci_urls: dict[str, str] | None = None) -> ExecutionView:
+    """One execution with its run (and the CI run it came from, when collected)."""
     failure = result.failure
     return ExecutionView(
         key=result.key,
@@ -1043,6 +1192,8 @@ def _execution_view(run: TestRun, result: TestResult) -> ExecutionView:
         source=run.source,
         started_at=run.started_at,
         context=run.context,
+        pipeline=run.pipeline,
+        ci_url=(ci_urls or {}).get(run.pipeline.pipeline_id) if run.pipeline else None,
     )
 
 

@@ -76,8 +76,9 @@ def test_test_history_shows_the_real_selenium_failure(page: Page) -> None:
     page.get_by_label("Search").fill("adminEditsACustomer")
     page.get_by_role("link", name=re.compile("adminEditsACustomer")).click()
 
-    expect(page.locator("tbody tr")).to_have_count(13)
-    failed_row = page.locator("tbody tr").filter(has=page.locator(".badge.failed"))
+    executions = page.get_by_role("region", name=re.compile("^Executions"))
+    expect(executions.locator("tbody tr")).to_have_count(13)
+    failed_row = executions.locator("tbody tr").filter(has=page.locator(".badge.failed"))
     expect(failed_row).to_have_count(1)
     failed_row.locator("summary").click()
     expect(failed_row.locator("pre.trace")).to_contain_text("TimeoutException")
@@ -392,3 +393,35 @@ def test_explorer_links_to_github_and_the_collection_page_shows_health(collected
     expect(row).to_contain_text("fresh")
     expect(row).to_contain_text("1 cancelled, 1 success")
     expect(page.locator("#view")).to_contain_text("artifact report-ui-firefox not found")
+
+
+def test_test_investigation_shows_context_pattern_requirements_and_copies(page: Page) -> None:
+    """Latest result, a pattern of 13 executions with one failure, duration chart and copy actions."""
+    page.context.grant_permissions(["clipboard-read", "clipboard-write"])
+    page.goto("/#/tests")
+    page.get_by_label("Search").fill("adminEditsACustomer")
+    page.get_by_role("link", name=re.compile("adminEditsACustomer")).click()
+
+    meta = page.locator("dl.meta")
+    expect(meta).to_contain_text("Latest result")
+    expect(meta.locator("ol.pattern li")).to_have_count(13)
+    expect(meta).to_contain_text("12 passed, 1 failed or errored of 13")
+    expect(page.locator("figure.chart")).to_contain_text("Duration per execution")
+    page.get_by_role("button", name="Copy test identifier").click()
+    expect(page.get_by_role("button", name="Copied")).to_be_visible()
+    assert "adminEditsACustomer" in page.evaluate("navigator.clipboard.readText()")
+
+
+def test_compare_page_shows_two_builds_and_their_changes(page: Page) -> None:
+    """Default: the last two builds; choosing TestNG's first two shows 10 slower tests with links."""
+    page.goto("/#/compare?framework=testng&base=f5a40d5&head=1d03232")
+    expect(page.get_by_role("heading", name="Compare builds")).to_be_visible()
+    expect(page.get_by_label("Baseline build")).to_have_value("f5a40d5")
+    expect(page.get_by_role("navigation", name="Change type")).to_contain_text("slower (10)")
+    expect(page.locator("#view tbody tr")).to_have_count(10)
+
+    page.get_by_label("Comparison build").select_option("e30ab76")
+    expect(page).to_have_url(re.compile(r"head=e30ab76"))
+    expect(page.get_by_role("navigation", name="Change type")).to_contain_text("slower (")
+    page.locator("#view tbody tr a.key").first.click()
+    expect(page).to_have_url(re.compile(r"#/test\?"))
