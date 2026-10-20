@@ -17,6 +17,10 @@
 - **Release status on the overview** ([docs/readiness.md](docs/readiness.md)): Ready / At risk /
   Blocked / Unknown from the release gate given with `qi dashboard --gate` plus flaky candidates,
   incomplete pipelines and stale data; unknown evidence is never ready; `/api/readiness`.
+- **Hosted operation (M5)**: login lock-out after 10 wrong logins (429), explicit public mode
+  for public data (`QI_DASHBOARD_PUBLIC`), trusted proxies (`QI_FORWARDED_ALLOW_IPS`), HSTS over
+  https, no-store API caching with a login; `qi history prune | backup | check | restore`;
+  Dependabot; [docs/operations.md](docs/operations.md).
 - **Accessibility and browsers**: axe-core WCAG 2.2 A/AA checks on every page in both themes
   (one finding fixed: 24 px targets in the run strips); theme and compact choice remembered;
   focus moves to the new page's heading; no sideways scrolling at 390/768/1280 px; browser tests

@@ -175,6 +175,12 @@ title = "The dashboard passes the automated WCAG 2.2 A/AA checks in both themes,
 feature = "Dashboard"
 criticality = "high"
 
+[[requirement]]
+id = "SEC-02"
+title = "Hosted operation: login guessing is locked out, public mode only on purpose, https and caches handled, history pruned and backed up with verification"
+feature = "Security"
+criticality = "critical"
+
 # ---- Test cases ----------------------------------------------------------------------------
 
 [[test_case]]
@@ -577,4 +583,23 @@ automated_by = [
   "tests.e2e.test_dashboard::test_no_horizontal_overflow_at_phone_tablet_and_desktop_widths",
   "tests.e2e.test_dashboard::test_theme_and_density_are_remembered",
   "tests.e2e.test_dashboard::test_moving_to_another_page_puts_the_focus_on_its_heading",
+]
+
+[[test_case]]
+id = "TC-HOSTED-OPERATION"
+title = "Login lock-out, public mode, HSTS and cache headers, prune, backup, check and restore"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["SEC-02"]
+automated_by = [
+  "tests.unit.dashboard.test_api::test_too_many_wrong_logins_lock_the_address_out_for_a_while",
+  "tests.unit.dashboard.test_api::test_the_throttle_forgets_old_failures_and_stays_bounded",
+  "tests.unit.dashboard.test_api::test_api_answers_are_not_kept_by_caches_and_https_gets_hsts",
+  "tests.unit.test_cli_dashboard::test_public_mode_serves_without_a_login_on_purpose_and_warns",
+  "tests.unit.test_cli_dashboard::test_public_mode_must_be_spelled_out",
+  "tests.unit.test_cli_history::test_backup_writes_a_verified_copy_and_never_overwrites",
+  "tests.unit.test_cli_history::test_restore_replaces_the_database_only_when_asked",
+  "tests.unit.test_cli_history::test_restore_refuses_a_file_that_is_not_a_history_database",
+  "tests.unit.test_cli_history::test_prune_refuses_a_retention_inside_the_collection_look_back",
+  "tests.unit.history.test_store::test_prune_deletes_old_runs_results_and_records_but_keeps_the_latest_snapshot",
 ]
