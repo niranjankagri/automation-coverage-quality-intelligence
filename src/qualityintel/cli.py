@@ -15,6 +15,7 @@ and prints; no business logic lives here.
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import sys
 import traceback
 from collections.abc import Callable, Sequence
@@ -319,6 +320,9 @@ def _cmd_config(args: argparse.Namespace) -> int:
     print(f"database        {settings.database}")
     print(f"dashboard host  {settings.dashboard_host}")
     print(f"dashboard port  {settings.dashboard_port}")
+    print(f"dashboard user  {settings.dashboard_user}")
+    # Never the value: only whether one is set
+    print(f"dashboard login {'password set' if settings.dashboard_password else 'off (this machine only)'}")
     return EXIT_OK
 
 
@@ -683,11 +687,45 @@ def _cmd_dashboard(args: argparse.Namespace) -> int:
 
     host = args.host or settings.dashboard_host
     port = args.port or settings.dashboard_port
-    print(
-        f"qi: dashboard on http://{host}:{port}  ({len(catalog.requirements)} requirements, {len(runs)} runs)"
+    credentials = (
+        (settings.dashboard_user, settings.dashboard_password) if settings.dashboard_password else None
     )
-    uvicorn.run(create_app(Workspace(catalog, runs, snapshots)), host=host, port=port, log_level="warning")
+    if credentials is None and not is_loopback(host):
+        print(
+            f"qi: error: refusing to serve the dashboard on {host} without a login: anyone who can reach "
+            "the port could read everything. Set QI_DASHBOARD_PASSWORD (and put TLS in front), or use "
+            "127.0.0.1 (docs/security.md)",
+            file=sys.stderr,
+        )
+        return EXIT_USAGE
+    login = f", login required (user {credentials[0]})" if credentials else ""
+    print(
+        f"qi: dashboard on http://{host}:{port}  "
+        f"({len(catalog.requirements)} requirements, {len(runs)} runs{login})"
+    )
+    if credentials and not is_loopback(host):
+        print(
+            "qi: note: basic authentication sends the password with every request; "
+            "serve it behind TLS (a reverse proxy)",
+            file=sys.stderr,
+        )
+    uvicorn.run(
+        create_app(Workspace(catalog, runs, snapshots), credentials),
+        host=host,
+        port=port,
+        log_level="warning",
+    )
     return EXIT_OK
+
+
+def is_loopback(host: str) -> bool:
+    """True for addresses only this machine can reach (127.0.0.0/8, ::1, localhost)."""
+    if host.lower() == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(host.strip("[]")).is_loopback
+    except ValueError:
+        return False  # a host name: it may resolve to anything
 
 
 COMMANDS: dict[str, Callable[[argparse.Namespace], int]] = {

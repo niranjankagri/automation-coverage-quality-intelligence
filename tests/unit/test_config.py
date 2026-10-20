@@ -65,3 +65,17 @@ def test_invalid_port_is_rejected(raw: str, message: str) -> None:
 def test_port_limits_are_accepted(port: str) -> None:
     """Both ends of the valid range are allowed."""
     assert Settings.from_env({"QI_DASHBOARD_PORT": port}).dashboard_port == int(port)
+
+
+def test_password_is_optional_checked_and_never_shown() -> None:
+    """Empty = off; too short = refused (without echoing it); never part of the repr."""
+    assert Settings.from_env({}).dashboard_password is None
+    assert Settings.from_env({"QI_DASHBOARD_PASSWORD": ""}).dashboard_password is None
+    with pytest.raises(ConfigError, match="at least 12 characters") as refused:
+        Settings.from_env({"QI_DASHBOARD_PASSWORD": "hunter2"})
+    assert "hunter2" not in str(refused.value)
+    settings = Settings.from_env(
+        {"QI_DASHBOARD_PASSWORD": "correct horse battery", "QI_DASHBOARD_USER": "lead"}
+    )
+    assert (settings.dashboard_user, settings.dashboard_password) == ("lead", "correct horse battery")
+    assert "correct horse battery" not in repr(settings)

@@ -3,6 +3,7 @@ from typing import Any
 
 import pytest
 import uvicorn
+from fastapi.testclient import TestClient
 
 from qualityintel.cli import EXIT_INPUT, EXIT_OK, EXIT_USAGE, main
 
@@ -38,6 +39,7 @@ def test_dashboard_serves_the_loaded_workspace(
 def test_host_and_port_options_win(served: dict[str, Any], monkeypatch: pytest.MonkeyPatch) -> None:
     """Command line beats QI_DASHBOARD_* variables."""
     monkeypatch.setenv("QI_DASHBOARD_PORT", "9000")
+    monkeypatch.setenv("QI_DASHBOARD_PASSWORD", "correct horse battery")  # needed off this machine
 
     main(["dashboard", "--catalog", str(SAMPLES / "catalog.toml"), "--host", "0.0.0.0", "--port", "8123"])
 
@@ -92,3 +94,52 @@ def test_dashboard_loads_runs_from_the_history_database(
 
     assert code == EXIT_OK
     assert "(42 requirements, 43 runs)" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("host", ["0.0.0.0", "192.168.1.20", "::", "dashboard.example.com"])
+def test_no_unauthenticated_dashboard_off_this_machine(
+    served: dict[str, Any], capsys: pytest.CaptureFixture[str], host: str
+) -> None:
+    """Without QI_DASHBOARD_PASSWORD only loopback addresses are served (exit 2 otherwise)."""
+    code = main(["dashboard", "--catalog", str(SAMPLES / "catalog.toml"), "--host", host])
+
+    assert code == EXIT_USAGE
+    assert served == {}
+    assert "refusing to serve the dashboard" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("host", ["127.0.0.1", "127.0.0.2", "localhost", "::1", "[::1]"])
+def test_loopback_needs_no_password(served: dict[str, Any], host: str) -> None:
+    """This machine only: served as before."""
+    assert main(["dashboard", "--catalog", str(SAMPLES / "catalog.toml"), "--host", host]) == EXIT_OK
+
+
+def test_with_a_password_the_app_requires_the_login(
+    served: dict[str, Any], monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The password reaches the app, the start line says a login is required, TLS is advised."""
+    monkeypatch.setenv("QI_DASHBOARD_USER", "lead")
+    monkeypatch.setenv("QI_DASHBOARD_PASSWORD", "correct horse battery")
+
+    assert main(["dashboard", "--catalog", str(SAMPLES / "catalog.toml"), "--host", "0.0.0.0"]) == EXIT_OK
+
+    client = TestClient(served["app"])
+    assert client.get("/api/health").status_code == 401
+    assert client.get("/api/health", auth=("lead", "correct horse battery")).status_code == 200
+    out, err = capsys.readouterr()
+    assert "login required (user lead)" in out
+    assert "behind TLS" in err
+    assert "correct horse battery" not in out + err
+
+
+def test_config_never_prints_the_password(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Qi config says whether a password is set, not what it is."""
+    monkeypatch.setenv("QI_DASHBOARD_PASSWORD", "correct horse battery")
+
+    assert main(["config"]) == EXIT_OK
+
+    out = capsys.readouterr().out
+    assert "password set" in out
+    assert "correct horse battery" not in out

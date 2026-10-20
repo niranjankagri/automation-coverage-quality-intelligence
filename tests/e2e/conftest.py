@@ -22,6 +22,7 @@ from qualityintel.workspace import Workspace
 
 SAMPLES = Path(__file__).parents[2] / "samples"
 PIPELINES = SAMPLES / "pipelines" / "cypress-taskboard"
+LOGIN = ("qi", "correct horse battery")
 
 
 def pipeline_runs() -> list[TestRun]:
@@ -54,11 +55,18 @@ def pipelines_url() -> Iterator[str]:
     yield from _serve(Workspace(load_catalog(PIPELINES / "catalog.toml"), pipeline_runs()))
 
 
-def _serve(workspace: Workspace) -> Iterator[str]:
+@pytest.fixture(scope="session")
+def secured_url() -> Iterator[str]:
+    """The sample dashboard with a login (QI_DASHBOARD_PASSWORD set)."""
+    workspace, _ = Workspace.load(SAMPLES / "catalog.toml", [SAMPLES / "results"])
+    yield from _serve(workspace, LOGIN)
+
+
+def _serve(workspace: Workspace, credentials: tuple[str, str] | None = None) -> Iterator[str]:
     """Start uvicorn in a background thread, wait until it answers, stop it afterwards."""
     port = _free_port()
     server = uvicorn.Server(
-        uvicorn.Config(create_app(workspace), host="127.0.0.1", port=port, log_level="warning")
+        uvicorn.Config(create_app(workspace, credentials), host="127.0.0.1", port=port, log_level="warning")
     )
     thread = threading.Thread(target=server.run, daemon=True)
     thread.start()

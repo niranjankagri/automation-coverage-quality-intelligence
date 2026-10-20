@@ -3,7 +3,7 @@
 import re
 
 import pytest
-from playwright.sync_api import Locator, Page, Route, expect
+from playwright.sync_api import Browser, Locator, Page, Route, expect
 
 pytestmark = pytest.mark.e2e
 
@@ -265,3 +265,21 @@ def test_runs_page_names_the_pipeline_job(pipelines_page: Page) -> None:
 
     row.get_by_role("link").click()
     expect(page.locator("dl.meta")).to_contain_text("39238241112 / ui-firefox")
+
+
+def test_with_a_login_the_whole_dashboard_works_after_signing_in(browser: Browser, secured_url: str) -> None:
+    """The browser sends the login with the front end's own API calls too: the data appears."""
+    anonymous = browser.new_context(base_url=secured_url)
+    assert anonymous.new_page().goto("/").status == 401  # type: ignore[union-attr]
+    anonymous.close()
+
+    context = browser.new_context(
+        base_url=secured_url, http_credentials={"username": "qi", "password": "correct horse battery"}
+    )
+    page = context.new_page()
+    page.goto("/#/")
+    expect(page.get_by_role("heading", name="Overview")).to_be_visible()
+    expect(page.locator("#data-size")).to_contain_text("42 requirements")
+    page.get_by_role("link", name="Trends", exact=True).click()
+    expect(page.locator("figure.chart").first).to_be_visible()
+    context.close()

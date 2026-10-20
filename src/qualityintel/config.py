@@ -8,12 +8,14 @@ from __future__ import annotations
 
 import os
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 DEFAULT_DATABASE = Path(".qi") / "quality.db"
 DEFAULT_DASHBOARD_HOST = "127.0.0.1"
 DEFAULT_DASHBOARD_PORT = 8000
+DEFAULT_DASHBOARD_USER = "qi"
+MIN_PASSWORD_LENGTH = 12
 
 
 class ConfigError(ValueError):
@@ -28,11 +30,16 @@ class Settings:
         database: SQLite file for the execution history.
         dashboard_host: Address the dashboard listens on.
         dashboard_port: TCP port the dashboard listens on.
+        dashboard_user: User name for the dashboard's basic authentication.
+        dashboard_password: Password that turns basic authentication on (``None``: off, and
+            then the dashboard only serves on this machine). Never printed: left out of repr.
     """
 
     database: Path
     dashboard_host: str
     dashboard_port: int
+    dashboard_user: str = DEFAULT_DASHBOARD_USER
+    dashboard_password: str | None = field(default=None, repr=False)
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> Settings:
@@ -55,7 +62,19 @@ class Settings:
             database=Path(source.get("QI_DATABASE") or DEFAULT_DATABASE),
             dashboard_host=source.get("QI_DASHBOARD_HOST") or DEFAULT_DASHBOARD_HOST,
             dashboard_port=_parse_port(source.get("QI_DASHBOARD_PORT")),
+            dashboard_user=source.get("QI_DASHBOARD_USER") or DEFAULT_DASHBOARD_USER,
+            dashboard_password=_check_password(source.get("QI_DASHBOARD_PASSWORD")),
         )
+
+
+def _check_password(raw: str | None) -> str | None:
+    """``QI_DASHBOARD_PASSWORD``: empty means no password; a short one is refused, not weakened."""
+    if not raw:
+        return None
+    if len(raw) < MIN_PASSWORD_LENGTH:
+        # The value itself is never part of the message
+        raise ConfigError(f"QI_DASHBOARD_PASSWORD must have at least {MIN_PASSWORD_LENGTH} characters")
+    return raw
 
 
 def _parse_port(raw: str | None) -> int:

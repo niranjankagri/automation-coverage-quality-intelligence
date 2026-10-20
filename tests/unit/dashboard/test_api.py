@@ -1,5 +1,6 @@
 """The JSON API, through FastAPI's TestClient (no server, no browser)."""
 
+import base64
 from pathlib import Path
 
 import pytest
@@ -177,3 +178,35 @@ def test_stability_window_and_trends(client: TestClient) -> None:
     assert len(body["trends"]) == 5
     assert len(body["trends"]["testng / ci / firefox / linux"]) == 13
     assert client.get("/api/stability", params={"window": 0}).status_code == 422
+
+
+@pytest.mark.parametrize(
+    "header",
+    [
+        None,
+        "Basic " + base64.b64encode(b"qi:wrong password!").decode(),
+        "Basic " + base64.b64encode(b"other:correct horse battery").decode(),
+        "Basic not-base64!!",
+        "Bearer correct horse battery",
+    ],
+    ids=["none", "wrong-password", "wrong-user", "malformed", "other-scheme"],
+)
+def test_login_is_required_for_every_path_when_a_password_is_set(header: str | None) -> None:
+    """Pages, static files, API and docs all answer 401 with a Basic challenge."""
+    workspace, _ = Workspace.load(SAMPLES / "catalog.toml", [])
+    client = TestClient(create_app(workspace, ("qi", "correct horse battery")))
+    headers = {"Authorization": header} if header else {}
+
+    for path in ("/", "/static/app.js", "/api/health", "/api/summary", "/docs", "/openapi.json"):
+        response = client.get(path, headers=headers)
+        assert response.status_code == 401, path
+        assert response.headers["WWW-Authenticate"].startswith("Basic ")
+
+
+def test_the_right_login_opens_everything() -> None:
+    """With the credentials every route answers as without a password."""
+    workspace, _ = Workspace.load(SAMPLES / "catalog.toml", [])
+    client = TestClient(create_app(workspace, ("qi", "correct horse battery")))
+
+    for path in ("/", "/static/app.js", "/api/health", "/api/summary"):
+        assert client.get(path, auth=("qi", "correct horse battery")).status_code == 200, path

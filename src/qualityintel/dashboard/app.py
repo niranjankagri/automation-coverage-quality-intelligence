@@ -7,6 +7,9 @@ OpenAPI documentation of the API is served at ``/docs``.
 
 from __future__ import annotations
 
+import base64
+import binascii
+import hmac
 from datetime import date
 from pathlib import Path
 from typing import Annotated
@@ -118,8 +121,47 @@ class SecurityHeaders(BaseHTTPMiddleware):
         return response
 
 
-def create_app(workspace: Workspace) -> FastAPI:
-    """Build the application around one loaded workspace."""
+class BasicAuth(BaseHTTPMiddleware):
+    """HTTP basic authentication for every path, when a password is configured (docs/security.md).
+
+    The browser asks once and then sends the credentials with every request, including the
+    front end's own API calls. Both parts are compared in constant time.
+    """
+
+    def __init__(self, app: object, user: str, password: str) -> None:
+        super().__init__(app)  # type: ignore[arg-type]
+        self.expected = (user.encode(), password.encode())
+
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        """Answer 401 unless the request carries the right user and password."""
+        scheme, _, token = request.headers.get("authorization", "").partition(" ")
+        user = password = b""
+        if scheme.lower() == "basic":
+            try:
+                user, _, password = base64.b64decode(token, validate=True).partition(b":")
+            except (binascii.Error, ValueError):
+                user = password = b""
+        # Both comparisons always run, so the timing does not tell which part was wrong
+        user_ok = hmac.compare_digest(user, self.expected[0])
+        password_ok = hmac.compare_digest(password, self.expected[1])
+        if user_ok and password_ok:
+            return await call_next(request)
+        return Response(
+            "authentication required\n",
+            status_code=401,
+            headers={"WWW-Authenticate": 'Basic realm="qi dashboard", charset="UTF-8"'},
+            media_type="text/plain",
+        )
+
+
+def create_app(workspace: Workspace, credentials: tuple[str, str] | None = None) -> FastAPI:
+    """Build the application around one loaded workspace.
+
+    Args:
+        workspace: The data to serve.
+        credentials: ``(user, password)`` to require on every request; ``None`` for none
+            (the command line only allows that on this machine's loopback address).
+    """
     app = FastAPI(
         title="Quality Intelligence Dashboard",
         version=__version__,
@@ -127,6 +169,9 @@ def create_app(workspace: Workspace) -> FastAPI:
         redoc_url=None,
     )
     app.add_middleware(SecurityHeaders)
+    if credentials is not None:
+        # Added last, so it runs first: nothing is answered before the check
+        app.add_middleware(BasicAuth, user=credentials[0], password=credentials[1])
     app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
     @app.get("/", include_in_schema=False)
