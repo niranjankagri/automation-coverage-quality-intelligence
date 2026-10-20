@@ -11,6 +11,8 @@ import base64
 import binascii
 import contextlib
 import hmac
+import math
+import time
 from collections.abc import AsyncIterator
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
@@ -123,16 +125,64 @@ RunScope = Annotated[Scope, Depends(run_scope)]
 
 
 class SecurityHeaders(BaseHTTPMiddleware):
-    """Strict headers for the dashboard pages; /docs keeps FastAPI's defaults (it loads a CDN)."""
+    """Strict headers for the dashboard pages; /docs keeps FastAPI's defaults (it loads a CDN).
+
+    Over https (directly, or behind a trusted proxy that says so) browsers are told to use
+    https only (HSTS). API answers are never stored by shared caches when a login protects
+    them, and always revalidated otherwise, so nobody sees an older snapshot.
+    """
+
+    def __init__(self, app: object, private: bool) -> None:
+        super().__init__(app)  # type: ignore[arg-type]
+        self.private = private
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         """Add the headers after the route has answered."""
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()"
+        if request.url.scheme == "https":
+            response.headers["Strict-Transport-Security"] = "max-age=31536000"
+        if request.url.path.startswith("/api/"):
+            response.headers["Cache-Control"] = "private, no-store" if self.private else "no-cache"
         if not request.url.path.startswith(("/docs", "/openapi.json")):
             response.headers["Content-Security-Policy"] = CONTENT_SECURITY_POLICY
         return response
+
+
+class LoginThrottle:
+    """Failed logins per client address in a sliding window; too many lock that address out.
+
+    Kept in memory (one process); bounded, so a flood of addresses cannot exhaust memory: the
+    oldest entries are dropped first. A correct login does not clear the count, so guessing
+    between correct logins of someone else from the same address gains nothing.
+    """
+
+    def __init__(self, limit: int = 10, window_seconds: float = 300.0, max_clients: int = 10_000) -> None:
+        self.limit = limit
+        self.window = window_seconds
+        self.max_clients = max_clients
+        self._failures: dict[str, list[float]] = {}
+
+    def retry_after(self, client: str, now: float) -> int:
+        """Seconds until ``client`` may try again; 0 when it may try now."""
+        recent = [t for t in self._failures.get(client, ()) if now - t < self.window]
+        if recent:
+            self._failures[client] = recent
+        else:
+            self._failures.pop(client, None)
+        if len(recent) < self.limit:
+            return 0
+        # Allowed again once enough failures have left the window to bring the count below the limit
+        return max(1, math.ceil(recent[len(recent) - self.limit] + self.window - now))
+
+    def failed(self, client: str, now: float) -> None:
+        """Record a failed login of ``client``."""
+        if client not in self._failures and len(self._failures) >= self.max_clients:
+            del self._failures[next(iter(self._failures))]
+        self._failures.setdefault(client, []).append(now)
 
 
 class BasicAuth(BaseHTTPMiddleware):
@@ -142,12 +192,26 @@ class BasicAuth(BaseHTTPMiddleware):
     front end's own API calls. Both parts are compared in constant time.
     """
 
-    def __init__(self, app: object, user: str, password: str) -> None:
+    def __init__(self, app: object, user: str, password: str, throttle: LoginThrottle | None = None) -> None:
         super().__init__(app)  # type: ignore[arg-type]
         self.expected = (user.encode(), password.encode())
+        self.throttle = throttle or LoginThrottle()
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        """Answer 401 unless the request carries the right user and password."""
+        """Answer 401 unless the user and password are right; 429 after too many wrong ones.
+
+        The lock-out is checked first, so a guess from a locked-out address is not even tried.
+        """
+        client = request.client.host if request.client else "unknown"
+        now = time.monotonic()
+        wait = self.throttle.retry_after(client, now)
+        if wait:
+            return Response(
+                "too many failed logins; try again later\n",
+                status_code=429,
+                headers={"Retry-After": str(wait)},
+                media_type="text/plain",
+            )
         scheme, _, token = request.headers.get("authorization", "").partition(" ")
         user = password = b""
         if scheme.lower() == "basic":
@@ -160,6 +224,8 @@ class BasicAuth(BaseHTTPMiddleware):
         password_ok = hmac.compare_digest(password, self.expected[1])
         if user_ok and password_ok:
             return await call_next(request)
+        if token:  # the browser's first request carries no credentials: not a failed login
+            self.throttle.failed(client, now)
         return Response(
             "authentication required\n",
             status_code=401,
@@ -224,7 +290,7 @@ def create_app(
         description="Read-only API over a requirement catalog and imported test results.",
         redoc_url=None,
     )
-    app.add_middleware(SecurityHeaders)
+    app.add_middleware(SecurityHeaders, private=credentials is not None)
     if credentials is not None:
         # Added last, so it runs first: nothing is answered before the check
         app.add_middleware(BasicAuth, user=credentials[0], password=credentials[1])

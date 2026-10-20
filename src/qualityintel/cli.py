@@ -392,7 +392,12 @@ def _cmd_config(args: argparse.Namespace) -> int:
     print(f"dashboard port  {settings.dashboard_port}")
     print(f"dashboard user  {settings.dashboard_user}")
     # Never the value: only whether one is set
-    print(f"dashboard login {'password set' if settings.dashboard_password else 'off (this machine only)'}")
+    if settings.dashboard_password:
+        login = "password set"
+    else:
+        login = "off, public on any address" if settings.dashboard_public else "off (this machine only)"
+    print(f"dashboard login {login}")
+    print(f"trusted proxies {settings.forwarded_allow_ips or '127.0.0.1'}")
     return EXIT_OK
 
 
@@ -844,14 +849,20 @@ def _cmd_dashboard(args: argparse.Namespace) -> int:
     credentials = (
         (settings.dashboard_user, settings.dashboard_password) if settings.dashboard_password else None
     )
-    if credentials is None and not is_loopback(host):
+    if credentials is None and not is_loopback(host) and not settings.dashboard_public:
         print(
             f"qi: error: refusing to serve the dashboard on {host} without a login: anyone who can reach "
-            "the port could read everything. Set QI_DASHBOARD_PASSWORD (and put TLS in front), or use "
-            "127.0.0.1 (docs/security.md)",
+            "the port could read everything. Set QI_DASHBOARD_PASSWORD (and put TLS in front), use "
+            "127.0.0.1, or, for data that is public anyway, QI_DASHBOARD_PUBLIC=true (docs/security.md)",
             file=sys.stderr,
         )
         return EXIT_USAGE
+    if credentials is None and not is_loopback(host):
+        print(
+            f"qi: warning: public dashboard on {host}: anyone who can reach it reads all of its data "
+            "(QI_DASHBOARD_PUBLIC=true)",
+            file=sys.stderr,
+        )
     login = f", login required (user {credentials[0]})" if credentials else ""
     print(
         f"qi: dashboard on http://{host}:{port}  "
@@ -865,7 +876,16 @@ def _cmd_dashboard(args: argparse.Namespace) -> int:
         )
     live = LiveData(first, sources, interval_seconds=refresh)
     app = create_app(live, credentials, settings.collection_hours, settings.collection_url)
-    uvicorn.run(app, host=host, port=port, log_level="warning")
+    # Behind a proxy, its X-Forwarded-For/-Proto give the client address (login throttling) and
+    # https (HSTS); only the proxies named in QI_FORWARDED_ALLOW_IPS are believed
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        log_level="warning",
+        proxy_headers=True,
+        forwarded_allow_ips=settings.forwarded_allow_ips,
+    )
     return EXIT_OK
 
 

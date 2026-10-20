@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from qualityintel.dashboard.app import CONTENT_SECURITY_POLICY, create_app
+from qualityintel.dashboard.app import CONTENT_SECURITY_POLICY, LoginThrottle, create_app
 from qualityintel.workspace import Workspace
 
 pytestmark = pytest.mark.unit
@@ -396,3 +396,51 @@ def test_stability_rows_link_to_the_runs_behind_them(client: TestClient) -> None
         assert row["last_passing_run_id"] in run_ids
         assert row["last_failed_at"] is not None
         assert row["affected_builds"]
+
+
+def test_too_many_wrong_logins_lock_the_address_out_for_a_while() -> None:
+    """After 10 wrong logins in 5 minutes even the right one answers 429 with Retry-After."""
+    workspace, _ = Workspace.load(SAMPLES / "catalog.toml", [])
+    client = TestClient(create_app(workspace, ("qi", "correct horse battery")))
+
+    assert client.get("/api/health").status_code == 401  # no credentials yet: not counted
+    for _ in range(10):
+        assert client.get("/api/health", auth=("qi", "guess guess guess")).status_code == 401
+    locked = client.get("/api/health", auth=("qi", "correct horse battery"))
+
+    assert locked.status_code == 429
+    assert 1 <= int(locked.headers["Retry-After"]) <= 300
+
+
+def test_the_throttle_forgets_old_failures_and_stays_bounded() -> None:
+    """Failures leave the window after 5 minutes; at most max_clients addresses are tracked."""
+    throttle = LoginThrottle(limit=2, window_seconds=300, max_clients=3)
+    throttle.failed("a", 0)
+    throttle.failed("a", 1)
+
+    assert throttle.retry_after("a", 2) == 298  # until the first failure leaves the window
+    assert throttle.retry_after("a", 301) == 0
+    for moment in (310, 320, 330):
+        throttle.failed("a", moment)
+    # Three failures in the window (310, 320, 330), limit 2: allowed again when 320 leaves it
+    assert throttle.retry_after("a", 340) == 280
+    for client in ("b", "c", "d", "e"):
+        throttle.failed(client, 400)
+    assert len(throttle._failures) == 3
+
+
+def test_api_answers_are_not_kept_by_caches_and_https_gets_hsts() -> None:
+    """With a login: private, no-store; without: revalidate. HSTS only over https."""
+    workspace, _ = Workspace.load(SAMPLES / "catalog.toml", [])
+    private = TestClient(
+        create_app(workspace, ("qi", "correct horse battery")), base_url="https://qi.example"
+    )
+    public = TestClient(create_app(workspace))
+
+    secured = private.get("/api/health", auth=("qi", "correct horse battery"))
+    assert secured.headers["Cache-Control"] == "private, no-store"
+    assert secured.headers["Strict-Transport-Security"] == "max-age=31536000"
+    plain = public.get("/api/health")
+    assert plain.headers["Cache-Control"] == "no-cache"
+    assert "Strict-Transport-Security" not in plain.headers
+    assert plain.headers["Cross-Origin-Opener-Policy"] == "same-origin"

@@ -35,6 +35,10 @@ class Settings:
         dashboard_user: User name for the dashboard's basic authentication.
         dashboard_password: Password that turns basic authentication on (``None``: off, and
             then the dashboard only serves on this machine). Never printed: left out of repr.
+        dashboard_public: Serve without a login on any address, on purpose: for a public
+            demonstration of data that is public anyway (docs/operations.md).
+        forwarded_allow_ips: Proxies whose ``X-Forwarded-*`` headers are trusted (client
+            address, https), comma-separated or ``*``; ``None``: only 127.0.0.1.
     """
 
     database: Path
@@ -45,6 +49,8 @@ class Settings:
     refresh_seconds: float = DEFAULT_REFRESH_SECONDS
     collection_hours: float = DEFAULT_COLLECTION_HOURS
     collection_url: str | None = None
+    dashboard_public: bool = False
+    forwarded_allow_ips: str | None = None
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> Settings:
@@ -72,7 +78,18 @@ class Settings:
             refresh_seconds=_parse_seconds(source.get("QI_REFRESH_SECONDS")),
             collection_hours=_parse_hours(source.get("QI_COLLECTION_HOURS")),
             collection_url=_check_url(source.get("QI_COLLECTION_URL")),
+            dashboard_public=_parse_flag("QI_DASHBOARD_PUBLIC", source.get("QI_DASHBOARD_PUBLIC")),
+            forwarded_allow_ips=source.get("QI_FORWARDED_ALLOW_IPS") or None,
         )
+
+
+def _parse_flag(name: str, raw: str | None) -> bool:
+    """A yes/no variable: ``true`` or ``false`` (any case); anything else is a mistake, not "no"."""
+    if not raw:
+        return False
+    if raw.lower() not in ("true", "false"):
+        raise ConfigError(f"{name} must be true or false, got {raw!r}")
+    return raw.lower() == "true"
 
 
 def _check_password(raw: str | None) -> str | None:

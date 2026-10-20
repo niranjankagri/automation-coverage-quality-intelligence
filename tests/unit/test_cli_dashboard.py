@@ -158,3 +158,26 @@ def test_the_dashboard_serves_live_data_with_the_refresh_interval(
     assert TestClient(served["app"]).get("/api/status").json()["refresh_seconds"] == 0
 
     assert main(["dashboard", "--catalog", str(SAMPLES / "catalog.toml"), "--refresh", "-1"]) == EXIT_USAGE
+
+
+def test_public_mode_serves_without_a_login_on_purpose_and_warns(
+    served: dict[str, Any], monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """QI_DASHBOARD_PUBLIC=true: any address, no login, a warning; proxies from the setting."""
+    monkeypatch.setenv("QI_DASHBOARD_PUBLIC", "true")
+    monkeypatch.setenv("QI_FORWARDED_ALLOW_IPS", "*")
+
+    assert main(["dashboard", "--catalog", str(SAMPLES / "catalog.toml"), "--host", "0.0.0.0"]) == EXIT_OK
+
+    assert TestClient(served["app"]).get("/api/health").status_code == 200
+    assert served["proxy_headers"] is True
+    assert served["forwarded_allow_ips"] == "*"
+    assert "public dashboard on 0.0.0.0" in capsys.readouterr().err
+
+
+def test_public_mode_must_be_spelled_out(served: dict[str, Any], monkeypatch: pytest.MonkeyPatch) -> None:
+    """A typo is a configuration error, not a silent "no" (or "yes")."""
+    monkeypatch.setenv("QI_DASHBOARD_PUBLIC", "yes")
+
+    assert main(["dashboard", "--catalog", str(SAMPLES / "catalog.toml"), "--host", "0.0.0.0"]) == EXIT_USAGE
+    assert served == {}
