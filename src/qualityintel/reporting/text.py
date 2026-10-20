@@ -1,12 +1,25 @@
-"""Plain-text rendering of a traceability report for the terminal and CI logs."""
+"""Plain-text rendering of traceability and history reports for the terminal and CI logs."""
 
 from __future__ import annotations
 
 from collections.abc import Iterable
+from datetime import datetime
 
+from qualityintel.history.analysis import (
+    ContextKey,
+    DurationRegression,
+    RecurringFailure,
+    RunComparison,
+    RunPoint,
+    SlowTest,
+    Stability,
+    TestStability,
+)
 from qualityintel.models.enums import Outcome
+from qualityintel.models.metrics import Ratio
+from qualityintel.models.results import TestRun
 from qualityintel.traceability.coverage import CoverageNumbers
-from qualityintel.traceability.report import TraceabilityReport
+from qualityintel.traceability.report import TraceabilityReport, context_key
 
 WIDTH = 96
 
@@ -107,3 +120,95 @@ def _list(title: str, items: Iterable[str]) -> list[str]:
         current += piece
     lines.append(current)
     return lines
+
+
+def render_history(
+    stability: list[TestStability],
+    recurring: list[RecurringFailure],
+    errors: dict[str, int],
+    regressions: list[DurationRegression],
+    slowest: list[SlowTest],
+    trends: dict[ContextKey, list[RunPoint]],
+    by_build: dict[str, tuple[int, Ratio]],
+    last_points: int = 8,
+) -> str:
+    """History report: stability classes with evidence, failures, durations, trends."""
+    counts: dict[str, int] = {}
+    for row in stability:
+        counts[row.status.value] = counts.get(row.status.value, 0) + 1
+    lines = [
+        "STABILITY (per test and run context, last verdicts in the window)",
+        "  " + (", ".join(f"{n} {status}" for status, n in sorted(counts.items())) or "no executions"),
+    ]
+    for status in (
+        Stability.CONSISTENTLY_FAILING,
+        Stability.NEW_FAILURE,
+        Stability.FLAKY_CANDIDATE,
+        Stability.RECOVERED,
+    ):
+        rows = [r for r in stability if r.status is status]
+        lines += ["", f"{status.value.upper()} ({len(rows)})"]
+        lines += [
+            f"  {r.key}\n    {_context(r.context)} · failure rate {r.failure_rate} · {'; '.join(r.reasons)}"
+            for r in rows
+        ] or ["  none"]
+    lines += ["", f"RECURRING FAILURES ({len(recurring)})"]
+    lines += [
+        f"  {f.signature}\n    {f.occurrences} times in {f.runs} runs, {len(f.tests)} test(s)"
+        for f in recurring
+    ] or ["  none"]
+    lines += ["", f"TESTS WITH ERRORS IN SEVERAL RUNS ({len(errors)})"]
+    lines += [f"  {key}: {n} runs" for key, n in errors.items()] or ["  none"]
+    lines += ["", f"DURATION REGRESSIONS ({len(regressions)})"]
+    lines += [
+        f"  {r.key}\n    {_context(r.context)} · {r.baseline_seconds:.2f} s -> {r.latest_seconds:.2f} s "
+        f"(+{r.increase:.0%}, baseline of {r.baseline_runs} runs)"
+        for r in regressions
+    ] or ["  none"]
+    lines += ["", "SLOWEST TESTS (median)"]
+    lines += [f"  {t.median_seconds:8.2f} s  {t.key}  [{_context(t.context)}]" for t in slowest] or ["  none"]
+    lines += ["", f"TREND (last {last_points} runs per context: pass rate, failed+error)"]
+    for context, points in trends.items():
+        recent = points[-last_points:]
+        lines.append(f"  {_context(context)}")
+        lines += [
+            f"    {_day(p.run.started_at)}  {p.run.context.build or '-':<9} {p.pass_rate!s:<20} "
+            f"{p.failed:>3} failed"
+            for p in recent
+        ]
+    lines += ["", "BY BUILD (runs, pooled pass rate)"]
+    lines += [f"  {build:<12} {runs:>3} runs  {rate}" for build, (runs, rate) in by_build.items()] or [
+        "  none"
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def render_comparison(base: TestRun, head: TestRun, diff: RunComparison) -> str:
+    """Differences between two runs."""
+    lines = [f"BASE {base.source}  ({_day(base.started_at)}, build {base.context.build or '-'})"]
+    lines.append(f"HEAD {head.source}  ({_day(head.started_at)}, build {head.context.build or '-'})")
+    if context_key(base.context) != context_key(head.context):
+        lines.append("note: the runs have different contexts; differences may come from the environment")
+    for title, items in (
+        ("NEWLY FAILING", diff.newly_failing),
+        ("FIXED", diff.fixed),
+        ("STILL FAILING", diff.still_failing),
+        ("ADDED", diff.added),
+        ("REMOVED", diff.removed),
+    ):
+        lines += (
+            ["", f"{title} ({len(items)})", *(f"  {key}" for key in items)] if items else ["", f"{title} (0)"]
+        )
+    lines += ["", f"CLEARLY SLOWER ({len(diff.slower)})"]
+    lines += [f"  {old:.2f} s -> {new:.2f} s  {key}" for key, old, new in diff.slower]
+    return "\n".join(lines) + "\n"
+
+
+def _context(context: ContextKey) -> str:
+    """framework/environment/browser/platform with '-' for missing parts."""
+    return "/".join(part or "-" for part in context)
+
+
+def _day(moment: datetime | None) -> str:
+    """Start time as text."""
+    return moment.strftime("%Y-%m-%d %H:%M") if moment else "undated         "
