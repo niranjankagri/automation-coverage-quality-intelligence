@@ -1,0 +1,17 @@
+# Release gate for this project itself (CI job "self-gate"): every acceptance criterion and
+# rule of the plan must be covered by automated tests, and all of them must pass.
+
+name = "self release gate"
+not_applicable = "fail"
+
+[coverage]
+min_requirement_coverage = 100
+min_automated_requirement_coverage = 100
+max_uncovered_critical = 0
+
+[execution]
+min_pass_rate = 100
+max_failing_requirements = 0
+max_automated_cases_without_results = 0
+# Ratchet: raise it when tests are added, so a suite that silently ran fewer tests fails
+min_results = 500

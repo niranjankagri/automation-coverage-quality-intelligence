@@ -1,0 +1,291 @@
+# This project's own requirements: the acceptance criteria and implementation rules of the
+# project plan, each linked to the tests that prove it. CI gates every build on this catalog
+# (job "self-gate", gate file quality/release.toml), so the platform checks its own release
+# with its own rules.
+#
+# Test keys are pytest's JUnit names: classname = module path, name = test function (with the
+# parametrised id in brackets). Unit tests have no test type of the plan's list; they keep
+# test_type unspecified on purpose.
+
+# ---- Acceptance criteria -------------------------------------------------------------------
+
+[[requirement]]
+id = "AC-01"
+title = "Results from at least two distinct automation projects can be imported successfully"
+feature = "Ingestion"
+criticality = "critical"
+
+[[requirement]]
+id = "AC-02"
+title = "Results are normalized without losing essential execution information"
+feature = "Ingestion"
+criticality = "critical"
+
+[[requirement]]
+id = "AC-03"
+title = "Requirements can be mapped to test cases"
+feature = "Traceability"
+criticality = "critical"
+
+[[requirement]]
+id = "AC-04"
+title = "Coverage gaps and uncovered critical requirements can be identified"
+feature = "Traceability"
+criticality = "critical"
+
+[[requirement]]
+id = "AC-05"
+title = "Dashboard metrics match independently verified calculations"
+feature = "Dashboard"
+criticality = "critical"
+
+[[requirement]]
+id = "AC-06"
+title = "Historical execution trends can be inspected"
+feature = "History"
+criticality = "high"
+
+[[requirement]]
+id = "AC-07"
+title = "Configured quality gates correctly pass or fail a pipeline"
+feature = "Quality gates"
+criticality = "critical"
+
+[[requirement]]
+id = "AC-08"
+title = "Automated tests validate core calculations, ingestion and gate behaviour"
+feature = "Engineering"
+criticality = "high"
+
+[[requirement]]
+id = "AC-09"
+title = "A clean checkout can reproduce the documented demonstration"
+feature = "Engineering"
+criticality = "high"
+
+[[requirement]]
+id = "AC-10"
+title = "Public documentation and reports contain no sensitive data"
+feature = "Engineering"
+criticality = "critical"
+
+# ---- Implementation rules ------------------------------------------------------------------
+
+[[requirement]]
+id = "RULE-01"
+title = "Business logic is independent of the dashboard"
+feature = "Architecture"
+criticality = "high"
+
+[[requirement]]
+id = "RULE-02"
+title = "Missing or invalid report files cannot produce a successful quality gate"
+feature = "Quality gates"
+criticality = "critical"
+
+[[requirement]]
+id = "RULE-03"
+title = "Thresholds are configurable, not hard-coded"
+feature = "Quality gates"
+criticality = "high"
+
+[[requirement]]
+id = "RULE-04"
+title = "Flaky-test candidates are claimed only from defined, tested rules"
+feature = "History"
+criticality = "high"
+
+[[requirement]]
+id = "RULE-05"
+title = "The dashboard is usable on desktop and mobile"
+feature = "Dashboard"
+criticality = "medium"
+
+# ---- Test cases ----------------------------------------------------------------------------
+
+[[test_case]]
+id = "TC-IMPORT-REAL-SAMPLES"
+title = "Real results of pytest, Robot Framework, Surefire/TestNG and Playwright import cleanly"
+automation_status = "automated"
+test_type = "integration"
+framework = "pytest"
+requirements = ["AC-01"]
+automated_by = [
+  "tests.integration.test_real_samples::test_all_samples_import_as_one_batch_without_errors",
+  "tests.integration.test_real_samples::test_every_sample_folder_is_known",
+]
+
+[[test_case]]
+id = "TC-NORMALISATION"
+title = "Counts match the producers' totals; context, time and failure details survive"
+automation_status = "automated"
+test_type = "integration"
+framework = "pytest"
+requirements = ["AC-02"]
+automated_by = [
+  "tests.integration.test_real_samples::test_counts_match_the_producers_own_totals*",
+  "tests.integration.test_real_samples::test_context_and_time_survive_the_import*",
+  "tests.integration.test_real_samples::test_real_selenium_timeout_is_kept_with_its_details",
+  "tests.integration.test_real_samples::test_playwright_attempts_show_failure_error_then_pass",
+]
+
+[[test_case]]
+id = "TC-JUNIT-PARSER"
+title = "JUnit XML importer: outcomes, reruns, nested suites, ids, timestamps, bad files"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["AC-02", "AC-08"]
+automated_by = ["tests.unit.ingest.test_junit::*", "tests.unit.ingest.test_batch::*"]
+
+[[test_case]]
+id = "TC-MAPPING"
+title = "Catalog loading and result matching; every sample pattern matches a real test"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["AC-03"]
+automated_by = [
+  "tests.unit.traceability.test_matching::*",
+  "tests.unit.ingest.test_catalog_file::*",
+  "tests.integration.test_sample_traceability::test_every_pattern_in_the_catalog_matches_at_least_one_real_test",
+]
+
+[[test_case]]
+id = "TC-GAPS"
+title = "Gaps, uncovered critical requirements and breakdowns on hand-calculated data"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["AC-04", "AC-08"]
+automated_by = [
+  "tests.unit.traceability.test_coverage::*",
+  "tests.integration.test_sample_traceability::test_hand_counted_catalog_numbers",
+]
+
+[[test_case]]
+id = "TC-INDEPENDENT-METRICS"
+title = "Metrics equal a second, naive implementation; the API serves the same numbers"
+automation_status = "automated"
+test_type = "integration"
+framework = "pytest"
+requirements = ["AC-05"]
+automated_by = [
+  "tests.integration.test_sample_traceability::test_metrics_match_a_naive_second_implementation*",
+  "tests.integration.test_sample_traceability::test_snapshot_counts_match_the_raw_xml",
+  "tests.unit.dashboard.test_api::test_summary_numbers_match_the_traceability_engine",
+]
+
+[[test_case]]
+id = "TC-DASHBOARD-BROWSER"
+title = "The dashboard shows those numbers in a real browser"
+automation_status = "automated"
+test_type = "ui"
+framework = "pytest"
+requirements = ["AC-05"]
+automated_by = ["tests.e2e.test_dashboard::test_overview_shows_coverage_and_pass_rate_separately"]
+
+[[test_case]]
+id = "TC-HISTORY"
+title = "Trends, stability classes, history commands and the stability page"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["AC-06"]
+automated_by = [
+  "tests.unit.history.test_analysis::test_trend*",
+  "tests.unit.history.test_store::*",
+  "tests.unit.test_cli_history::*",
+  "tests.e2e.test_dashboard::test_stability_page_shows_flaky_candidates_with_evidence",
+]
+
+[[test_case]]
+id = "TC-GATES"
+title = "Gates pass, fail and stay incomplete with the documented exit codes"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["AC-07", "AC-08"]
+automated_by = ["tests.unit.gates.test_gates::*", "tests.unit.test_cli_gate::*", "tests.unit.gates.test_reports::*"]
+
+[[test_case]]
+id = "TC-METRIC-UNITS"
+title = "Ratio, pass rate and model validation"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["AC-08"]
+automated_by = ["tests.unit.models.*"]
+
+[[test_case]]
+id = "TC-DEMO"
+title = "The ten demonstration steps return their documented exit codes"
+automation_status = "automated"
+test_type = "integration"
+framework = "pytest"
+requirements = ["AC-09"]
+automated_by = ["tests.integration.test_demo::*"]
+
+[[test_case]]
+id = "TC-HYGIENE"
+title = "No secrets, private paths, personal data or employer names; samples stay sanitised"
+automation_status = "automated"
+test_type = "integration"
+framework = "pytest"
+requirements = ["AC-10"]
+automated_by = ["tests.integration.test_repository_hygiene::*", "tests.unit.tools.test_sanitize_junit::*"]
+
+[[test_case]]
+id = "TC-LAYERING"
+title = "No core module imports the dashboard or a web framework"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["RULE-01"]
+automated_by = ["tests.architecture.test_layering::*"]
+
+[[test_case]]
+id = "TC-NO-SILENT-PASS"
+title = "Missing, broken or empty results and unreadable catalogs never pass"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["RULE-02"]
+automated_by = [
+  "tests.unit.test_cli_gate::test_missing_results_never_pass*",
+  "tests.unit.test_cli_gate::test_broken_result_file_never_passes",
+  "tests.unit.test_cli_gate::test_empty_result_file_never_passes",
+  "tests.unit.test_cli_gate::test_unreadable_catalog_still_writes_reports",
+  "tests.unit.gates.test_gates::test_execution_rules_without_results_are_incomplete_not_passed",
+  "tests.unit.gates.test_gates::test_results_with_zero_tests_are_incomplete",
+  "tests.unit.gates.test_gates::test_any_input_problem_makes_the_gate_incomplete",
+]
+
+[[test_case]]
+id = "TC-CONFIGURABLE"
+title = "Gate files: every rule optional, typos and out-of-range values refused"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["RULE-03"]
+automated_by = [
+  "tests.unit.gates.test_gates::test_config_file_loads_with_defaults",
+  "tests.unit.gates.test_gates::test_bad_config_is_rejected_with_the_reason*",
+  "tests.unit.test_cli_gate::test_scope_in_the_gate_file_limits_the_requirements",
+]
+
+[[test_case]]
+id = "TC-FLAKY-RULES"
+title = "Every stability rule on hand-made histories"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["RULE-04"]
+automated_by = [
+  "tests.unit.history.test_analysis::test_classification_rules*",
+  "tests.unit.history.test_analysis::test_same_build_passing_and_failing_is_a_flaky_candidate",
+  "tests.unit.history.test_analysis::test_pass_after_retry_is_a_flaky_candidate_even_with_little_history",
+  "tests.unit.history.test_analysis::test_consistent_failure_wins_over_flaky_signals",
+]
+
+[[test_case]]
+id = "TC-RESPONSIVE"
+title = "Phone and tablet width without sideways scrolling; keyboard skip link"
+automation_status = "automated"
+test_type = "ui"
+framework = "pytest"
+requirements = ["RULE-05"]
+automated_by = [
+  "tests.e2e.test_dashboard::test_layout_fits_small_screens*",
+  "tests.e2e.test_dashboard::test_keyboard_users_can_skip_to_the_content",
+]

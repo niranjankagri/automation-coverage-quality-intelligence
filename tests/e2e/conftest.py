@@ -7,7 +7,7 @@ sample data, so the browser sees exactly what a user of the demonstration sees.
 import socket
 import threading
 import time
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
 
 import pytest
@@ -69,3 +69,13 @@ def page(browser: Browser, base_url: str) -> Iterator[Page]:
     context.close()
     allowed = [e for e in errors if "Failed to load resource" in e]  # deliberate 404/500 in some tests
     assert [e for e in errors if e not in allowed] == []
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _record_browser(record_testsuite_property: Callable[[str, object], None]) -> None:
+    """Write browser=chromium into the JUnit file.
+
+    The self-gate then sees these results as their own run context instead of mixing them with
+    the unit-test run (docs/quality-gates.md).
+    """
+    record_testsuite_property("browser", "chromium")
