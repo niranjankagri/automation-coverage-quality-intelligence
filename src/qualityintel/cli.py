@@ -548,6 +548,9 @@ def _cmd_gate(args: argparse.Namespace) -> int:
             environments=frozenset(scope.environment),
             browsers=frozenset(scope.browser),
         ),
+        # A pipeline execution is one execution: all its runs count (several files per job, or
+        # two jobs in the same context), not only the latest per context
+        one_execution=execution is not None,
     )
     result = evaluate(report, config, problems, execution)
     document = gate_document(result, report, args.catalog.name)

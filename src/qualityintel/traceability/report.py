@@ -122,15 +122,24 @@ def context_key(context: RunContext) -> tuple[str | None, ...]:
     return (context.framework, context.environment, context.browser, context.platform)
 
 
+def snapshot_key(run: TestRun) -> tuple[str | None, ...]:
+    """What "the same suite" means for the snapshot: the run context, plus the pipeline job.
+
+    Two jobs of a pipeline can share a context (component tests and UI tests, both in Chrome);
+    they are different suites, so neither may replace the other.
+    """
+    return (*context_key(run.context), run.pipeline.job if run.pipeline else None)
+
+
 def latest_runs(runs: Iterable[TestRun]) -> tuple[TestRun, ...]:
-    """The newest run per run context, ordered by start time.
+    """The newest run per run context (and pipeline job), ordered by start time.
 
     Runs without a start time sort before every dated run, so a dated run always wins; among
     undated runs the last one given wins (import order).
     """
     latest: dict[tuple[str | None, ...], TestRun] = {}
     for run in runs:
-        key = context_key(run.context)
+        key = snapshot_key(run)
         current = latest.get(key)
         if current is None or _when(run) >= _when(current):
             latest[key] = run
@@ -142,11 +151,23 @@ def build_report(
     runs: Iterable[TestRun],
     filters: Filters | None = None,
     run_filters: RunFilters | None = None,
+    one_execution: bool = False,
 ) -> TraceabilityReport:
-    """Join catalog coverage with the snapshot of the given runs."""
+    """Join catalog coverage with the snapshot of the given runs.
+
+    Args:
+        catalog: Requirements and test cases.
+        runs: Runs to take the snapshot from.
+        filters: Catalog scope (all when omitted).
+        run_filters: Run scope (all when omitted).
+        one_execution: The runs are one execution (the jobs of one pipeline execution): every
+            run counts. Otherwise the snapshot is the latest run per context and job.
+    """
     coverage = analyse_coverage(catalog, filters)
     chosen = [run for run in runs if (run_filters or RunFilters()).keeps(run)]
-    snapshot = latest_runs(chosen)
+    snapshot = (
+        tuple(sorted(chosen, key=lambda r: (_when(r), r.source))) if one_execution else latest_runs(chosen)
+    )
     matching = match_results(catalog, snapshot)
 
     in_scope = {case.id for row in coverage.requirements for case in row.test_cases} | {

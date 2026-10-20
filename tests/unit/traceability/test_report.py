@@ -2,6 +2,7 @@ import pytest
 
 from qualityintel.models.enums import Outcome
 from qualityintel.models.metrics import Ratio
+from qualityintel.models.results import PipelineJob
 from qualityintel.traceability.report import (
     FAILING,
     NOT_AUTOMATED,
@@ -138,3 +139,29 @@ def test_empty_input_gives_not_applicable_pass_rate() -> None:
 
     assert report.pass_rate.value is None
     assert report.requirement_status == {"R1": NOT_RUN}
+
+
+def test_two_pipeline_jobs_in_the_same_context_are_both_in_the_snapshot() -> None:
+    """Component and UI jobs both run in Chrome: different suites, neither replaces the other."""
+    component = run(result("C"), hour=9, browser="chrome").model_copy(
+        update={"pipeline": PipelineJob(pipeline_id="1", job="component")}
+    )
+    ui = run(result("U"), hour=10, browser="chrome").model_copy(
+        update={"pipeline": PipelineJob(pipeline_id="1", job="ui")}
+    )
+    next_night_ui = run(result("U"), day=20, browser="chrome").model_copy(
+        update={"pipeline": PipelineJob(pipeline_id="2", job="ui")}
+    )
+
+    assert latest_runs([component, ui]) == (component, ui)
+    assert latest_runs([component, ui, next_night_ui]) == (component, next_night_ui)
+
+
+def test_one_execution_counts_every_run() -> None:
+    """Several files of one job in one context are one execution, not competing runs."""
+    first = run(result("A"), hour=9, source="TEST-A.xml")
+    second = run(result("B"), hour=10, source="TEST-B.xml")
+    cat = catalog([req("R1")], [case("TC", "R1", automated_by=("suite::*",))])
+
+    assert build_report(cat, [first, second]).snapshot == (second,)
+    assert build_report(cat, [first, second], one_execution=True).snapshot == (first, second)
