@@ -1,0 +1,857 @@
+# Demonstration catalog: SYNTHETIC requirements and test cases.
+#
+# The requirements are invented for this demonstration (no real product, customer or employer
+# document behind them). They describe the four public demo applications that my test
+# repositories exercise, and the test cases point at the REAL tests whose CI results are in
+# samples/results. Gaps are deliberate, so the traceability report has something to find:
+#   - requirements with no test at all (NOTES-012, SHOP-010, ADMIN-010, ADMIN-012)
+#   - requirements whose test cases are manual, planned or blocked (NOTES-011, SHOP-008,
+#     SHOP-009, SAUCE-008, ADMIN-009, ADMIN-011)
+#   - critical requirements without automation (SHOP-008, ADMIN-012)
+#   - an automated test case linked to no requirement (TC-NOTES-HEALTH)
+#   - real tests no test case claims: the database layer's own self-checks
+#
+# Patterns: `classname::name`, wildcards * and ? only ([ and ] are literal).
+
+# --------------------------------------------------------------------------------------------
+# Notes app (practice.expandtesting.com/notes): python-pytest-framework
+# --------------------------------------------------------------------------------------------
+
+[[requirement]]
+id = "NOTES-001"
+title = "Visitors can register an account; invalid or taken data is refused"
+feature = "Notes / Accounts"
+criticality = "high"
+priority = "p1"
+risk = "medium"
+platforms = ["api"]
+
+[[requirement]]
+id = "NOTES-002"
+title = "Users log in with email and password and get a session; failures do not reveal which part was wrong"
+feature = "Notes / Accounts"
+criticality = "critical"
+priority = "p1"
+risk = "high"
+platforms = ["web", "api"]
+
+[[requirement]]
+id = "NOTES-003"
+title = "Logging out ends the session token"
+feature = "Notes / Accounts"
+criticality = "high"
+priority = "p1"
+risk = "medium"
+platforms = ["api"]
+
+[[requirement]]
+id = "NOTES-004"
+title = "Users can change their password; the old password stops working"
+feature = "Notes / Accounts"
+criticality = "high"
+priority = "p2"
+risk = "medium"
+platforms = ["api"]
+
+[[requirement]]
+id = "NOTES-005"
+title = "Users can view and update their profile; the phone number is validated"
+feature = "Notes / Accounts"
+criticality = "medium"
+priority = "p3"
+risk = "low"
+platforms = ["api"]
+
+[[requirement]]
+id = "NOTES-006"
+title = "Users can create notes in the categories Home, Work and Personal; invalid notes are refused"
+feature = "Notes / Notes"
+criticality = "critical"
+priority = "p1"
+risk = "medium"
+platforms = ["web", "api"]
+
+[[requirement]]
+id = "NOTES-007"
+title = "Users can edit notes and mark them completed; progress is shown"
+feature = "Notes / Notes"
+criticality = "high"
+priority = "p1"
+risk = "medium"
+platforms = ["web", "api"]
+
+[[requirement]]
+id = "NOTES-008"
+title = "Users can delete notes after confirming"
+feature = "Notes / Notes"
+criticality = "high"
+priority = "p2"
+risk = "low"
+platforms = ["web", "api"]
+
+[[requirement]]
+id = "NOTES-009"
+title = "Users can only see and change their own notes"
+feature = "Notes / Security"
+criticality = "critical"
+priority = "p1"
+risk = "high"
+platforms = ["api"]
+
+[[requirement]]
+id = "NOTES-010"
+title = "Users can search notes and filter them by category"
+feature = "Notes / Notes"
+criticality = "medium"
+priority = "p2"
+risk = "low"
+platforms = ["web"]
+
+[[requirement]]
+id = "NOTES-011"
+title = "Users can reset a forgotten password by email"
+feature = "Notes / Accounts"
+criticality = "high"
+priority = "p2"
+risk = "high"
+platforms = ["web"]
+
+[[requirement]]
+id = "NOTES-012"
+title = "Notes created offline are saved when the connection returns"
+feature = "Notes / Notes"
+criticality = "low"
+priority = "p4"
+risk = "medium"
+platforms = ["web"]
+
+# --------------------------------------------------------------------------------------------
+# Toolshop (practicesoftwaretesting.com): playwright-typescript-framework
+# --------------------------------------------------------------------------------------------
+
+[[requirement]]
+id = "SHOP-001"
+title = "Customers can browse the product catalogue and filter it by category"
+feature = "Toolshop / Catalogue"
+criticality = "high"
+priority = "p1"
+risk = "medium"
+platforms = ["web"]
+
+[[requirement]]
+id = "SHOP-002"
+title = "Customers can search products; no match is stated clearly"
+feature = "Toolshop / Catalogue"
+criticality = "medium"
+priority = "p2"
+risk = "low"
+platforms = ["web"]
+
+[[requirement]]
+id = "SHOP-003"
+title = "Customers can sort products by name and price"
+feature = "Toolshop / Catalogue"
+criticality = "low"
+priority = "p3"
+risk = "low"
+platforms = ["web"]
+
+[[requirement]]
+id = "SHOP-004"
+title = "Product details match the catalogue and products can be added to the cart in any quantity"
+feature = "Toolshop / Cart"
+criticality = "high"
+priority = "p1"
+risk = "medium"
+platforms = ["web"]
+
+[[requirement]]
+id = "SHOP-005"
+title = "Customers can log in and out; wrong or missing credentials are reported"
+feature = "Toolshop / Accounts"
+criticality = "critical"
+priority = "p1"
+risk = "medium"
+platforms = ["web"]
+
+[[requirement]]
+id = "SHOP-006"
+title = "Customers can check out and place an order with correct totals; guests are asked to sign in"
+feature = "Toolshop / Checkout"
+criticality = "critical"
+priority = "p1"
+risk = "high"
+platforms = ["web"]
+
+[[requirement]]
+id = "SHOP-007"
+title = "The shop stays usable when the product API fails or returns nothing"
+feature = "Toolshop / Resilience"
+criticality = "medium"
+priority = "p2"
+risk = "medium"
+platforms = ["web"]
+
+[[requirement]]
+id = "SHOP-008"
+title = "Customers can pay by credit card"
+feature = "Toolshop / Checkout"
+criticality = "critical"
+priority = "p1"
+risk = "high"
+platforms = ["web"]
+
+[[requirement]]
+id = "SHOP-009"
+title = "Customers can download an invoice as PDF"
+feature = "Toolshop / Checkout"
+criticality = "medium"
+priority = "p3"
+risk = "low"
+platforms = ["web"]
+
+[[requirement]]
+id = "SHOP-010"
+title = "Checkout meets WCAG 2.2 AA"
+feature = "Toolshop / Checkout"
+criticality = "high"
+priority = "p2"
+risk = "medium"
+platforms = ["web"]
+
+# --------------------------------------------------------------------------------------------
+# Swag Labs (saucedemo.com) + DummyJSON API: robot-framework-automation
+# --------------------------------------------------------------------------------------------
+
+[[requirement]]
+id = "SAUCE-001"
+title = "Shoppers can log in and out; locked-out and invalid users see the right error"
+feature = "Swag Labs / Accounts"
+criticality = "critical"
+priority = "p1"
+risk = "medium"
+platforms = ["web"]
+
+[[requirement]]
+id = "SAUCE-002"
+title = "The inventory lists all products and can be sorted"
+feature = "Swag Labs / Inventory"
+criticality = "medium"
+priority = "p2"
+risk = "low"
+platforms = ["web"]
+
+[[requirement]]
+id = "SAUCE-003"
+title = "The cart keeps added products and its badge follows changes"
+feature = "Swag Labs / Cart"
+criticality = "high"
+priority = "p1"
+risk = "medium"
+platforms = ["web"]
+
+[[requirement]]
+id = "SAUCE-004"
+title = "Shoppers can buy products; totals include 8 % tax and customer details are required"
+feature = "Swag Labs / Checkout"
+criticality = "critical"
+priority = "p1"
+risk = "high"
+platforms = ["web"]
+
+[[requirement]]
+id = "SAUCE-005"
+title = "The API issues tokens and protects the current-user endpoint"
+feature = "Swag Labs / API"
+criticality = "high"
+priority = "p1"
+risk = "medium"
+platforms = ["api"]
+
+[[requirement]]
+id = "SAUCE-006"
+title = "The product API supports read, search, paging, field selection and changes"
+feature = "Swag Labs / API"
+criticality = "medium"
+priority = "p2"
+risk = "low"
+platforms = ["api"]
+
+[[requirement]]
+id = "SAUCE-007"
+title = "The cart API returns a user's carts with correct line totals"
+feature = "Swag Labs / API"
+criticality = "medium"
+priority = "p2"
+risk = "medium"
+platforms = ["api"]
+
+[[requirement]]
+id = "SAUCE-008"
+title = "The shop is usable on a phone-sized screen"
+feature = "Swag Labs / Inventory"
+criticality = "medium"
+priority = "p3"
+risk = "medium"
+platforms = ["mobile-web"]
+
+# --------------------------------------------------------------------------------------------
+# Order administration demo app: enterprise-test-automation-framework
+# --------------------------------------------------------------------------------------------
+
+[[requirement]]
+id = "ADMIN-001"
+title = "Staff sign in with a role; viewers can read but not change; failures reveal nothing"
+feature = "Admin / Access"
+criticality = "critical"
+priority = "p1"
+risk = "high"
+platforms = ["web", "api"]
+
+[[requirement]]
+id = "ADMIN-002"
+title = "Every request can be traced by the caller's request id"
+feature = "Admin / Operations"
+criticality = "low"
+priority = "p3"
+risk = "low"
+platforms = ["api"]
+
+[[requirement]]
+id = "ADMIN-003"
+title = "Admins can create, edit, search and delete customers; every invalid field is reported"
+feature = "Admin / Customers"
+criticality = "high"
+priority = "p1"
+risk = "medium"
+platforms = ["web", "api"]
+
+[[requirement]]
+id = "ADMIN-004"
+title = "Orders compute totals, reserve and release stock and follow the allowed status flow"
+feature = "Admin / Orders"
+criticality = "critical"
+priority = "p1"
+risk = "high"
+platforms = ["web", "api"]
+
+[[requirement]]
+id = "ADMIN-005"
+title = "Admins manage the product catalogue; deleting deactivates instead of removing"
+feature = "Admin / Products"
+criticality = "high"
+priority = "p2"
+risk = "medium"
+platforms = ["web", "api"]
+
+[[requirement]]
+id = "ADMIN-006"
+title = "Admins manage user accounts and roles"
+feature = "Admin / Access"
+criticality = "high"
+priority = "p2"
+risk = "medium"
+platforms = ["api"]
+
+[[requirement]]
+id = "ADMIN-007"
+title = "Data changed through the UI or API is stored exactly and consistently"
+feature = "Admin / Data"
+criticality = "critical"
+priority = "p1"
+risk = "high"
+platforms = ["web", "api", "database"]
+
+[[requirement]]
+id = "ADMIN-008"
+title = "Passwords are stored hashed and salted"
+feature = "Admin / Access"
+criticality = "critical"
+priority = "p1"
+risk = "medium"
+platforms = ["database"]
+
+[[requirement]]
+id = "ADMIN-009"
+title = "Admins can export orders as CSV"
+feature = "Admin / Orders"
+criticality = "medium"
+priority = "p3"
+risk = "low"
+platforms = ["web"]
+
+[[requirement]]
+id = "ADMIN-010"
+title = "Changes made by admins are written to an audit log"
+feature = "Admin / Operations"
+criticality = "high"
+priority = "p2"
+risk = "medium"
+platforms = ["api"]
+
+[[requirement]]
+id = "ADMIN-011"
+title = "The order list answers within 2 s for 50 concurrent admins"
+feature = "Admin / Orders"
+criticality = "high"
+priority = "p2"
+risk = "medium"
+platforms = ["api"]
+
+[[requirement]]
+id = "ADMIN-012"
+title = "Admins must confirm sign-in with a second factor"
+feature = "Admin / Access"
+criticality = "critical"
+priority = "p1"
+risk = "high"
+platforms = ["web"]
+
+# ============================================================================================
+# Test cases
+# ============================================================================================
+
+# ---- Notes app ------------------------------------------------------------------------------
+
+[[test_case]]
+id = "TC-NOTES-REGISTER"
+title = "Register: new user, taken email, field validation"
+automation_status = "automated"
+test_type = "api"
+framework = "pytest"
+requirements = ["NOTES-001"]
+automated_by = ["tests.api.test_users::test_register_*"]
+
+[[test_case]]
+id = "TC-NOTES-LOGIN-API"
+title = "Login API: token on success, same answer for unknown user and wrong password"
+automation_status = "automated"
+test_type = "api"
+framework = "pytest"
+requirements = ["NOTES-002"]
+automated_by = ["tests.api.test_users::test_login_*"]
+
+[[test_case]]
+id = "TC-NOTES-LOGIN-UI"
+title = "Login page: valid login, wrong password, empty form"
+automation_status = "automated"
+test_type = "ui"
+framework = "pytest"
+platforms = ["web"]
+requirements = ["NOTES-002"]
+automated_by = ["tests.ui.test_login::*"]
+
+[[test_case]]
+id = "TC-NOTES-LOGOUT"
+title = "Logout invalidates the token"
+automation_status = "automated"
+test_type = "api"
+framework = "pytest"
+requirements = ["NOTES-003"]
+automated_by = ["tests.api.test_users::test_logout_invalidates_the_token"]
+
+[[test_case]]
+id = "TC-NOTES-PASSWORD"
+title = "Change password: current password checked, new one replaces the old"
+automation_status = "automated"
+test_type = "api"
+framework = "pytest"
+requirements = ["NOTES-004"]
+automated_by = ["tests.api.test_users::test_change*password*"]
+
+[[test_case]]
+id = "TC-NOTES-PROFILE"
+title = "Profile: read, update, phone validation, token required"
+automation_status = "automated"
+test_type = "api"
+framework = "pytest"
+requirements = ["NOTES-005"]
+automated_by = ["tests.api.test_users::test_profile_*"]
+
+[[test_case]]
+id = "TC-NOTES-CREATE-API"
+title = "Create note per category and field validation through the API"
+automation_status = "automated"
+test_type = "api"
+framework = "pytest"
+requirements = ["NOTES-006"]
+automated_by = ["tests.api.test_notes::test_create_note_*", "tests.api.test_notes::test_get_note*"]
+
+[[test_case]]
+id = "TC-NOTES-CREATE-UI"
+title = "Note added through the form is listed; note created through the API shows in the app"
+automation_status = "automated"
+test_type = "ui"
+framework = "pytest"
+platforms = ["web"]
+requirements = ["NOTES-006"]
+automated_by = [
+  "tests.ui.test_notes::test_note_added_through_the_form_is_listed*",
+  "tests.e2e.test_api_and_ui::test_note_created_through_the_api_is_shown_in_the_app*",
+]
+
+[[test_case]]
+id = "TC-NOTES-EDIT"
+title = "PUT replaces, PATCH completes; completing in the app shows in the API and progress"
+automation_status = "automated"
+test_type = "integration"
+framework = "pytest"
+requirements = ["NOTES-007"]
+automated_by = [
+  "tests.api.test_notes::test_put_replaces_every_field",
+  "tests.api.test_notes::test_patch_changes_only_the_completed_flag",
+  "tests.ui.test_notes::test_completing_*",
+  "tests.e2e.test_api_and_ui::test_note_changed_through_the_api_shows_the_new_text*",
+  "tests.e2e.test_api_and_ui::test_note_completed_in_the_app_is_completed_in_the_api*",
+]
+
+[[test_case]]
+id = "TC-NOTES-DELETE"
+title = "Deleted note is gone in the API and in the app"
+automation_status = "automated"
+test_type = "integration"
+framework = "pytest"
+requirements = ["NOTES-008"]
+automated_by = [
+  "tests.api.test_notes::test_deleted_note_is_gone",
+  "tests.ui.test_notes::test_deleted_note_disappears_after_confirming*",
+  "tests.e2e.test_api_and_ui::test_note_deleted_in_the_app_is_gone_from_the_api*",
+]
+
+[[test_case]]
+id = "TC-NOTES-ISOLATION"
+title = "Users cannot read or delete each other's notes; notes need a token"
+automation_status = "automated"
+test_type = "api"
+framework = "pytest"
+requirements = ["NOTES-009"]
+automated_by = [
+  "tests.api.test_notes::test_users_cannot_see_or_delete_each_others_notes",
+  "tests.api.test_notes::test_notes_require_a_token",
+  "tests.api.test_notes::test_get_notes_lists_every_note_of_the_user",
+]
+
+[[test_case]]
+id = "TC-NOTES-SEARCH"
+title = "Search and category filter"
+automation_status = "automated"
+test_type = "ui"
+framework = "pytest"
+platforms = ["web"]
+requirements = ["NOTES-010"]
+automated_by = ["tests.ui.test_notes::test_search_*", "tests.e2e.test_api_and_ui::test_category_filter_*"]
+
+[[test_case]]
+id = "TC-NOTES-RESET"
+title = "Password reset mail arrives and the link sets a new password"
+automation_status = "manual"
+test_type = "ui"
+requirements = ["NOTES-011"]
+
+[[test_case]]
+id = "TC-NOTES-HEALTH"
+title = "Health endpoint answers (smoke check before the suite)"
+automation_status = "automated"
+test_type = "api"
+framework = "pytest"
+automated_by = ["tests.api.test_health::*"]
+
+# ---- Toolshop -----------------------------------------------------------------------------
+
+[[test_case]]
+id = "TC-SHOP-BROWSE"
+title = "Home page shows a full first page; category filter matches the API"
+automation_status = "automated"
+test_type = "ui"
+framework = "playwright"
+platforms = ["web"]
+requirements = ["SHOP-001"]
+automated_by = ["ui/catalog.spec.ts::*home page*", "ui/catalog.spec.ts::*category filter*"]
+
+[[test_case]]
+id = "TC-SHOP-SEARCH"
+title = "Search shows matches, says so when nothing matches, sends the term to the API"
+automation_status = "automated"
+test_type = "ui"
+framework = "playwright"
+platforms = ["web"]
+requirements = ["SHOP-002"]
+automated_by = ["ui/catalog.spec.ts::*search*", "ui/network.spec.ts::*search sends*"]
+
+[[test_case]]
+id = "TC-SHOP-SORT"
+title = "Sorting by name and price, and the sort request to the API"
+automation_status = "automated"
+test_type = "ui"
+framework = "playwright"
+platforms = ["web"]
+requirements = ["SHOP-003"]
+automated_by = ["ui/catalog.spec.ts::*sort*", "ui/network.spec.ts::*sorting*"]
+
+[[test_case]]
+id = "TC-SHOP-PRODUCT"
+title = "Product details, quantity and cart badge"
+automation_status = "automated"
+test_type = "ui"
+framework = "playwright"
+platforms = ["web"]
+requirements = ["SHOP-004"]
+automated_by = ["ui/product.spec.ts::*"]
+
+[[test_case]]
+id = "TC-SHOP-LOGIN"
+title = "Log in, sign out, wrong password, empty form"
+automation_status = "automated"
+test_type = "ui"
+framework = "playwright"
+platforms = ["web"]
+requirements = ["SHOP-005"]
+automated_by = ["ui/login.spec.ts::*"]
+
+[[test_case]]
+id = "TC-SHOP-CHECKOUT"
+title = "Guest and customer checkout, totals, cart filled through the API"
+automation_status = "automated"
+test_type = "ui"
+framework = "playwright"
+platforms = ["web"]
+requirements = ["SHOP-006"]
+automated_by = ["ui/checkout.spec.ts::*"]
+
+[[test_case]]
+id = "TC-SHOP-RESILIENCE"
+title = "Mocked product API: failure, empty list, exact rendering"
+automation_status = "automated"
+test_type = "ui"
+framework = "playwright"
+platforms = ["web"]
+requirements = ["SHOP-007"]
+automated_by = ["ui/network.spec.ts::Catalogue with a mocked API*"]
+
+[[test_case]]
+id = "TC-SHOP-PAYMENT"
+title = "Card payment with the payment provider's sandbox"
+automation_status = "planned"
+test_type = "ui"
+requirements = ["SHOP-008"]
+
+[[test_case]]
+id = "TC-SHOP-INVOICE"
+title = "Invoice PDF content"
+automation_status = "blocked"
+test_type = "ui"
+requirements = ["SHOP-009"]
+
+# ---- Swag Labs ------------------------------------------------------------------------------
+
+[[test_case]]
+id = "TC-SAUCE-LOGIN"
+title = "Login, logout, error messages, protected page without session"
+automation_status = "automated"
+test_type = "ui"
+framework = "robot-framework"
+platforms = ["web"]
+requirements = ["SAUCE-001"]
+automated_by = ["Robot Framework Automation.Ui.01 Login::*"]
+
+[[test_case]]
+id = "TC-SAUCE-INVENTORY"
+title = "Six products, default sort, sorting"
+automation_status = "automated"
+test_type = "ui"
+framework = "robot-framework"
+platforms = ["web"]
+requirements = ["SAUCE-002"]
+automated_by = ["Robot Framework Automation.Ui.02 Products::*"]
+
+[[test_case]]
+id = "TC-SAUCE-CART"
+title = "Cart contents and badge"
+automation_status = "automated"
+test_type = "ui"
+framework = "robot-framework"
+platforms = ["web"]
+requirements = ["SAUCE-003"]
+automated_by = ["Robot Framework Automation.Ui.03 Cart::*"]
+
+[[test_case]]
+id = "TC-SAUCE-CHECKOUT"
+title = "Buy two products, tax, required fields, cancel keeps the cart"
+automation_status = "automated"
+test_type = "ui"
+framework = "robot-framework"
+platforms = ["web"]
+requirements = ["SAUCE-004"]
+automated_by = ["Robot Framework Automation.Ui.04 Checkout::*"]
+
+[[test_case]]
+id = "TC-SAUCE-API-AUTH"
+title = "Token login and protected endpoint"
+automation_status = "automated"
+test_type = "api"
+framework = "robot-framework"
+requirements = ["SAUCE-005"]
+automated_by = ["Robot Framework Automation.Api.01 Auth::*"]
+
+[[test_case]]
+id = "TC-SAUCE-API-PRODUCTS"
+title = "Product API operations"
+automation_status = "automated"
+test_type = "api"
+framework = "robot-framework"
+requirements = ["SAUCE-006"]
+automated_by = ["Robot Framework Automation.Api.02 Products::*"]
+
+[[test_case]]
+id = "TC-SAUCE-API-CARTS"
+title = "Cart API ownership and totals"
+automation_status = "automated"
+test_type = "api"
+framework = "robot-framework"
+requirements = ["SAUCE-007"]
+automated_by = ["Robot Framework Automation.Api.03 Carts::*"]
+
+[[test_case]]
+id = "TC-SAUCE-MOBILE"
+title = "Inventory and checkout on a 390 px wide screen"
+automation_status = "manual"
+test_type = "mobile"
+platforms = ["mobile-web"]
+requirements = ["SAUCE-008"]
+
+# ---- Order administration ------------------------------------------------------------------
+
+[[test_case]]
+id = "TC-ADMIN-AUTH-API"
+title = "Bearer tokens, roles, 401/400 answers, logout"
+automation_status = "automated"
+test_type = "api"
+framework = "testng"
+requirements = ["ADMIN-001"]
+automated_by = [
+  "com.enterprise.automation.tests.api.AuthApiTest::adminLogsIn*",
+  "com.enterprise.automation.tests.api.AuthApiTest::currentUser*",
+  "com.enterprise.automation.tests.api.AuthApiTest::invalidToken*",
+  "com.enterprise.automation.tests.api.AuthApiTest::loggedOut*",
+  "com.enterprise.automation.tests.api.AuthApiTest::missingCredentials*",
+  "com.enterprise.automation.tests.api.AuthApiTest::requestsWithoutToken*",
+  "com.enterprise.automation.tests.api.AuthApiTest::viewerCanRead*",
+  "com.enterprise.automation.tests.api.AuthApiTest::wrongPassword*",
+]
+
+[[test_case]]
+id = "TC-ADMIN-LOGIN-UI"
+title = "Sign-in page: rejected sign-ins, viewer role, protected pages"
+automation_status = "automated"
+test_type = "ui"
+framework = "testng"
+platforms = ["web"]
+requirements = ["ADMIN-001"]
+automated_by = ["com.enterprise.automation.tests.ui.LoginRegressionTest::*"]
+
+[[test_case]]
+id = "TC-ADMIN-CORRELATION"
+title = "Request id from the client is used for correlation"
+automation_status = "automated"
+test_type = "api"
+framework = "testng"
+requirements = ["ADMIN-002"]
+automated_by = ["com.enterprise.automation.tests.api.AuthApiTest::theClientsRequestIdIsUsedForCorrelation"]
+
+[[test_case]]
+id = "TC-ADMIN-CUSTOMERS-API"
+title = "Customer API: CRUD, search, validation, conflicts"
+automation_status = "automated"
+test_type = "api"
+framework = "testng"
+requirements = ["ADMIN-003"]
+automated_by = ["com.enterprise.automation.tests.api.CustomerApiTest::*"]
+
+[[test_case]]
+id = "TC-ADMIN-CUSTOMERS-UI"
+title = "Customer screens: create, edit, delete, validation, viewer role"
+automation_status = "automated"
+test_type = "ui"
+framework = "testng"
+platforms = ["web"]
+requirements = ["ADMIN-003"]
+automated_by = ["com.enterprise.automation.tests.ui.CustomerManagementTest::*"]
+
+[[test_case]]
+id = "TC-ADMIN-ORDERS-API"
+title = "Order API: totals, stock, status flow, validation"
+automation_status = "automated"
+test_type = "api"
+framework = "testng"
+requirements = ["ADMIN-004"]
+automated_by = ["com.enterprise.automation.tests.api.OrderApiTest::*"]
+
+[[test_case]]
+id = "TC-ADMIN-ORDERS-UI"
+title = "Checkout screen and purchase journey"
+automation_status = "automated"
+test_type = "ui"
+framework = "testng"
+platforms = ["web"]
+requirements = ["ADMIN-004"]
+automated_by = [
+  "com.enterprise.automation.tests.ui.CheckoutTest::*",
+  "com.enterprise.automation.tests.e2e.PurchaseJourneyTest::*",
+]
+
+[[test_case]]
+id = "TC-ADMIN-PRODUCTS"
+title = "Product API and catalogue screen"
+automation_status = "automated"
+test_type = "api"
+framework = "testng"
+requirements = ["ADMIN-005"]
+automated_by = [
+  "com.enterprise.automation.tests.api.ProductApiTest::*",
+  "com.enterprise.automation.tests.ui.ProductCatalogTest::*",
+]
+
+[[test_case]]
+id = "TC-ADMIN-USERS"
+title = "User administration API"
+automation_status = "automated"
+test_type = "api"
+framework = "testng"
+requirements = ["ADMIN-006"]
+automated_by = ["com.enterprise.automation.tests.api.UserApiTest::*"]
+
+[[test_case]]
+id = "TC-ADMIN-CONSISTENCY"
+title = "UI, API and database agree after every change"
+automation_status = "automated"
+test_type = "integration"
+framework = "testng"
+requirements = ["ADMIN-007"]
+automated_by = [
+  "com.enterprise.automation.tests.integration.ApiToDatabaseTest::*",
+  "com.enterprise.automation.tests.integration.UiApiDatabaseTest::*",
+  "com.enterprise.automation.tests.db.DatabaseLayerTest::catalogue*",
+]
+
+[[test_case]]
+id = "TC-ADMIN-PASSWORD-STORAGE"
+title = "Stored passwords are salted hashes"
+automation_status = "automated"
+test_type = "database"
+framework = "testng"
+requirements = ["ADMIN-008"]
+automated_by = ["com.enterprise.automation.tests.integration.ApiToDatabaseTest::passwordsAreStoredHashedAndSalted"]
+
+[[test_case]]
+id = "TC-ADMIN-EXPORT"
+title = "CSV export columns and encoding"
+automation_status = "planned"
+test_type = "ui"
+requirements = ["ADMIN-009"]
+
+[[test_case]]
+id = "TC-ADMIN-LOAD"
+title = "Order list under 50 concurrent admins"
+automation_status = "blocked"
+test_type = "performance"
+requirements = ["ADMIN-011"]
