@@ -19,13 +19,25 @@ from pathlib import Path
 
 from qualityintel import __version__
 from qualityintel.config import ConfigError, Settings
+from qualityintel.history.analysis import (
+    HistorySettings,
+    compare_runs,
+    duration_regressions,
+    recurring_failures,
+    repeated_errors,
+    slow_tests,
+    stability_report,
+    summary_by,
+    trend,
+)
+from qualityintel.history.store import HistoryError, HistoryStore
 from qualityintel.ingest.batch import Batch, import_results
 from qualityintel.ingest.catalog_file import CatalogFileError, load_catalog
 from qualityintel.models.catalog import Catalog
 from qualityintel.models.enums import Outcome
 from qualityintel.models.metrics import execution_pass_rate
-from qualityintel.models.results import RunContext
-from qualityintel.reporting.text import render_traceability
+from qualityintel.models.results import RunContext, TestRun
+from qualityintel.reporting.text import render_comparison, render_history, render_traceability
 from qualityintel.traceability.coverage import Filters
 from qualityintel.traceability.report import RunFilters, build_report
 
@@ -66,6 +78,35 @@ def build_parser() -> argparse.ArgumentParser:
     add_result_arguments(dashboard, required=False)
     dashboard.add_argument("--host", help="address to listen on (default: QI_DASHBOARD_HOST or 127.0.0.1)")
     dashboard.add_argument("--port", type=int, help="port (default: QI_DASHBOARD_PORT or 8000)")
+    dashboard.add_argument(
+        "--database", type=Path, help="also load every run stored in this history database"
+    )
+
+    history = commands.add_parser(
+        "history", help="execution history: import runs, stability report, compare runs"
+    )
+    history_commands = history.add_subparsers(dest="history_command", metavar="<action>", required=True)
+
+    store = history_commands.add_parser("import", help="store result files in the history database")
+    add_result_arguments(store, required=True)
+    store.add_argument("--database", type=Path, help="SQLite file (default: QI_DATABASE or .qi/quality.db)")
+
+    report = history_commands.add_parser("report", help="stability, recurring failures, durations, trends")
+    add_result_arguments(report, required=False)
+    report.add_argument("--database", type=Path, help="SQLite file (default: QI_DATABASE or .qi/quality.db)")
+    report.add_argument("--no-database", action="store_true", help="use only the result files given")
+    report.add_argument(
+        "--window", type=int, default=HistorySettings.window, help="verdicts per test to look at"
+    )
+    for name in ("framework", "environment", "browser"):
+        report.add_argument(
+            f"--{name}", action="append", default=[], metavar="VALUE", help=f"only runs with this {name}"
+        )
+
+    compare = history_commands.add_parser("compare", help="what changed between two stored runs")
+    compare.add_argument("base", help="run id (or its first characters) or the end of its source name")
+    compare.add_argument("head", help="run id (or its first characters) or the end of its source name")
+    compare.add_argument("--database", type=Path, help="SQLite file (default: QI_DATABASE or .qi/quality.db)")
     return parser
 
 
@@ -205,6 +246,107 @@ def _cmd_coverage(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def database_path(args: argparse.Namespace) -> Path:
+    """``--database`` if given, else the configured default (may raise ConfigError)."""
+    return args.database if args.database is not None else Settings.from_env().database
+
+
+def open_store(path: Path) -> HistoryStore | None:
+    """Open the history database; print the reason and return ``None`` when it cannot be used."""
+    try:
+        return HistoryStore(path)
+    except HistoryError as error:
+        print(f"qi: error: {error}", file=sys.stderr)
+        return None
+
+
+def find_run(runs: list[TestRun], reference: str) -> TestRun:
+    """A stored run by id prefix (>= 6 characters) or by the end of its source name."""
+    matches = [r for r in runs if len(reference) >= 6 and r.run_id.startswith(reference)]
+    matches = matches or [r for r in runs if r.source.endswith(reference)]
+    if len(matches) != 1:
+        found = "no run" if not matches else f"{len(matches)} runs"
+        raise UsageError(f"{found} match {reference!r}; use more characters of the run id or file name")
+    return matches[0]
+
+
+def _cmd_history(args: argparse.Namespace) -> int:
+    """Dispatch ``qi history <action>``."""
+    try:
+        path = database_path(args)
+    except ConfigError as error:
+        print(f"qi: configuration error: {error}", file=sys.stderr)
+        return EXIT_USAGE
+
+    if args.history_command == "import":
+        batch = import_results(args.results, context=context_from(args))
+        report_batch_problems(batch)
+        if not batch.complete:
+            return EXIT_INPUT
+        store = open_store(path)
+        if store is None:
+            return EXIT_INPUT
+        with store:
+            added, known = store.add_all(batch.runs)
+            run_count, result_count = store.count()
+        print(
+            f"added {added} run(s), {known} already stored; "
+            f"{path} now holds {run_count} runs, {result_count} results"
+        )
+        return EXIT_OK
+
+    if args.history_command == "report":
+        runs: list[TestRun] = []
+        if not args.no_database:
+            store = open_store(path)
+            if store is None:
+                return EXIT_INPUT
+            with store:
+                runs = store.runs()
+        if args.results:
+            batch = import_results(args.results, context=context_from(args))
+            report_batch_problems(batch)
+            if not batch.complete:
+                return EXIT_INPUT
+            stored_ids = {r.run_id for r in runs}
+            runs += [r for r in batch.runs if r.run_id not in stored_ids]
+        filters = RunFilters(
+            frameworks=frozenset(args.framework),
+            environments=frozenset(args.environment),
+            browsers=frozenset(args.browser),
+        )
+        runs = [r for r in runs if filters.keeps(r)]
+        if not runs:
+            print("qi: error: no runs to analyse (import some with `qi history import`)", file=sys.stderr)
+            return EXIT_INPUT
+        if args.window < 1:
+            raise UsageError("--window must be at least 1")
+        settings = HistorySettings(window=args.window)
+        print(
+            render_history(
+                stability_report(runs, settings),
+                recurring_failures(runs),
+                repeated_errors(runs),
+                duration_regressions(runs, settings),
+                slow_tests(runs),
+                trend(runs),
+                summary_by(runs, "build"),
+            ),
+            end="",
+        )
+        return EXIT_OK
+
+    # compare
+    store = open_store(path)
+    if store is None:
+        return EXIT_INPUT
+    with store:
+        stored = store.runs()
+    base, head = find_run(stored, args.base), find_run(stored, args.head)
+    print(render_comparison(base, head, compare_runs(base, head)), end="")
+    return EXIT_OK
+
+
 def _cmd_dashboard(args: argparse.Namespace) -> int:
     """Load the data once, then serve it until interrupted (Ctrl+C)."""
     try:
@@ -215,13 +357,20 @@ def _cmd_dashboard(args: argparse.Namespace) -> int:
     catalog = load_catalog_or_report(args.catalog)
     if catalog is None:
         return EXIT_INPUT
-    runs = []
+    runs: list[TestRun] = []
+    if args.database is not None:
+        store = open_store(args.database)
+        if store is None:
+            return EXIT_INPUT
+        with store:
+            runs = store.runs()
     if args.results:
         batch = import_results(args.results, context=context_from(args))
         report_batch_problems(batch)
         if not batch.complete:
             return EXIT_INPUT
-        runs = batch.runs
+        known = {r.run_id for r in runs}
+        runs += [r for r in batch.runs if r.run_id not in known]
     # Imported here so the other commands start without loading the web stack
     import uvicorn
 
@@ -243,6 +392,7 @@ COMMANDS: dict[str, Callable[[argparse.Namespace], int]] = {
     "inspect": _cmd_inspect,
     "coverage": _cmd_coverage,
     "dashboard": _cmd_dashboard,
+    "history": _cmd_history,
 }
 
 

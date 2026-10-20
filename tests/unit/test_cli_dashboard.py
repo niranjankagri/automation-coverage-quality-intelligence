@@ -69,3 +69,26 @@ def test_dashboard_reports_bad_configuration(served: dict[str, Any], monkeypatch
 
     assert main(["dashboard", "--catalog", str(SAMPLES / "catalog.toml")]) == EXIT_USAGE
     assert served == {}
+
+
+def test_dashboard_loads_runs_from_the_history_database(
+    served: dict[str, Any], tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """--database adds stored runs; files given as well are not counted twice."""
+    database = tmp_path / "h.db"
+    assert main(["history", "import", str(SAMPLES / "results"), "--database", str(database)]) == EXIT_OK
+    capsys.readouterr()
+
+    code = main(
+        [
+            "dashboard",
+            "--catalog",
+            str(SAMPLES / "catalog.toml"),
+            str(SAMPLES / "results"),
+            "--database",
+            str(database),
+        ]
+    )
+
+    assert code == EXIT_OK
+    assert "(42 requirements, 43 runs)" in capsys.readouterr().out
