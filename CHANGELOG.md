@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 (2026-10-20)
 
 - **Portfolio:** featured project 17 on https://niranjankagri.github.io with genuine dashboard screenshots.
 - **Clean-checkout validation:** README steps run from fresh clones in cmd.exe and Git Bash
@@ -37,9 +37,25 @@
   turns on basic authentication; failure messages are redacted of secret-shaped values; Markdown
   summaries escape all Markdown punctuation; tests prove no imported content can be executed and
   the API takes no writes; CI audits dependencies with pip-audit; `SECURITY.md`.
+- **CI maintenance** ([docs/ci.md](docs/ci.md)): `ubuntu-latest` had already moved to the
+  ubuntu-26.04 image (verified in the job logs, all runs green); jobs now name `ubuntu-26.04` and
+  `windows-2025`, with one test job left on `ubuntu-latest` as a canary for the next migration;
+  actions are pinned to commit SHAs; a dependency audit job; 11 jobs in total.
 - **Fixes found on the way:** two pipeline jobs in the same context (component and UI tests in
   Chrome) no longer replace each other in the snapshot; a late API response for an older address
-  is no longer shown by the dashboard (a CI race); empty view slots no longer print "null".
+  is no longer shown by the dashboard, and re-syncing the filters no longer overwrites the field
+  being typed in (both races seen in CI); empty view slots no longer print "null".
+
+**Upgrade notes**
+
+- History databases are upgraded when opened (schema 1 or 2 to 3); existing runs are kept.
+- `qi dashboard --host` with an address other than this machine now needs
+  `QI_DASHBOARD_PASSWORD` (12+ characters), which turns on a login ([docs/security.md](docs/security.md)).
+- A directory given as input is now also searched for `*.json` reports: a JSON file in it that
+  is not a mochawesome report makes the import incomplete (exit 3). Point at the report folder,
+  not at a whole project folder.
+- The gate's JSON report has a new key, `pipeline` (`null` unless `--pipeline` is used); the
+  other keys are unchanged.
 
 ## 1.0.0 (2026-10-20)
 

@@ -1,6 +1,6 @@
 # Architecture
 
-Status: release 1.0.0, all eight milestones done. Each section names the milestone that built it.
+Status: release 1.1.0: the eight milestones of the plan, then the post-1.0 phases (CSV import, trends, Cypress and Allure, pipelines, security, CI maintenance). Each section names the milestone that built it.
 
 ## Purpose
 

@@ -58,7 +58,7 @@ CI on Linux and Windows on every push: [docs/validation.md](docs/validation.md).
 | History | `qi history import / report / compare` | SQLite history with coverage snapshots; stability classes with evidence (flaky candidates, consistent and new failures); recurring failures; duration regressions; trends | [history](docs/history.md) |
 | Quality gates | `qi gate` | configurable rules; passed / failed / incomplete as exit codes 0 / 1 / 3; JSON, HTML and Markdown reports | [quality gates](docs/quality-gates.md) |
 | Pipelines | `--pipeline ID --job NAME=PATH` | the jobs of one CI execution grouped; re-run attempts; a gate never decides on a pipeline with a missing, empty or inconsistent job; Pipelines page | [pipelines](docs/pipelines.md) |
-| Dashboard | `qi dashboard` | read-only web UI and JSON API (`/docs`) over the same numbers, incl. trend charts per day and per context checked against the stored records | [dashboard](docs/dashboard.md), [OpenAPI](docs/api/openapi.json) |
+| Dashboard | `qi dashboard` | read-only web UI and JSON API (`/docs`) over the same numbers, incl. trend charts per day and per context checked against the stored records and a Pipelines page; this machine only unless a login is set | [dashboard](docs/dashboard.md), [OpenAPI](docs/api/openapi.json) |
 
 ## The sample data is real
 
@@ -80,6 +80,14 @@ What the platform finds in it (each number checked by a test):
 | Execution pass rate of the latest run per context | 100.0 % (221/221) → the nightly gate **passes** |
 | Flaky candidates (passed and failed on the same build) | 4: the 13 Oct Selenium timeout and three Playwright tests hit by the site outage |
 | Duration regressions confirmed over two runs | 2 (19 single-run spikes in a parallel suite were correctly ignored) |
+
+More real CI output in [`samples/formats`](samples/README.md#formats-other-result-formats-real-ci-output)
+and [`samples/pipelines`](samples/README.md#pipelines-whole-ci-pipeline-executions-real-ci-output):
+8 Cypress runs, 5 Allure runs checked test by test against the JUnit XML of the same CI job, and
+two whole Cypress pipeline runs. One of them was cancelled with its Firefox job missing: all 114
+results that exist passed, and the pipeline gate still says **incomplete**.
+
+![Pipelines page: the cancelled run is incomplete](docs/images/dashboard-pipelines.png)
 
 ## How it works
 
@@ -127,22 +135,33 @@ src/qualityintel/
 ## Evidence: the plan's acceptance criteria
 
 This repository gates its own release on them: [`quality/catalog.toml`](quality/catalog.toml)
-lists the ten acceptance criteria and five implementation rules of the project plan, linked to
-the tests below, and CI job *Self gate* runs `qi gate` on this repository's own JUnit results
-(15/15 requirements automated, all tests passing).
+lists the ten acceptance criteria and five implementation rules of the project plan and the five
+capabilities added after 1.0 (below), linked to their tests, and CI job *Self gate* runs `qi gate`
+on this repository's own unit and browser results as one pipeline execution (20/20 requirements
+automated, all tests passing).
 
 | # | Criterion | Proven by |
 |---|---|---|
-| 1 | Results from at least two distinct automation projects import | 4 producers, 43 real files: `tests/integration/test_real_samples.py` |
+| 1 | Results from at least two distinct automation projects import | 4 JUnit producers, 43 real files: `tests/integration/test_real_samples.py`; Cypress and Allure: `tests/integration/test_format_samples.py` |
 | 2 | Normalised without losing essential information | counts equal each producer's own totals, context and failures survive (same file) |
 | 3 | Requirements map to test cases | `tests/unit/traceability/test_matching.py`; every sample pattern matches a real test |
 | 4 | Gaps and uncovered critical requirements are found | `tests/unit/traceability/test_coverage.py` (hand-calculated), sample hand counts |
 | 5 | Dashboard metrics match independent calculations | a second, standard-library-only implementation in `tests/integration/test_sample_traceability.py`; API and browser tests show the same numbers |
 | 6 | Historical trends can be inspected | `tests/unit/history/`, `qi history report`, the Stability page (browser test) |
 | 7 | Gates pass or fail a pipeline | `tests/unit/test_cli_gate.py`; CI job *Quality gates* asserts exit codes 0, 1, 1 and 3 |
-| 8 | Tests validate calculations, ingestion and gates | 503 unit and integration tests + 13 browser tests, 98 % branch coverage |
+| 8 | Tests validate calculations, ingestion and gates | 765 unit and integration tests + 20 browser tests, 98 % branch coverage |
 | 9 | A clean checkout reproduces the demonstration | `tests/integration/test_demo.py`; CI job *Demonstration from a clean checkout* |
-| 10 | No sensitive data in docs and reports | `tests/integration/test_repository_hygiene.py` scans every tracked file (it found and fixed a local path in two sample files) |
+| 10 | No sensitive data in docs and reports | `tests/integration/test_repository_hygiene.py` scans every tracked file (it found and fixed a local path in two sample files); failure messages are redacted ([security](docs/security.md)) |
+
+Added after 1.0, each a requirement of the self gate:
+
+| Id | Capability | Proven by |
+|---|---|---|
+| IMP-01 | Requirements import from CSV | `tests/unit/ingest/test_requirements_csv.py`, `tests/unit/test_cli_requirements.py`, the sample CSV |
+| TREND-01 | Trend charts match the stored records | `tests/integration/test_trends_against_database.py` (plain SQL), browser tests |
+| FMT-01 | Cypress (mochawesome) and Allure results | real samples; Allure and JUnit of the same CI run agree test by test |
+| PIPE-01 | Pipeline executions: no decision on a pipeline with a missing job | a real cancelled pipeline: `tests/integration/test_pipeline_samples.py` |
+| SEC-01 | Hostile input, dashboard login, no secrets in reports | `tests/unit/ingest/test_hostile_input.py`, `tests/architecture/test_no_code_execution.py`, [security](docs/security.md) |
 
 ## How this repository is checked
 
@@ -150,11 +169,14 @@ the tests below, and CI job *Self gate* runs `qi gate` on this repository's own 
 |---|---|---|
 | Lint incl. a docstring on every public item, formatting | ruff | Lint, format, types |
 | Types, package and tests | mypy `--strict` | Lint, format, types |
-| 503 unit and integration tests, branch coverage >= 90 % (98 %), warnings are errors | pytest | Tests (Python 3.12, 3.13) |
-| 13 dashboard tests in a real browser, incl. 390 px phone width | Playwright, Chromium | Dashboard in Chromium |
+| 765 unit and integration tests, branch coverage >= 90 % (98 %), warnings are errors | pytest | Tests (Python 3.12, 3.13 on Ubuntu 26.04; 3.13 on Windows and on the latest Ubuntu image) |
+| 20 dashboard tests in a real browser, incl. 390 px phone width and a login | Playwright, Chromium | Dashboard in Chromium |
+| Known vulnerabilities in installed dependencies | pip-audit | Dependency audit |
 | Sample gates: passed, failed, failed on a real attempt, incomplete | `qi gate` | Quality gates (sample data) |
 | The plan's acceptance criteria | `qi gate` on this repo's own results | Self gate |
-| Reproducible demonstration | `tools/demo.py` | Demonstration from a clean checkout |
+| Reproducible demonstration | `tools/demo.py` | Demonstration from a clean checkout (Ubuntu and Windows) |
+
+Runner images and actions are pinned ([CI](docs/ci.md)).
 
 On Windows, the `e2e` extra (Playwright) installs files with very long paths: clone into a short
 folder (for example `D:\src`) or enable Windows long paths, otherwise `pip` stops with
