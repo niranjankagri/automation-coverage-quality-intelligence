@@ -61,6 +61,7 @@ def test_requirement_detail_and_404(client: TestClient) -> None:
     missing = client.get("/api/requirements/NOPE-1")
 
     assert [c["id"] for c in detail["test_cases"]] == ["TC-SHOP-CHECKOUT"]
+    assert detail["requirement"]["description"].startswith("Logged-in customers can order")  # from the CSV
     assert detail["test_cases"][0]["execution_status"] == "passing"
     assert missing.status_code == 404
     assert missing.json()["detail"] == "unknown requirement 'NOPE-1'"

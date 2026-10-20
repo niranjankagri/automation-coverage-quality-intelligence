@@ -58,6 +58,7 @@ def test_requirement_detail_shows_cases_and_latest_executions(page: Page) -> Non
     page.goto("/#/requirement/SHOP-006")
 
     expect(page.get_by_role("heading", name=re.compile("^SHOP-006"))).to_be_visible()
+    expect(page.get_by_text("guests are asked to sign in at checkout.")).to_be_visible()  # description
     expect(page.get_by_text("TC-SHOP-CHECKOUT")).to_be_visible()
     expect(page.locator("tbody tr")).to_have_count(4)
 

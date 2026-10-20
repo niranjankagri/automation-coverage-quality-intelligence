@@ -330,6 +330,17 @@
             "title": "Criticality",
             "type": "string"
           },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
           "execution_status": {
             "title": "Execution Status",
             "type": "string"
@@ -369,6 +380,7 @@
         "required": [
           "id",
           "title",
+          "description",
           "feature",
           "criticality",
           "priority",

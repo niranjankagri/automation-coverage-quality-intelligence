@@ -261,6 +261,7 @@ async function requirementDetail(id) {
   return [
     h("p", {}, h("a", { href: link("/requirements") }, "← Requirements")),
     h("h1", {}, `${r.id}: ${r.title}`),
+    r.description ? h("p", { class: "lead" }, r.description) : null,
     h("dl", { class: "meta" }, h("dt", {}, "Feature"), h("dd", {}, r.feature), h("dt", {}, "Criticality"), h("dd", {}, r.criticality), h("dt", {}, "Priority / risk"), h("dd", {}, `${r.priority} / ${r.risk}`), h("dt", {}, "Platforms"), h("dd", {}, r.platforms.join(", ") || "unspecified"), h("dt", {}, "Coverage"), h("dd", {}, badge(r.coverage_status)), h("dt", {}, "Execution"), h("dd", {}, badge(r.execution_status))),
     h("h2", {}, `Test cases (${d.test_cases.length})`),
     d.test_cases.length

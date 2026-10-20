@@ -95,6 +95,7 @@ class RequirementRow(View):
 
     id: str
     title: str
+    description: str | None
     feature: str
     criticality: str
     priority: str
@@ -511,6 +512,7 @@ class Workspace:
         return RequirementRow(
             id=requirement.id,
             title=requirement.title,
+            description=requirement.description,
             feature=requirement.feature or UNSPECIFIED,
             criticality=_text(requirement.criticality),
             priority=_text(requirement.priority),
