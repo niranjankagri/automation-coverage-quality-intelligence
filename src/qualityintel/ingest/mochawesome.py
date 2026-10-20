@@ -30,7 +30,13 @@ from collections.abc import Iterator, Mapping
 from pathlib import Path
 from typing import Any
 
-from qualityintel.ingest.errors import MalformedResultError, UnsupportedFormatError
+from qualityintel.ingest.errors import (
+    STRUCTURE_ERRORS,
+    IngestError,
+    MalformedResultError,
+    UnsupportedFormatError,
+    unexpected_structure,
+)
 from qualityintel.ingest.junit import MAX_FILE_BYTES, ParsedFile, merge_context, parse_timestamp
 from qualityintel.models.enums import Outcome
 from qualityintel.models.results import MAX_FAILURE_TEXT, FailureDetails, RunContext, TestResult, TestRun
@@ -77,11 +83,22 @@ def parse_mochawesome(
         report = json.loads(data)
     except (json.JSONDecodeError, UnicodeDecodeError) as error:
         raise MalformedResultError(source, f"not valid JSON ({error})") from None
+    except RecursionError as error:
+        raise unexpected_structure(source, error) from None
     if not isinstance(report, dict) or "stats" not in report or not isinstance(report.get("results"), list):
         raise UnsupportedFormatError(
             source, "JSON without mochawesome 'stats' and 'results': not a mochawesome report"
         )
+    try:
+        return _convert(report, data, source, context)
+    except IngestError:
+        raise
+    except STRUCTURE_ERRORS as error:
+        raise unexpected_structure(source, error) from None
 
+
+def _convert(report: dict[str, Any], data: bytes, source: str, context: RunContext | None) -> ParsedFile:
+    """A recognised mochawesome report as a ParsedFile (fields of an unexpected type raise)."""
     warnings: list[str] = []
     results = [_result(test, spec, titles, source) for spec, titles, test in _tests(report["results"])]
     if not results:

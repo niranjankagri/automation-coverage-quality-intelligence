@@ -33,7 +33,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from qualityintel.ingest.errors import MalformedResultError, UnsupportedFormatError
+from qualityintel.ingest.errors import (
+    STRUCTURE_ERRORS,
+    IngestError,
+    MalformedResultError,
+    UnsupportedFormatError,
+    unexpected_structure,
+)
 from qualityintel.ingest.junit import MAX_FILE_BYTES, ParsedFile, merge_context
 from qualityintel.models.enums import Outcome
 from qualityintel.models.results import MAX_FAILURE_TEXT, FailureDetails, RunContext, TestResult, TestRun
@@ -66,10 +72,20 @@ def read_allure_folder(
 
     Raises:
         MalformedResultError: A result file is not valid JSON, misses ``name`` or ``status``,
-            or the folder is larger than the size limit.
+            has fields of an unexpected type, or the folder is larger than the size limit.
         UnsupportedFormatError: The folder holds no Allure result files.
     """
     name = source or folder.name
+    try:
+        return _read(folder, name, context)
+    except IngestError:
+        raise
+    except STRUCTURE_ERRORS as error:
+        raise unexpected_structure(name, error) from None
+
+
+def _read(folder: Path, name: str, context: RunContext | None) -> ParsedFile:
+    """``read_allure_folder`` itself (fields of an unexpected type raise)."""
     files = sorted(folder.glob(f"*{RESULT_SUFFIX}"))
     if not files:
         raise UnsupportedFormatError(name, f"no *{RESULT_SUFFIX} files: not an Allure results folder")

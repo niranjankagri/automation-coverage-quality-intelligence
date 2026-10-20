@@ -23,8 +23,15 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from xml.parsers import expat
 
-from qualityintel.ingest.errors import MalformedResultError, UnsupportedFormatError
+from qualityintel.ingest.errors import (
+    STRUCTURE_ERRORS,
+    IngestError,
+    MalformedResultError,
+    UnsupportedFormatError,
+    unexpected_structure,
+)
 from qualityintel.models.enums import Outcome
 from qualityintel.models.results import MAX_FAILURE_TEXT, FailureDetails, RunContext, TestResult, TestRun
 
@@ -114,7 +121,7 @@ def parse_junit(
         raise MalformedResultError(source, f"content is larger than the limit of {MAX_FILE_BYTES} bytes")
     if not data.strip():
         raise MalformedResultError(source, "file is empty")
-    if b"<!DOCTYPE" in data or b"<!ENTITY" in data:
+    if _declares_dtd(data):
         # JUnit XML never needs a DTD; refusing it rules out entity-expansion attacks
         raise UnsupportedFormatError(source, "DTDs and entity declarations are not allowed in result files")
     try:
@@ -122,7 +129,47 @@ def parse_junit(
     except ET.ParseError as error:
         line, column = error.position
         raise MalformedResultError(source, f"not well-formed XML (line {line}, column {column})") from None
+    except ValueError as error:  # e.g. an encoding the XML parser cannot read
+        raise MalformedResultError(source, f"cannot be read as XML ({error})") from None
+    try:
+        return _collect(root, data, source, context, id_pattern)
+    except IngestError:
+        raise
+    except STRUCTURE_ERRORS as error:
+        raise unexpected_structure(source, error) from None
 
+
+class _DtdFound(Exception):
+    """Raised inside the scan when a DOCTYPE or entity declaration is seen."""
+
+
+def _declares_dtd(data: bytes) -> bool:
+    """Whether the document declares a DTD or an entity, as the XML parser itself reads it.
+
+    A byte search for ``<!DOCTYPE`` misses UTF-16 documents (verified: one passed and had its
+    entities expanded), so the document is scanned by expat, which decodes every encoding the
+    real parse accepts. A document expat cannot read is left to the real parse to report.
+    """
+
+    def found(*_: object) -> None:
+        raise _DtdFound
+
+    scanner = expat.ParserCreate()
+    scanner.StartDoctypeDeclHandler = found
+    scanner.EntityDeclHandler = found
+    try:
+        scanner.Parse(data, True)
+    except _DtdFound:
+        return True
+    except (expat.ExpatError, ValueError):
+        return False
+    return False
+
+
+def _collect(
+    root: ET.Element, data: bytes, source: str, context: RunContext | None, id_pattern: re.Pattern[str]
+) -> ParsedFile:
+    """Turn a parsed JUnit document into a ParsedFile (``parse_junit`` after the checks)."""
     root_tag = _local(root.tag)
     if root_tag not in {"testsuites", "testsuite"}:
         raise UnsupportedFormatError(
