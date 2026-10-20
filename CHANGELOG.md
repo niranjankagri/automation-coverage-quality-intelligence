@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- **CI collection** (`qi collect`, [docs/collection.md](docs/collection.md),
+  [ADR 0007](docs/adr/0007-ci-collection.md)): a producers file names, per job, the artifact
+  and the one path to import; completed runs of four public repositories are collected as
+  pipeline executions (pipeline id `<repository>#<run id>`, attempt, branch, commit), one
+  transaction per attempt with a collection record (GitHub conclusion, complete/incomplete,
+  problems); idempotent; transient failures are retried, not recorded; artifacts unpacked
+  safely; daily ingestion audit; `qi gate --database --pipeline` decides on a collected
+  pipeline; scheduled workflow `collect.yml`. History schema 4.
+
 ## 1.1.0 (2026-10-20)
 
 - **Portfolio:** featured project 17 on https://niranjankagri.github.io with genuine dashboard screenshots.

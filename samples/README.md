@@ -69,6 +69,7 @@ set they were written for. Cleaned with [`tools/sanitize_reports.py`](../tools/s
 | `cypress-taskboard-api` | Cypress 16.2 + cypress-mochawesome-reporter 5 (HTML report, JSON taken from its `data-raw`) | [cypress-typescript-framework](https://github.com/niranjankagri/cypress-typescript-framework), API job (default browser Electron) | 4 (16-19 Oct), 31 tests each |
 | `cypress-taskboard-ui-chrome` | same | same repository, UI job on Chrome | 4 (16-19 Oct), 33 tests each |
 | `allure-enterprise-api` | Allure 2 TestNG adapter (`allure-results` folder, one folder per run) | [enterprise-test-automation-framework](https://github.com/niranjankagri/enterprise-test-automation-framework), API job | 5 (6-19 Oct), 57 tests each |
+| `allure-enterprise-nightly-full` | Allure 2 TestNG adapter | enterprise-test-automation-framework, nightly job *Full suite (Chrome)*, run 39385969773 (20 Oct) | 1, with 169 executions (its CI log: "169 passed"), incl. 4 invocations of one method (`invocationCount`) |
 | `junit-enterprise-api` | Maven Surefire, the same CI job and run as `allure-enterprise-api` | same | 5 |
 
 One run per day was kept (the latest of that day). All of these runs passed.

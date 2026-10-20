@@ -133,6 +133,12 @@ title = "Hostile input never crashes or executes; no unauthenticated dashboard o
 feature = "Security"
 criticality = "critical"
 
+[[requirement]]
+id = "COL-01"
+title = "CI results are collected without manual copying: idempotent per pipeline attempt, one format per job, failed and cancelled runs distinguishable, missing reports visible, safe against hostile artifacts"
+feature = "Collection"
+criticality = "critical"
+
 # ---- Test cases ----------------------------------------------------------------------------
 
 [[test_case]]
@@ -429,4 +435,18 @@ automated_by = [
   "tests.unit.test_config::test_password_is_optional_checked_and_never_shown",
   "tests.unit.gates.test_reports::test_markdown_summary_shows_untrusted_text_literally",
   "tests.e2e.test_dashboard::test_with_a_login_the_whole_dashboard_works_after_signing_in",
+]
+
+[[test_case]]
+id = "TC-COLLECTION"
+title = "Archive safety, GitHub client, producers file, collector, audit, collect command, gate on collected pipelines"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["COL-01"]
+automated_by = [
+  "tests.unit.collect.test_archive::*",
+  "tests.unit.collect.test_github::*",
+  "tests.unit.collect.test_collector::*",
+  "tests.unit.collect.test_config_and_audit::*",
+  "tests.unit.collect.test_cli_collect::*",
 ]
