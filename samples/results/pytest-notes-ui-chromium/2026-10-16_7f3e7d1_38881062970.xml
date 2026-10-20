@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests">
+  <testsuite name="pytest" errors="0" failures="0" skipped="0" tests="14" time="18.141" timestamp="2026-10-16T09:32:39.660328+00:00">
+    <properties>
+      <property name="build" value="7f3e7d1" />
+      <property name="framework" value="pytest" />
+      <property name="environment" value="ci" />
+      <property name="platform" value="linux" />
+      <property name="browser" value="chromium" />
+    </properties>
+    <testcase classname="tests.e2e.test_api_and_ui" name="test_note_created_through_the_api_is_shown_in_the_app[chromium]" time="4.157" />
+    <testcase classname="tests.e2e.test_api_and_ui" name="test_note_changed_through_the_api_shows_the_new_text[chromium]" time="4.689" />
+    <testcase classname="tests.e2e.test_api_and_ui" name="test_note_completed_in_the_app_is_completed_in_the_api[chromium]" time="4.667" />
+    <testcase classname="tests.e2e.test_api_and_ui" name="test_category_filter_shows_only_that_category[chromium]" time="2.671" />
+    <testcase classname="tests.ui.test_login" name="test_valid_login_opens_the_notes_page[chromium]" time="2.329" />
+    <testcase classname="tests.e2e.test_api_and_ui" name="test_note_deleted_in_the_app_is_gone_from_the_api[chromium]" time="3.277" />
+    <testcase classname="tests.ui.test_login" name="test_wrong_password_shows_an_error[chromium]" time="2.448" />
+    <testcase classname="tests.ui.test_login" name="test_empty_form_asks_for_email_and_password[chromium]" time="1.066" />
+    <testcase classname="tests.ui.test_notes" name="test_note_added_through_the_form_is_listed[chromium]" time="3.209" />
+    <testcase classname="tests.ui.test_notes" name="test_deleted_note_disappears_after_confirming[chromium]" time="3.997" />
+    <testcase classname="tests.ui.test_notes" name="test_completing_a_note_updates_the_progress[chromium]" time="5.005" />
+    <testcase classname="tests.ui.test_notes" name="test_completing_every_note_shows_all_done[chromium]" time="3.517" />
+    <testcase classname="tests.ui.test_notes" name="test_search_shows_only_matching_notes[chromium]" time="3.250" />
+    <testcase classname="tests.ui.test_notes" name="test_search_without_match_says_so[chromium]" time="2.911" />
+  </testsuite>
+</testsuites>
