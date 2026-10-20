@@ -37,7 +37,19 @@ from qualityintel.history.analysis import (
 )
 from qualityintel.history.store import HistoryError, HistoryStore
 from qualityintel.ingest.batch import Batch, import_results
-from qualityintel.ingest.catalog_file import CatalogFileError, load_catalog
+from qualityintel.ingest.catalog_file import (
+    CatalogFileError,
+    load_catalog,
+    requirements_by_file,
+    requirements_in,
+)
+from qualityintel.ingest.errors import IngestError
+from qualityintel.ingest.requirements_csv import (
+    is_generated,
+    plan_import,
+    read_requirements_csv,
+    render_requirements_toml,
+)
 from qualityintel.models.catalog import Catalog
 from qualityintel.models.enums import Outcome
 from qualityintel.models.metrics import execution_pass_rate
@@ -106,6 +118,24 @@ def build_parser() -> argparse.ArgumentParser:
     gate.add_argument(
         "--summary", type=Path, metavar="FILE", help="append a Markdown summary (e.g. $GITHUB_STEP_SUMMARY)"
     )
+
+    requirements = commands.add_parser("requirements", help="import requirements from a CSV file")
+    requirement_commands = requirements.add_subparsers(
+        dest="requirements_command", metavar="<action>", required=True
+    )
+    csv_import = requirement_commands.add_parser(
+        "import", help="preview (default) or apply a CSV import into a generated requirements file"
+    )
+    csv_import.add_argument("csv", type=Path, metavar="CSV", help="requirements CSV (UTF-8, header row)")
+    csv_import.add_argument(
+        "--into", required=True, type=Path, help="generated requirements file (TOML); created if missing"
+    )
+    csv_import.add_argument(
+        "--catalog",
+        type=Path,
+        help="catalog that includes --into: checked for duplicate ids and still-valid links",
+    )
+    csv_import.add_argument("--apply", action="store_true", help="write the file (without it: preview only)")
 
     history = commands.add_parser(
         "history", help="execution history: import runs, stability report, compare runs"
@@ -433,6 +463,85 @@ def _write_gate_reports(document: dict[str, object], args: argparse.Namespace) -
             summary.write(to_markdown(document))
 
 
+def _cmd_requirements(args: argparse.Namespace) -> int:
+    """Preview or apply a requirements CSV import (all-or-nothing; see docs/requirements-import.md)."""
+    target: Path = args.into
+    if not is_generated(target):
+        print(
+            f"qi: error: {target.name} was not written by `qi requirements import`; "
+            "refusing to overwrite a hand-written file (use a separate file and include it from the catalog)",
+            file=sys.stderr,
+        )
+        return EXIT_USAGE
+    try:
+        parsed = read_requirements_csv(args.csv)
+        existing = requirements_in(target)
+        elsewhere = _ids_defined_elsewhere(args.catalog, target)
+    except IngestError as error:
+        print(f"qi: error: {error}", file=sys.stderr)
+        return EXIT_INPUT
+    plan = plan_import(parsed.requirements, existing, elsewhere)
+
+    mode = "APPLY" if args.apply else "PREVIEW (nothing written; add --apply to write)"
+    print(f"{parsed.source} -> {target.name}: {mode}")
+    print(f"  rows {parsed.rows}: {len(parsed.requirements)} valid, {len(parsed.errors)} invalid")
+    print(
+        f"  new {len(plan.added)}, changed {len(plan.changed)}, unchanged {len(plan.unchanged)}, "
+        f"kept (in {target.name}, not in the file) {len(plan.kept)}"
+    )
+    for requirement in plan.added:
+        print(f"  + {requirement.id}  {requirement.title}")
+    for before, _, fields in plan.changed:
+        print(f"  ~ {before.id}  changed: {', '.join(fields)}")
+    for row_error in parsed.errors:
+        print(f"qi: error: {parsed.source}: {row_error}", file=sys.stderr)
+    for identifier in plan.conflicts:
+        print(f"qi: error: {identifier} is already defined in another catalog file", file=sys.stderr)
+    if parsed.errors or plan.conflicts:
+        print("  nothing written: fix the problems above and run the import again")
+        return EXIT_INPUT
+    if not args.apply:
+        return EXIT_OK
+
+    previous = target.read_text(encoding="utf-8") if target.exists() else None
+    text = render_requirements_toml(plan.result, parsed.source)
+    if text == previous:
+        print(f"  {target.name} is already up to date")
+    else:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(text, encoding="utf-8")
+        print(f"  wrote {target} ({len(plan.result)} requirements)")
+    if args.catalog is not None:
+        try:
+            catalog = load_catalog(args.catalog)
+        except IngestError as problem:
+            # The import broke the catalog: put the old file back and say why
+            if previous is None:
+                target.unlink()
+            else:
+                target.write_text(previous, encoding="utf-8")
+            print(
+                f"qi: error: the catalog would no longer load, {target.name} restored: {problem}",
+                file=sys.stderr,
+            )
+            return EXIT_INPUT
+        counts = f"{len(catalog.requirements)} requirements, {len(catalog.links)} links"
+        print(f"  {args.catalog.name} loads: {counts}")
+    return EXIT_OK
+
+
+def _ids_defined_elsewhere(catalog: Path | None, target: Path) -> set[str]:
+    """Requirement ids the catalog (or its other includes) defines outside the target file."""
+    if catalog is None:
+        return set()
+    return {
+        identifier
+        for name, ids in requirements_by_file(catalog).items()
+        if name != target.name
+        for identifier in ids
+    }
+
+
 def _cmd_dashboard(args: argparse.Namespace) -> int:
     """Load the data once, then serve it until interrupted (Ctrl+C)."""
     try:
@@ -480,6 +589,7 @@ COMMANDS: dict[str, Callable[[argparse.Namespace], int]] = {
     "dashboard": _cmd_dashboard,
     "history": _cmd_history,
     "gate": _cmd_gate,
+    "requirements": _cmd_requirements,
 }
 
 
