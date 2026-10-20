@@ -183,7 +183,7 @@ def _execution_rules(report: TraceabilityReport, config: GateConfig) -> list[Rul
                 "execution pass rate",
                 report.pass_rate,
                 rules.min_pass_rate,
-                "passed of passed + failed + error, latest run per context",
+                "passed of passed + failed + error in the counted runs",
                 config,
             )
         )

@@ -661,7 +661,8 @@ async function render() {
     if (!handler) throw new Error("This page does not exist.");
     const content = await handler(parts);
     if (current !== renderCount) return; // a newer address is being rendered
-    view.replaceChildren(...[content].flat(3));
+    // Views may leave empty slots (cond ? node : null); they must not show up as "null"
+    view.replaceChildren(...[content].flat(3).filter((node) => node != null));
     statusLine.textContent = "";
     document.title = `${document.querySelector("#view h1")?.textContent ?? "Overview"} · Quality Intelligence`;
   } catch (error) {

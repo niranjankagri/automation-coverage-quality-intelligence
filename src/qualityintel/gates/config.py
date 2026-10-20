@@ -55,7 +55,7 @@ class CoverageRules(_Section):
 
 
 class ExecutionRules(_Section):
-    """Thresholds on the execution snapshot (latest run per context)."""
+    """Thresholds on the counted runs: latest run per context, or every run of a pipeline execution."""
 
     min_pass_rate: Percent | None = None
     max_failing_critical: Count | None = None

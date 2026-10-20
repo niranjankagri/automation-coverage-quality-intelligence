@@ -19,7 +19,7 @@ import time
 from pathlib import Path
 
 import uvicorn
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import Browser, sync_playwright
 
 from qualityintel.cli import main as cli_main
 from qualityintel.dashboard.app import create_app
@@ -28,6 +28,8 @@ from qualityintel.ingest.catalog_file import load_catalog
 from qualityintel.workspace import Workspace
 
 ROOT = Path(__file__).parents[1]
+PIPELINES = ROOT / "samples" / "pipelines" / "cypress-taskboard"
+TASKBOARD_JOBS = ("api", "ui-chrome", "ui-firefox", "ui-edge", "component")
 SHOTS = [
     # (file name, hash route, viewport width, colour scheme, full page)
     ("dashboard-overview.png", "#/", 1280, "light", True),
@@ -43,6 +45,10 @@ SHOTS = [
     ("dashboard-stability.png", "#/stability", 1280, "light", True),
     ("dashboard-trends.png", "#/trends", 1280, "light", False),
     ("dashboard-phone.png", "#/", 390, "light", False),
+]
+# Taken on the two real TaskBoard pipeline executions (samples/pipelines)
+PIPELINE_SHOTS = [
+    ("dashboard-pipelines.png", f"#/pipelines?jobs={','.join(TASKBOARD_JOBS)}", 1280, "light", True),
 ]
 
 
@@ -71,6 +77,50 @@ def main(argv: list[str]) -> int:
         workspace = Workspace(
             load_catalog(ROOT / "samples" / "catalog.toml"), store.runs(), store.snapshots()
         )
+    pipelines = pipeline_workspace(Path(tempfile.mkdtemp()) / "pipelines.db")
+    if pipelines is None:
+        print("pipeline samples did not import cleanly", file=sys.stderr)
+        return 3
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch()
+        capture(browser, workspace, SHOTS, out)
+        capture(browser, pipelines, PIPELINE_SHOTS, out)
+        gate_reports(browser, out)
+        browser.close()
+    return 0
+
+
+def pipeline_workspace(database: Path) -> Workspace | None:
+    """Both TaskBoard pipelines, imported with the documented command (one call per execution)."""
+    for folder in sorted(p for p in PIPELINES.iterdir() if p.is_dir()):
+        _, commit, run_id = folder.name.split("_")
+        jobs = [
+            arg for report in sorted(folder.glob("*.json")) for arg in ("--job", f"{report.stem}={report}")
+        ]
+        with contextlib.redirect_stdout(io.StringIO()):
+            code = cli_main(
+                [
+                    "history",
+                    "import",
+                    "--database",
+                    str(database),
+                    "--pipeline",
+                    run_id,
+                    "--commit",
+                    commit,
+                    *jobs,
+                ]
+            )
+        if code != 0:
+            return None
+    with HistoryStore(database) as store:
+        return Workspace(load_catalog(PIPELINES / "catalog.toml"), store.runs())
+
+
+def capture(
+    browser: Browser, workspace: Workspace, shots: list[tuple[str, str, int, str, bool]], out: Path
+) -> None:
+    """Serve one workspace on a free port and take its screenshots."""
     with socket.socket() as probe:
         probe.bind(("127.0.0.1", 0))
         port = int(probe.getsockname()[1])
@@ -82,45 +132,62 @@ def main(argv: list[str]) -> int:
     while not server.started:
         time.sleep(0.05)
     try:
-        with sync_playwright() as playwright:
-            browser = playwright.chromium.launch()
-            for name, route, width, scheme, full in SHOTS:
-                context = browser.new_context(
-                    viewport={"width": width, "height": 900 if width > 600 else 844},
-                    color_scheme=scheme,  # type: ignore[arg-type]
-                    device_scale_factor=1 if width > 600 else 2,
-                )
-                page = context.new_page()
-                page.goto(f"http://127.0.0.1:{port}/{route}")
-                page.locator("#view h1").wait_for()
-                page.wait_for_load_state("networkidle")
-                page.screenshot(path=out / name, full_page=full)
-                print(f"saved {out / name}")
-                context.close()
-            # The release gate's HTML report, produced by the real command
-            with tempfile.TemporaryDirectory() as folder:
-                report = Path(folder) / "release.html"
-                gate = [
-                    "gate",
-                    "--catalog",
-                    str(ROOT / "samples" / "catalog.toml"),
-                    "--config",
-                    str(ROOT / "samples" / "gates" / "release.toml"),
-                    str(ROOT / "samples" / "results"),
-                    "--html",
-                    str(report),
-                ]
-                with contextlib.redirect_stdout(io.StringIO()):
-                    cli_main(gate)
-                page = browser.new_page(viewport={"width": 1100, "height": 900})
-                page.goto(report.as_uri())
-                page.screenshot(path=out / "gate-report-release.png", full_page=True)
-                print(f"saved {out / 'gate-report-release.png'}")
-            browser.close()
+        for name, route, width, scheme, full in shots:
+            context = browser.new_context(
+                viewport={"width": width, "height": 900 if width > 600 else 844},
+                color_scheme=scheme,  # type: ignore[arg-type]
+                device_scale_factor=1 if width > 600 else 2,
+            )
+            page = context.new_page()
+            page.goto(f"http://127.0.0.1:{port}/{route}")
+            page.locator("#view h1").wait_for()
+            page.wait_for_load_state("networkidle")
+            page.screenshot(path=out / name, full_page=full)
+            print(f"saved {out / name}")
+            context.close()
     finally:
         server.should_exit = True
         thread.join(timeout=10)
-    return 0
+
+
+def gate_reports(browser: Browser, out: Path) -> None:
+    """HTML gate reports produced by the real command: the sample release, the cancelled pipeline."""
+    cancelled = PIPELINES / "2026-10-16_a15d3c7_38842296207"
+    _, commit, run_id = cancelled.name.split("_")
+    gates = {
+        "gate-report-release.png": [
+            "--catalog",
+            str(ROOT / "samples" / "catalog.toml"),
+            "--config",
+            str(ROOT / "samples" / "gates" / "release.toml"),
+            str(ROOT / "samples" / "results"),
+        ],
+        "gate-report-pipeline.png": [
+            "--catalog",
+            str(PIPELINES / "catalog.toml"),
+            "--config",
+            str(PIPELINES / "gate.toml"),
+            "--pipeline",
+            run_id,
+            "--commit",
+            commit,
+            *[
+                arg
+                for report in sorted(cancelled.glob("*.json"))
+                for arg in ("--job", f"{report.stem}={report}")
+            ],
+        ],
+    }
+    for name, args in gates.items():
+        with tempfile.TemporaryDirectory() as folder:
+            report = Path(folder) / "report.html"
+            with contextlib.redirect_stdout(io.StringIO()):
+                cli_main(["gate", *args, "--html", str(report)])
+            page = browser.new_page(viewport={"width": 1100, "height": 900})
+            page.goto(report.as_uri())
+            page.screenshot(path=out / name, full_page=True)
+            print(f"saved {out / name}")
+            page.close()
 
 
 if __name__ == "__main__":

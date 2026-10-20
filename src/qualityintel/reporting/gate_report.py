@@ -271,7 +271,12 @@ def to_html(document: dict[str, Any]) -> str:
         cards=cards,
         gaps=gap_rows,
         inputs=f"Catalog <code>{_h(inputs['catalog'])}</code>, "
-        f"{inputs['requirements_in_scope']} requirement(s) in scope. Latest run per context:",
+        f"{inputs['requirements_in_scope']} requirement(s) in scope. "
+        + (
+            f"Every run of pipeline {_h(pipeline['id'])} (latest attempt of each job):"
+            if pipeline
+            else "Latest run per context:"
+        ),
         run_rows=run_rows or "<tr><td colspan='9'>no runs</td></tr>",
     )
 

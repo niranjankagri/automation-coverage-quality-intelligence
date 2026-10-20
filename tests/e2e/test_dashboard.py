@@ -253,6 +253,7 @@ def test_pipelines_page_shows_the_cancelled_run_as_incomplete(pipelines_page: Pa
     expect(complete.locator(".badge")).to_have_text("complete")
     expect(complete.locator("tbody tr")).to_have_count(5)
     expect(page.get_by_role("note")).to_have_count(0)
+    expect(page.locator("#view")).not_to_contain_text("null")  # an empty slot must not print "null"
 
 
 def test_runs_page_names_the_pipeline_job(pipelines_page: Page) -> None:
