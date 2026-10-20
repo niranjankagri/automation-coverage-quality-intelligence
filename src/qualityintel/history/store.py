@@ -23,10 +23,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from types import TracebackType
 
+from qualityintel.history.trends import CoverageSnapshot
 from qualityintel.models.enums import Outcome
+from qualityintel.models.metrics import Ratio
 from qualityintel.models.results import FailureDetails, RunContext, TestResult, TestRun
 
-SCHEMA_VERSION = 1
+# 1: runs and results. 2: coverage snapshots (older files are upgraded when opened)
+SCHEMA_VERSION = 2
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS schema_version (version INTEGER NOT NULL);
@@ -59,6 +62,15 @@ CREATE TABLE IF NOT EXISTS results (
 );
 CREATE INDEX IF NOT EXISTS results_by_test ON results (classname, name);
 CREATE INDEX IF NOT EXISTS runs_by_start ON runs (started_at);
+CREATE TABLE IF NOT EXISTS coverage_snapshots (
+    taken_at                    TEXT    NOT NULL,
+    catalog                     TEXT    NOT NULL,
+    catalog_sha256              TEXT    NOT NULL,
+    requirements                INTEGER NOT NULL,
+    requirement_coverage        TEXT    NOT NULL,
+    automation_coverage         TEXT    NOT NULL,
+    automated_requirement_coverage TEXT NOT NULL
+);
 """
 
 
@@ -192,6 +204,50 @@ class HistoryStore:
             deleted = db.execute("DELETE FROM runs WHERE run_id = ?", (run_id,)).rowcount
         return deleted > 0
 
+    def add_snapshot(self, snapshot: CoverageSnapshot) -> bool:
+        """Store a coverage snapshot unless the catalog is unchanged since the latest one."""
+        latest = self._db.execute(
+            "SELECT catalog_sha256 FROM coverage_snapshots WHERE catalog = ? ORDER BY taken_at DESC LIMIT 1",
+            (snapshot.catalog,),
+        ).fetchone()
+        if latest is not None and latest[0] == snapshot.catalog_sha256:
+            return False
+        with self._transaction() as db:
+            db.execute(
+                "INSERT INTO coverage_snapshots VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (
+                    _iso(snapshot.taken_at),
+                    snapshot.catalog,
+                    snapshot.catalog_sha256,
+                    snapshot.requirements,
+                    *(
+                        f"{ratio.numerator}/{ratio.denominator}"
+                        for ratio in (
+                            snapshot.requirement_coverage,
+                            snapshot.automation_coverage,
+                            snapshot.automated_requirement_coverage,
+                        )
+                    ),
+                ),
+            )
+        return True
+
+    def snapshots(self) -> list[CoverageSnapshot]:
+        """Every coverage snapshot, oldest first."""
+        rows = self._db.execute("SELECT * FROM coverage_snapshots ORDER BY taken_at").fetchall()
+        return [
+            CoverageSnapshot(
+                taken_at=_parse(taken_at) or datetime.now(UTC),
+                catalog=catalog,
+                catalog_sha256=sha,
+                requirements=requirements,
+                requirement_coverage=_ratio(req),
+                automation_coverage=_ratio(auto),
+                automated_requirement_coverage=_ratio(auto_req),
+            )
+            for taken_at, catalog, sha, requirements, req, auto, auto_req in rows
+        ]
+
     # ---- internals -----------------------------------------------------------------------
 
     def _migrate(self) -> None:
@@ -206,6 +262,10 @@ class HistoryStore:
                 f"{self.path.name}: written by a newer version "
                 f"(schema {row[0]}, this version reads {SCHEMA_VERSION})"
             )
+        elif row[0] < SCHEMA_VERSION:
+            # The new tables were created above (IF NOT EXISTS); existing data is untouched
+            self._db.execute("UPDATE schema_version SET version = ?", (SCHEMA_VERSION,))
+            self._db.commit()
 
     @contextmanager
     def _transaction(self) -> Iterator[sqlite3.Connection]:
@@ -256,6 +316,12 @@ class HistoryStore:
                 )
             )
         return grouped
+
+
+def _ratio(text: str) -> Ratio:
+    """``"38/42"`` back to a Ratio."""
+    numerator, denominator = text.split("/")
+    return Ratio(numerator=int(numerator), denominator=int(denominator))
 
 
 def _iso(value: datetime | None) -> str | None:
