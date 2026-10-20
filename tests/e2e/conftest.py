@@ -24,6 +24,9 @@ from qualityintel.workspace import Workspace
 
 SAMPLES = Path(__file__).parents[2] / "samples"
 PIPELINES = SAMPLES / "pipelines" / "cypress-taskboard"
+TASKBOARD_REPO = (
+    "niranjankagri/cypress-typescript-framework"  # where these reports come from (samples/README.md)
+)
 LOGIN = ("qi", "correct horse battery")
 
 
@@ -32,7 +35,12 @@ def pipeline_runs() -> list[TestRun]:
     runs: list[TestRun] = []
     for folder in sorted(p for p in PIPELINES.iterdir() if p.is_dir()):
         _, commit, run_id = folder.name.split("_")
-        runs += import_pipeline({r.stem: [str(r)] for r in folder.glob("*.json")}, run_id, commit=commit).runs
+        runs += import_pipeline(
+            {r.stem: [str(r)] for r in folder.glob("*.json")},
+            run_id,
+            commit=commit,
+            repository=TASKBOARD_REPO,
+        ).runs
     return runs
 
 

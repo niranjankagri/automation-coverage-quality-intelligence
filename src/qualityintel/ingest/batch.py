@@ -132,6 +132,7 @@ def import_pipeline(
     context: RunContext | None = None,
     id_pattern: re.Pattern[str] = DEFAULT_ID_PATTERN,
     job_contexts: Mapping[str, RunContext] | None = None,
+    repository: str | None = None,
 ) -> Batch:
     """Import the inputs of every job of one pipeline execution (docs/pipelines.md).
 
@@ -142,7 +143,14 @@ def import_pipeline(
     batch = Batch()
     seen: dict[str, str] = {}
     for job, inputs in jobs.items():
-        tag = PipelineJob(pipeline_id=pipeline_id, job=job, attempt=attempt, branch=branch, commit=commit)
+        tag = PipelineJob(
+            pipeline_id=pipeline_id,
+            job=job,
+            attempt=attempt,
+            branch=branch,
+            commit=commit,
+            repository=repository,
+        )
         part = import_results(inputs, context=(job_contexts or {}).get(job, context), id_pattern=id_pattern)
         batch.errors.extend(part.errors)
         batch.duplicates.extend(f"{job}: {note}" for note in part.duplicates)

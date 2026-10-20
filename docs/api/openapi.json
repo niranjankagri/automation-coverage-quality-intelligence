@@ -357,6 +357,14 @@
             "title": "Platforms",
             "type": "array"
           },
+          "repositories": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Repositories",
+            "type": "array"
+          },
           "test_types": {
             "items": {
               "type": "string"
@@ -428,7 +436,7 @@
       },
       "PipelineJob": {
         "additionalProperties": false,
-        "description": "The CI pipeline execution and job a run came from (docs/pipelines.md).\n\nOne pipeline execution (a GitHub Actions run, a GitLab pipeline, a Jenkins build) usually\nhas several jobs, and each job writes its own result files. Grouping them is what lets a\ngate refuse to decide on a pipeline whose jobs did not all report.\n\nAttributes:\n    pipeline_id: Identifier of the pipeline execution (e.g. ``github.run_id``).\n    job: Name of the job within the pipeline (``api``, ``ui-chrome``).\n    attempt: Re-run number of the job; the highest attempt of a job replaces earlier ones.\n    branch: Branch the pipeline ran on, if known.\n    commit: Commit the pipeline tested, if known.",
+        "description": "The CI pipeline execution and job a run came from (docs/pipelines.md).\n\nOne pipeline execution (a GitHub Actions run, a GitLab pipeline, a Jenkins build) usually\nhas several jobs, and each job writes its own result files. Grouping them is what lets a\ngate refuse to decide on a pipeline whose jobs did not all report.\n\nAttributes:\n    pipeline_id: Identifier of the pipeline execution (e.g. ``github.run_id``).\n    job: Name of the job within the pipeline (``api``, ``ui-chrome``).\n    attempt: Re-run number of the job; the highest attempt of a job replaces earlier ones.\n    branch: Branch the pipeline ran on, if known.\n    commit: Commit the pipeline tested, if known.\n    repository: The repository whose pipeline it is (``owner/name``), when known: set by\n        collection from the producers file, or given on import. Never guessed from names.",
         "properties": {
           "attempt": {
             "default": 1,
@@ -469,6 +477,18 @@
             "minLength": 1,
             "title": "Pipeline Id",
             "type": "string"
+          },
+          "repository": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repository"
           }
         },
         "required": [
@@ -1801,6 +1821,25 @@
               ],
               "title": "Until"
             }
+          },
+          {
+            "in": "query",
+            "name": "repository",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repository"
+            }
           }
         ],
         "responses": {
@@ -2037,6 +2076,25 @@
               ],
               "title": "Until"
             }
+          },
+          {
+            "in": "query",
+            "name": "repository",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repository"
+            }
           }
         ],
         "responses": {
@@ -2194,6 +2252,25 @@
               ],
               "title": "Until"
             }
+          },
+          {
+            "in": "query",
+            "name": "repository",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repository"
+            }
           }
         ],
         "responses": {
@@ -2337,6 +2414,25 @@
                 }
               ],
               "title": "Until"
+            }
+          },
+          {
+            "in": "query",
+            "name": "repository",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repository"
             }
           }
         ],
@@ -2550,6 +2646,25 @@
                 }
               ],
               "title": "Until"
+            }
+          },
+          {
+            "in": "query",
+            "name": "repository",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repository"
             }
           }
         ],
@@ -2815,6 +2930,25 @@
               ],
               "title": "Until"
             }
+          },
+          {
+            "in": "query",
+            "name": "repository",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repository"
+            }
           }
         ],
         "responses": {
@@ -2975,6 +3109,25 @@
               ],
               "title": "Until"
             }
+          },
+          {
+            "in": "query",
+            "name": "repository",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repository"
+            }
           }
         ],
         "responses": {
@@ -3132,6 +3285,25 @@
                 }
               ],
               "title": "Until"
+            }
+          },
+          {
+            "in": "query",
+            "name": "repository",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repository"
             }
           }
         ],
@@ -3352,6 +3524,25 @@
                 }
               ],
               "title": "Until"
+            }
+          },
+          {
+            "in": "query",
+            "name": "repository",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repository"
             }
           }
         ],

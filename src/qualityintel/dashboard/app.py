@@ -64,6 +64,7 @@ def run_scope(
     build: ListQuery = None,
     since: date | None = None,
     until: date | None = None,
+    repository: ListQuery = None,
 ) -> Scope:
     """Run filters from query parameters (``?browser=firefox&browser=chrome&since=2026-10-13``)."""
     if since is not None and until is not None and since > until:
@@ -74,6 +75,7 @@ def run_scope(
             environments=frozenset(environment or ()),
             browsers=frozenset(browser or ()),
             builds=frozenset(build or ()),
+            repositories=frozenset(repository or ()),
             since=since,
             until=until,
         )
@@ -91,11 +93,12 @@ def full_scope(
     build: ListQuery = None,
     since: date | None = None,
     until: date | None = None,
+    repository: ListQuery = None,
 ) -> Scope:
     """Catalog and run filters; values that can never match an enum are a client error."""
     _check("criticality", criticality or [], {c.value for c in Criticality})
     _check("test_type", test_type or [], {t.value for t in TestType})
-    runs = run_scope(framework, environment, browser, build, since, until).run_filters
+    runs = run_scope(framework, environment, browser, build, since, until, repository).run_filters
     return Scope(
         filters=Filters(
             features=frozenset(feature or ()),

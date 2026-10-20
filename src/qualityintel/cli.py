@@ -244,13 +244,14 @@ def add_pipeline_arguments(parser: argparse.ArgumentParser) -> None:
     group.add_argument("--attempt", type=int, default=1, help="re-run number of the jobs given (default 1)")
     group.add_argument("--branch", help="branch the pipeline ran on")
     group.add_argument("--commit", help="commit the pipeline tested")
+    group.add_argument("--repository", metavar="OWNER/NAME", help="repository the pipeline belongs to")
 
 
 def read_inputs(args: argparse.Namespace) -> Batch:
     """Result inputs as given: plain RESULTS, or ``--pipeline`` with ``--job NAME=PATH``."""
     if args.pipeline is None:
-        if args.job or args.branch or args.commit or args.attempt != 1:
-            raise UsageError("--job, --attempt, --branch and --commit need --pipeline")
+        if args.job or args.branch or args.commit or args.repository or args.attempt != 1:
+            raise UsageError("--job, --attempt, --branch, --commit and --repository need --pipeline")
         if not args.results:
             raise UsageError("give result files, or --pipeline with --job NAME=PATH")
         return import_results(args.results, context=context_from(args))
@@ -273,6 +274,7 @@ def read_inputs(args: argparse.Namespace) -> Batch:
         branch=args.branch,
         commit=args.commit,
         context=context_from(args),
+        repository=args.repository,
     )
 
 
@@ -538,7 +540,7 @@ def _cmd_gate(args: argparse.Namespace) -> int:
     runs: list[TestRun] = []
     execution = None
     # Any input option is checked, so a --job without --pipeline is an error, not ignored
-    pipeline_options = (args.pipeline, args.job, args.branch, args.commit, args.attempt != 1)
+    pipeline_options = (args.pipeline, args.job, args.branch, args.commit, args.repository, args.attempt != 1)
     if args.database is not None:
         if args.pipeline is None or args.job or args.results:
             raise UsageError(

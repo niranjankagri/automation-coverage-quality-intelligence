@@ -337,6 +337,7 @@ class Facets(View):
     environments: tuple[str, ...]
     browsers: tuple[str, ...]
     builds: tuple[str, ...]
+    repositories: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -387,6 +388,9 @@ class Workspace:
             environments=_sorted(r.context.environment for r in self.runs if r.context.environment),
             browsers=_sorted(r.context.browser for r in self.runs if r.context.browser),
             builds=_sorted(r.context.build for r in self.runs if r.context.build),
+            repositories=_sorted(
+                r.pipeline.repository for r in self.runs if r.pipeline and r.pipeline.repository
+            ),
         )
 
     def summary(self, scope: Scope = EVERYTHING) -> Summary:

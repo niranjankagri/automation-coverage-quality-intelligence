@@ -165,3 +165,18 @@ def test_one_execution_counts_every_run() -> None:
 
     assert build_report(cat, [first, second]).snapshot == (second,)
     assert build_report(cat, [first, second], one_execution=True).snapshot == (first, second)
+
+
+def test_runs_can_be_chosen_by_repository() -> None:
+    """The repository comes from the pipeline job; runs without one never match a chosen repository."""
+    pytest_run = run(result("A"), hour=9).model_copy(
+        update={"pipeline": PipelineJob(pipeline_id="p#1", job="api", repository="o/pytest")}
+    )
+    cypress_run = run(result("B"), hour=10).model_copy(
+        update={"pipeline": PipelineJob(pipeline_id="c#1", job="api", repository="o/cypress")}
+    )
+    plain = run(result("C"), hour=11)
+    chosen = RunFilters(repositories=frozenset({"o/pytest"}))
+
+    assert [r.run_id for r in (pytest_run, cypress_run, plain) if chosen.keeps(r)] == [pytest_run.run_id]
+    assert all(RunFilters().keeps(r) for r in (pytest_run, cypress_run, plain))

@@ -97,7 +97,13 @@ def _collect_run(
             values["build"] = values.get("build") or run.commit
             contexts[job.name] = RunContext.model_validate(values)
         batch = import_pipeline(
-            inputs, pid, attempt=run.attempt, branch=run.branch, commit=run.commit, job_contexts=contexts
+            inputs,
+            pid,
+            attempt=run.attempt,
+            branch=run.branch,
+            commit=run.commit,
+            job_contexts=contexts,
+            repository=producer.repository,
         )
         problems += [str(error) for error in batch.errors]
         execution = pipeline_execution(batch.runs, pid, [job.name for job in producer.job])

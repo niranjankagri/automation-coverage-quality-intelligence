@@ -231,3 +231,16 @@ def test_history_import_still_needs_some_input(capsys: pytest.CaptureFixture[str
     """No results and no --pipeline: a usage error, not an empty import."""
     assert main(["history", "import", "--database", str(tmp_path / "h.db")]) == EXIT_USAGE
     assert "give result files" in capsys.readouterr().err
+
+
+def test_a_pipeline_can_name_its_repository(setup: dict[str, str], tmp_path: Path) -> None:
+    """--repository is stored with every job; it is invalid without --pipeline or malformed."""
+    database = str(tmp_path / "h.db")
+    base = ["history", "import", "--database", database, "--pipeline", "77", "--job", f"api={setup['api']}"]
+
+    assert main([*base, "--repository", "niranjankagri/python-pytest-framework"]) == EXIT_OK
+    with HistoryStore(database) as store:
+        assert {r.pipeline.repository for r in store.runs() if r.pipeline} == {
+            "niranjankagri/python-pytest-framework"
+        }
+    assert main(gate(setup, "--repository", "o/r", setup["api"])) == EXIT_USAGE

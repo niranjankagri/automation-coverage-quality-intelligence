@@ -169,7 +169,7 @@ def test_version_2_database_gains_the_pipeline_columns(tmp_path: Path) -> None:
     assert old.pipeline is None
     assert old.context.build == "1.0"
     with closing(sqlite3.connect(path)) as db:
-        assert db.execute("SELECT version FROM schema_version").fetchone()[0] == SCHEMA_VERSION == 4
+        assert db.execute("SELECT version FROM schema_version").fetchone()[0] == SCHEMA_VERSION == 5
 
 
 # The runs table and version row as schema 2 wrote them (before pipeline columns existed)
@@ -181,3 +181,52 @@ CREATE TABLE runs (
     platform TEXT, build TEXT, started_at TEXT, imported_at TEXT NOT NULL
 );
 """
+
+
+def test_repository_is_stored_and_a_version_4_database_gains_the_column(tmp_path: Path) -> None:
+    """The pipeline's repository round-trips; an older file keeps its runs and gets the column."""
+    path = tmp_path / "v4.db"
+    with HistoryStore(path) as store:
+        store.add(run(result("A"), day=1))
+    with closing(sqlite3.connect(path)) as db, db:
+        db.execute("ALTER TABLE runs DROP COLUMN repository")
+        db.execute("UPDATE schema_version SET version = 4")
+
+    job = PipelineJob(pipeline_id="r#1", job="api", repository="niranjankagri/python-pytest-framework")
+    with HistoryStore(path) as store:
+        store.add(run(result("B"), day=2).model_copy(update={"pipeline": job}))
+        stored = {r.pipeline.repository if r.pipeline else None for r in store.runs()}
+
+    assert stored == {None, "niranjankagri/python-pytest-framework"}
+
+
+def test_runs_collected_before_schema_5_get_the_repository_of_their_collection(tmp_path: Path) -> None:
+    """The upgrade copies the repository from the collection record; other runs stay without one."""
+    from datetime import UTC, datetime
+
+    from qualityintel.models.collection import PipelineCollection
+
+    path = tmp_path / "old.db"
+    collected = run(result("A"), day=1).model_copy(
+        update={"pipeline": PipelineJob(pipeline_id="r#1", job="api")}
+    )
+    record = PipelineCollection(
+        pipeline_id="r#1",
+        attempt=1,
+        repository="niranjankagri/robot-framework-automation",
+        workflow="ci.yml",
+        conclusion="success",
+        collected_at=datetime(2026, 10, 20, tzinfo=UTC),
+        state="complete",
+    )
+    with HistoryStore(path) as store:
+        store.add_collection(record, [collected])
+        store.add(run(result("B"), day=2))
+    with closing(sqlite3.connect(path)) as db, db:
+        db.execute("UPDATE runs SET repository = NULL")
+        db.execute("UPDATE schema_version SET version = 4")
+
+    with HistoryStore(path) as store:
+        repositories = sorted(str(r.pipeline.repository if r.pipeline else None) for r in store.runs())
+
+    assert repositories == ["None", "niranjankagri/robot-framework-automation"]

@@ -331,3 +331,17 @@ def test_a_failed_refresh_keeps_the_data_and_warns(live_page: Page, live_server:
     expect(page.locator("#data-stale")).to_contain_text("The last refresh failed")
     page.reload()
     expect(rows).to_have_count(3)  # still the last good data
+
+
+def test_the_repository_selection_is_kept_across_pages_and_reloads(pipelines_page: Page) -> None:
+    """Chosen once, in the address, applied on every page."""
+    page = pipelines_page
+    page.goto("/#/runs")
+    page.get_by_label("Repository").select_option("niranjankagri/cypress-typescript-framework")
+
+    expect(page).to_have_url(re.compile(r"repository=niranjankagri%2Fcypress-typescript-framework"))
+    expect(page.locator("#view tbody tr")).to_have_count(9)
+    page.get_by_role("link", name="Pipelines", exact=True).click()
+    expect(page).to_have_url(re.compile(r"#/pipelines\?.*repository="))
+    page.reload()
+    expect(page.get_by_label("Repository")).to_have_value("niranjankagri/cypress-typescript-framework")

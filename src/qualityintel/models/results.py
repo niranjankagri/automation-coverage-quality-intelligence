@@ -108,6 +108,8 @@ class PipelineJob(_Frozen):
         attempt: Re-run number of the job; the highest attempt of a job replaces earlier ones.
         branch: Branch the pipeline ran on, if known.
         commit: Commit the pipeline tested, if known.
+        repository: The repository whose pipeline it is (``owner/name``), when known: set by
+            collection from the producers file, or given on import. Never guessed from names.
     """
 
     pipeline_id: Annotated[str, Field(min_length=1, max_length=200)]
@@ -115,6 +117,7 @@ class PipelineJob(_Frozen):
     attempt: Annotated[int, Field(ge=1)] = 1
     branch: str | None = None
     commit: str | None = None
+    repository: Annotated[str, Field(pattern=r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")] | None = None
 
 
 class TestRun(_Frozen):

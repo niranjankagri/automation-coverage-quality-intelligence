@@ -32,15 +32,22 @@ from qualityintel.models.metrics import Ratio
 from qualityintel.models.results import FailureDetails, PipelineJob, RunContext, TestResult, TestRun
 
 # 1: runs and results. 2: coverage snapshots. 3: pipeline columns on runs. 4: collections.
+# 5: repository of a pipeline run.
 # Older files are upgraded when opened.
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 PIPELINE_COLUMNS = {
     "pipeline_id": "TEXT",
     "job": "TEXT",
     "attempt": "INTEGER",
     "branch": "TEXT",
     "git_commit": "TEXT",
+    "repository": "TEXT",
 }
+RUN_COLUMNS = (
+    "run_id, source, framework, environment, browser, platform, build, started_at, imported_at, "
+    + ", ".join(PIPELINE_COLUMNS)
+)
+RUN_PLACEHOLDERS = ", ".join("?" for _ in RUN_COLUMNS.split(","))
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS schema_version (version INTEGER NOT NULL);
@@ -58,7 +65,8 @@ CREATE TABLE IF NOT EXISTS runs (
     job          TEXT,
     attempt      INTEGER,
     branch       TEXT,
-    git_commit   TEXT
+    git_commit   TEXT,
+    repository   TEXT
 );
 CREATE TABLE IF NOT EXISTS results (
     run_id           TEXT    NOT NULL REFERENCES runs (run_id) ON DELETE CASCADE,
@@ -160,7 +168,7 @@ class HistoryStore:
         context = run.context
         pipeline = run.pipeline
         db.execute(
-            "INSERT INTO runs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            f"INSERT INTO runs ({RUN_COLUMNS}) VALUES ({RUN_PLACEHOLDERS})",
             (
                 run.run_id,
                 run.source,
@@ -178,6 +186,7 @@ class HistoryStore:
                         pipeline.attempt,
                         pipeline.branch,
                         pipeline.commit,
+                        pipeline.repository,
                     )
                     if pipeline
                     else (None,) * len(PIPELINE_COLUMNS)
@@ -238,7 +247,12 @@ class HistoryStore:
                 started_at=_parse(started_at),
                 results=tuple(results.get(run_id, ())),
                 pipeline=PipelineJob(
-                    pipeline_id=pipeline_id, job=job, attempt=attempt, branch=branch, commit=commit
+                    pipeline_id=pipeline_id,
+                    job=job,
+                    attempt=attempt,
+                    branch=branch,
+                    commit=commit,
+                    repository=repository,
                 )
                 if pipeline_id is not None
                 else None,
@@ -257,6 +271,7 @@ class HistoryStore:
                 attempt,
                 branch,
                 commit,
+                repository,
             ) in rows
         ]
         # Sorted again on real datetimes: ISO text with and without fractions does not sort reliably
@@ -439,6 +454,12 @@ class HistoryStore:
                 for name, kind in PIPELINE_COLUMNS.items():
                     if name not in columns:
                         db.execute(f"ALTER TABLE runs ADD COLUMN {name} {kind}")
+                # Runs collected before schema 5 get the repository their collection record names
+                db.execute(
+                    "UPDATE runs SET repository = (SELECT c.repository FROM collections c "
+                    "WHERE c.pipeline_id = runs.pipeline_id LIMIT 1) "
+                    "WHERE repository IS NULL AND pipeline_id IS NOT NULL"
+                )
                 db.execute("UPDATE schema_version SET version = ?", (SCHEMA_VERSION,))
         self._db.execute("CREATE INDEX IF NOT EXISTS runs_by_pipeline ON runs (pipeline_id, job, attempt)")
         self._db.commit()

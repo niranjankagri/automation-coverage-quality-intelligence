@@ -3,8 +3,8 @@
 // All text is set with textContent (test names contain quotes, brackets and < >).
 "use strict";
 
-const FILTERS = ["feature", "criticality", "test_type", "framework", "environment", "browser", "build", "since", "until"];
-const RUN_FILTERS = ["framework", "environment", "browser", "build", "since", "until"];
+const FILTERS = ["repository", "feature", "criticality", "test_type", "framework", "environment", "browser", "build", "since", "until"];
+const RUN_FILTERS = ["repository", "framework", "environment", "browser", "build", "since", "until"];
 const OUTCOMES = ["passed", "failed", "error", "skipped"];
 const view = document.getElementById("view");
 const statusLine = document.getElementById("status");

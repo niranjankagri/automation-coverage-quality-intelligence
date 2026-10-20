@@ -263,3 +263,12 @@ def test_only_the_named_repositories_are_collected(store: HistoryStore) -> None:
         )
 
     assert len(outcome.collected) == 1
+
+
+def test_collected_runs_carry_their_repository(store: HistoryStore) -> None:
+    """The repository comes from the producers file, not from names."""
+    with store:
+        collect(CONFIG, FakeSource([run()], good_artifacts()), store, SINCE, now=NOW)
+        repositories = {r.pipeline.repository for r in store.runs() if r.pipeline}
+
+    assert repositories == {"niranjankagri/python-pytest-framework"}

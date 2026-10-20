@@ -23,7 +23,9 @@ def pipeline_runs() -> list[TestRun]:
     for folder in sorted(p for p in PIPELINES.iterdir() if p.is_dir()):
         _, commit, run_id = folder.name.split("_")
         jobs = {report.stem: [str(report)] for report in folder.glob("*.json")}
-        batch = import_pipeline(jobs, run_id, commit=commit)
+        batch = import_pipeline(
+            jobs, run_id, commit=commit, repository="niranjankagri/cypress-typescript-framework"
+        )
         assert batch.complete
         runs += batch.runs
     return runs
@@ -83,3 +85,21 @@ def test_runs_carry_their_pipeline_job(client: TestClient) -> None:
 def test_an_oversized_job_list_is_refused(client: TestClient) -> None:
     """Query parameters are bounded like every other input."""
     assert client.get("/api/pipelines", params={"jobs": "x" * 2001}).status_code == 422
+
+
+def test_repository_is_a_facet_and_a_filter(client: TestClient) -> None:
+    """The selector's values come from the data; choosing one keeps its runs, another none."""
+    facets = client.get("/api/facets").json()
+
+    assert facets["repositories"] == ["niranjankagri/cypress-typescript-framework"]
+    assert (
+        len(
+            client.get(
+                "/api/runs", params={"repository": "niranjankagri/cypress-typescript-framework"}
+            ).json()
+        )
+        == 9
+    )
+    assert client.get("/api/runs", params={"repository": "niranjankagri/other"}).json() == []
+    summary = client.get("/api/summary", params={"repository": "niranjankagri/other"}).json()
+    assert summary["pass_rate"]["text"].startswith("n/a")
