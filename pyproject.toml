@@ -1,0 +1,89 @@
+# Automation Coverage & Quality Intelligence: one Python package (src layout) with a `qi` command.
+# Runtime dependencies are added milestone by milestone, only when code uses them.
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "automation-coverage-quality-intelligence"
+version = "0.1.0"
+description = "Imports results from existing test automation frameworks, measures requirement and automation coverage, tracks failures and flaky-test candidates, and runs release quality gates."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Niranjan Kumar Agri" }]
+requires-python = ">=3.12"
+dependencies = []
+
+[project.optional-dependencies]
+# Pinned so a local run and CI use the same tool versions
+dev = [
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+    "ruff==0.16.10",
+    "mypy==2.4.0",
+]
+
+[project.scripts]
+qi = "qualityintel.cli:main"
+
+[project.urls]
+Repository = "https://github.com/niranjankagri/automation-coverage-quality-intelligence"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+# py.typed tells type checkers that the package ships its own type hints
+qualityintel = ["py.typed"]
+
+# ruff: linter and formatter, run in CI before any test
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# E/W pycodestyle, F pyflakes, I import order, B bugbear, UP pyupgrade, PT pytest style,
+# SIM simplify, RUF ruff's own rules, D docstrings (every public item explains itself)
+select = ["E", "W", "F", "I", "B", "UP", "PT", "SIM", "RUF", "D"]
+# D105/D107: magic methods and __init__ are covered by the class docstring
+ignore = ["D105", "D107"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+# Test modules and packages need no module docstring; each test function still has one
+"tests/**" = ["D100", "D104"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["qualityintel"]
+
+# mypy in strict mode for the package and the tests
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# -ra lists every non-passing test at the end; strict options turn typos in markers/config into errors
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+xfail_strict = true
+markers = [
+    "unit: fast tests of one module, no files or processes outside tmp_path",
+    "integration: tests that run the installed package as a separate process",
+]
+
+[tool.coverage.run]
+source = ["qualityintel"]
+branch = true
+# __main__ is only one line and runs in a separate process (tests/integration), where
+# coverage is not recorded
+omit = ["*/qualityintel/__main__.py"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 90
