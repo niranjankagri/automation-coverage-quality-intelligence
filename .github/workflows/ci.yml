@@ -37,6 +37,23 @@ jobs:
       - name: mypy (strict)
         run: mypy
 
+  # Known vulnerabilities in the exact versions installed (docs/security.md). pip-audit runs in
+  # its own virtual environment, so its own dependencies are not part of what is audited.
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -e ".[dev,e2e]"
+      - run: pip freeze --exclude-editable > installed.txt
+      - run: python -m venv "$RUNNER_TEMP/audit" && "$RUNNER_TEMP/audit/bin/pip" install pip-audit==2.10.1
+      - name: pip-audit
+        run: '"$RUNNER_TEMP/audit/bin/pip-audit" --requirement installed.txt --progress-spinner off'
+
   tests:
     name: Tests (Python ${{ matrix.python }}${{ matrix.os == 'windows-latest' && ', Windows' || '' }})
     needs: checks
