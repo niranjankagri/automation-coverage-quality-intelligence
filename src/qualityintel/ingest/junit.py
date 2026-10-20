@@ -135,7 +135,7 @@ def parse_junit(
         collector.warnings.append("file contains no test cases")
 
     file_context = RunContext.model_validate(collector.context_values)
-    merged = _merge(file_context, context)
+    merged = merge_context(file_context, context)
     run = TestRun(
         run_id=hashlib.sha256(data).hexdigest(),
         source=source,
@@ -290,7 +290,7 @@ def _properties(element: ET.Element) -> list[tuple[str, str]]:
     return pairs
 
 
-def _merge(from_file: RunContext, given: RunContext | None) -> RunContext:
+def merge_context(from_file: RunContext, given: RunContext | None) -> RunContext:
     """Caller-given values win; file values fill the gaps."""
     if given is None:
         return from_file

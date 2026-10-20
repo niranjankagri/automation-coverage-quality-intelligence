@@ -1,5 +1,9 @@
 """Import many result files at once: files, directories and glob patterns.
 
+Formats (docs/ingestion.md): JUnit XML (``*.xml``), mochawesome reports (``*.json``, and
+``*.html`` when named explicitly) and Allure results folders (a folder with ``*-result.json``
+files is one run). A directory input is searched recursively for all of them.
+
 A batch never hides a problem: every file that could not be imported is listed in
 ``errors``, and a pattern or directory that matched nothing is an error too. The caller
 decides what that means (the quality gate treats any error as "results incomplete").
@@ -13,11 +17,17 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from qualityintel.ingest.errors import IngestError, NoResultFilesError
-from qualityintel.ingest.junit import DEFAULT_ID_PATTERN, read_junit_file
+from qualityintel.ingest.allure import is_allure_folder, read_allure_folder
+from qualityintel.ingest.errors import IngestError, NoResultFilesError, UnsupportedFormatError
+from qualityintel.ingest.junit import DEFAULT_ID_PATTERN, ParsedFile, read_junit_file
+from qualityintel.ingest.mochawesome import read_mochawesome_file
 from qualityintel.models.results import RunContext, TestRun
 
 _GLOB_CHARS = re.compile(r"[*?\[]")
+# Files found when a directory is searched (HTML only when named explicitly: report folders
+# hold many HTML files that are not results)
+_SEARCHED = frozenset({".xml", ".json"})
+_READABLE = _SEARCHED | {".html", ".htm"}
 
 
 @dataclass
@@ -43,7 +53,7 @@ class Batch:
 
 
 def expand_inputs(inputs: Iterable[str | Path]) -> tuple[list[tuple[Path, str]], list[IngestError]]:
-    """Resolve files, directories (all ``*.xml`` below them) and glob patterns to files.
+    """Resolve files, directories (results below them) and glob patterns to result inputs.
 
     Patterns are expanded here rather than by the shell, so ``"reports/TEST-*.xml"`` works the
     same in cmd.exe, PowerShell and bash. Each input that matches nothing is an error.
@@ -60,12 +70,14 @@ def expand_inputs(inputs: Iterable[str | Path]) -> tuple[list[tuple[Path, str]],
         path = Path(text)
         if _GLOB_CHARS.search(text):
             matches = [
-                (p, p.name) for p in sorted(Path(m) for m in glob.glob(text, recursive=True)) if p.is_file()
+                (p, p.name)
+                for p in sorted(Path(m) for m in glob.glob(text, recursive=True))
+                if p.is_file() or is_allure_folder(p)
             ]
+        elif is_allure_folder(path):
+            matches = [(path, path.name)]
         elif path.is_dir():
-            matches = [
-                (p, p.relative_to(path).as_posix()) for p in sorted(path.rglob("*.xml")) if p.is_file()
-            ]
+            matches = _search(path)
         elif path.is_file():
             matches = [(path, path.name)]
         else:
@@ -97,7 +109,7 @@ def import_results(
     seen: dict[str, str] = {}
     for path, name in files:
         try:
-            parsed = read_junit_file(path, context=context, id_pattern=id_pattern, source=name)
+            parsed = read_any(path, context=context, id_pattern=id_pattern, source=name)
         except IngestError as error:
             batch.errors.append(error)
             continue
@@ -109,3 +121,37 @@ def import_results(
         batch.runs.append(run)
         batch.warnings.extend(f"{name}: {warning}" for warning in parsed.warnings)
     return batch
+
+
+def read_any(
+    path: Path,
+    context: RunContext | None = None,
+    id_pattern: re.Pattern[str] = DEFAULT_ID_PATTERN,
+    source: str | None = None,
+) -> ParsedFile:
+    """Read one input with the importer its format needs (folder = Allure, else by file suffix)."""
+    if is_allure_folder(path):
+        return read_allure_folder(path, context=context, source=source)
+    suffix = path.suffix.lower()
+    if suffix == ".xml":
+        return read_junit_file(path, context=context, id_pattern=id_pattern, source=source)
+    if suffix in _READABLE:
+        return read_mochawesome_file(path, context=context, source=source)
+    raise UnsupportedFormatError(
+        source or path.name, "unsupported file type (expected .xml, .json, .html or an Allure results folder)"
+    )
+
+
+def _search(root: Path) -> list[tuple[Path, str]]:
+    """Result inputs below a directory: Allure folders as a whole, other .xml and .json files."""
+    found: list[tuple[Path, str]] = []
+    allure: list[Path] = []
+    for path in sorted(root.rglob("*")):
+        if any(folder in path.parents for folder in allure):
+            continue  # inside an Allure folder: its files belong to that run
+        if is_allure_folder(path):
+            allure.append(path)
+            found.append((path, path.relative_to(root).as_posix()))
+        elif path.is_file() and path.suffix.lower() in _SEARCHED:
+            found.append((path, path.relative_to(root).as_posix()))
+    return found

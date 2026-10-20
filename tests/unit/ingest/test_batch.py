@@ -132,3 +132,57 @@ def test_files_with_the_same_name_in_two_folders_stay_distinguishable(tmp_path: 
     batch = import_results([tmp_path])
 
     assert sorted(r.source for r in batch.runs) == ["api/junit.xml", "ui/junit.xml"]
+
+
+def test_directory_with_every_format_is_read_with_the_right_importer(tmp_path: Path) -> None:
+    """JUnit XML, mochawesome JSON and an Allure folder (one run; its files are not read alone)."""
+    write(tmp_path / "junit" / "junit.xml", GOOD.format(name="j"))
+    write(
+        tmp_path / "cypress" / "report.json",
+        '{"stats": {"start": "2026-10-19T10:00:00Z"}, "results": [{"fullFile": "a.cy.ts", "tests": [{"title": "t", "state": "passed"}], "suites": []}]}',
+    )
+    allure = tmp_path / "allure-results"
+    write(allure / "1-result.json", '{"name": "a", "status": "passed", "fullName": "c.A.a"}')
+    write(allure / "1-container.json", "{}")
+    write(allure / "categories.json", "[]")
+
+    batch = import_results([tmp_path])
+
+    assert batch.errors == []
+    assert sorted(r.source for r in batch.runs) == [
+        "allure-results",
+        "cypress/report.json",
+        "junit/junit.xml",
+    ]
+
+
+def test_unknown_json_in_a_directory_is_an_error_not_silence(tmp_path: Path) -> None:
+    """A JSON file that is no report stops the batch from being complete."""
+    write(tmp_path / "junit.xml", GOOD.format(name="j"))
+    write(tmp_path / "package.json", '{"name": "app"}')
+
+    batch = import_results([tmp_path])
+
+    assert [e.source for e in batch.errors] == ["package.json"]
+    assert not batch.complete
+
+
+def test_html_reports_are_read_only_when_named(tmp_path: Path) -> None:
+    """Report folders hold many HTML files; a directory search skips them, a named file is read."""
+    write(tmp_path / "index.html", "<html><body>no report</body></html>")
+    write(tmp_path / "junit.xml", GOOD.format(name="j"))
+
+    searched = import_results([tmp_path])
+    named = import_results([tmp_path / "index.html"])
+
+    assert [r.source for r in searched.runs] == ["junit.xml"]
+    assert "without a mochawesome data-raw attribute" in str(named.errors[0])
+
+
+def test_unsupported_file_type_is_reported(tmp_path: Path) -> None:
+    """A named .txt file is not guessed at."""
+    write(tmp_path / "results.txt", "PASSED 3")
+
+    batch = import_results([tmp_path / "results.txt"])
+
+    assert "unsupported file type" in str(batch.errors[0])
