@@ -56,7 +56,8 @@ src/qualityintel/
   ingest/         result files -> model, JUnit XML first                    M3
   traceability/   result matching, coverage metrics, gaps, execution status M4
   reporting/      text (and later JSON/HTML) renderers, no calculations
-  dashboard/      FastAPI + HTML/JS view over the packages above            M5
+  dashboard/      FastAPI JSON API + static HTML/JS front end               M5
+  workspace.py    view models behind every dashboard page (tested without a server)
   history/        SQLite history, trends, flaky-test candidates             M6
   gates/          release criteria, reports, pipeline exit status           M7
   config.py       settings from QI_* environment variables
@@ -69,6 +70,14 @@ docs/
   architecture.md, adr/
 ```
 
+## Dashboard
+
+![Dashboard overview on the sample data](docs/images/dashboard-overview.png)
+
+Read-only views of coverage, gaps, the latest runs, every test's history and every run, with
+filters kept in the address and a JSON API documented at `/docs`. Details:
+[docs/dashboard.md](docs/dashboard.md).
+
 ## Setup
 
 Needs Python 3.12 or newer.
@@ -79,7 +88,8 @@ Windows (cmd.exe):
 cd /d D:\path\to\automation-coverage-quality-intelligence
 python -m venv .venv
 .venv\Scripts\activate
-pip install -e ".[dev]"
+pip install -e ".[dev,e2e]"
+playwright install chromium
 ```
 
 Linux / macOS:
@@ -87,7 +97,8 @@ Linux / macOS:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -e ".[dev]"
+pip install -e ".[dev,e2e]"
+playwright install chromium   # only for the browser tests and screenshots
 ```
 
 ## Usage
@@ -98,6 +109,7 @@ qi config           # prints the settings in effect
 qi inspect samples/results                       # what the result files contain
 qi inspect "target/surefire-reports/TEST-*.xml"  # quoted patterns work in cmd.exe too
 qi coverage --catalog samples/catalog.toml samples/results   # coverage, gaps, execution status
+qi dashboard --catalog samples/catalog.toml samples/results  # web dashboard on http://127.0.0.1:8000
 python -m qualityintel version   # same, when the qi script is not on PATH
 ```
 
@@ -122,10 +134,11 @@ ruff check .            # lint, including a docstring on every public item
 ruff format --check .   # formatting
 mypy                    # strict type checking of the package and the tests
 pytest --cov            # tests; branch coverage below 90 % fails
+pytest -m e2e           # dashboard in Chromium (needs `playwright install chromium`)
 ```
 
-CI runs the static checks once, then the tests on Python 3.12 and 3.13, and keeps the JUnit XML
-of each run as an artifact.
+CI runs the static checks once, then the tests on Python 3.12 and 3.13 and the dashboard in
+Chromium, and keeps the JUnit XML of each job (and the dashboard screenshots) as artifacts.
 
 ## Milestones
 
@@ -135,7 +148,7 @@ of each run as an artifact.
 | 2 | Coverage data model and metric definitions | Done |
 | 3 | Multi-framework result ingestion (JUnit XML) | Done |
 | 4 | Requirement traceability engine | Done |
-| 5 | Quality dashboard | Planned |
+| 5 | Quality dashboard | Done |
 | 6 | Historical quality intelligence | Planned |
 | 7 | CI/CD quality gates | Planned |
 | 8 | Portfolio-ready release | Planned |
