@@ -145,4 +145,4 @@ def test_version_1_database_is_upgraded_without_losing_runs(tmp_path: Path) -> N
         assert store.count() == (1, 1)
         assert store.snapshots() == []
     with closing(sqlite3.connect(path)) as db:
-        assert db.execute("SELECT version FROM schema_version").fetchone()[0] == SCHEMA_VERSION == 2
+        assert db.execute("SELECT version FROM schema_version").fetchone()[0] == SCHEMA_VERSION

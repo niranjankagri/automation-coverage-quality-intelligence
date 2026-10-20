@@ -10,7 +10,9 @@ Design points:
 - a run and its results are written in one transaction: a crash never leaves half a run;
 - the schema has a version number; opening a database written by a newer version fails
   instead of guessing;
-- one writer at a time (SQLite's own locking); concurrent CI jobs should write separate files.
+- one writer at a time (SQLite's own locking); concurrent CI jobs should write separate files;
+- one attempt of a pipeline job is imported once: :meth:`HistoryStore.job_runs` lets the caller
+  refuse a second, different import of the same job attempt (docs/pipelines.md).
 """
 
 from __future__ import annotations
@@ -26,10 +28,18 @@ from types import TracebackType
 from qualityintel.history.trends import CoverageSnapshot
 from qualityintel.models.enums import Outcome
 from qualityintel.models.metrics import Ratio
-from qualityintel.models.results import FailureDetails, RunContext, TestResult, TestRun
+from qualityintel.models.results import FailureDetails, PipelineJob, RunContext, TestResult, TestRun
 
-# 1: runs and results. 2: coverage snapshots (older files are upgraded when opened)
-SCHEMA_VERSION = 2
+# 1: runs and results. 2: coverage snapshots. 3: pipeline columns on runs.
+# Older files are upgraded when opened.
+SCHEMA_VERSION = 3
+PIPELINE_COLUMNS = {
+    "pipeline_id": "TEXT",
+    "job": "TEXT",
+    "attempt": "INTEGER",
+    "branch": "TEXT",
+    "git_commit": "TEXT",
+}
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS schema_version (version INTEGER NOT NULL);
@@ -42,7 +52,12 @@ CREATE TABLE IF NOT EXISTS runs (
     platform     TEXT,
     build        TEXT,
     started_at   TEXT,
-    imported_at  TEXT NOT NULL
+    imported_at  TEXT NOT NULL,
+    pipeline_id  TEXT,
+    job          TEXT,
+    attempt      INTEGER,
+    branch       TEXT,
+    git_commit   TEXT
 );
 CREATE TABLE IF NOT EXISTS results (
     run_id           TEXT    NOT NULL REFERENCES runs (run_id) ON DELETE CASCADE,
@@ -119,8 +134,9 @@ class HistoryStore:
             if exists:
                 return False
             context = run.context
+            pipeline = run.pipeline
             db.execute(
-                "INSERT INTO runs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO runs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     run.run_id,
                     run.source,
@@ -131,6 +147,17 @@ class HistoryStore:
                     context.build,
                     _iso(run.started_at),
                     datetime.now(UTC).isoformat(),
+                    *(
+                        (
+                            pipeline.pipeline_id,
+                            pipeline.job,
+                            pipeline.attempt,
+                            pipeline.branch,
+                            pipeline.commit,
+                        )
+                        if pipeline
+                        else (None,) * len(PIPELINE_COLUMNS)
+                    ),
                 ),
             )
             db.executemany(
@@ -169,8 +196,8 @@ class HistoryStore:
     def runs(self) -> list[TestRun]:
         """Every stored run with its results, oldest first (undated runs first)."""
         rows = self._db.execute(
-            "SELECT run_id, source, framework, environment, browser, platform, build, started_at "
-            "FROM runs ORDER BY started_at IS NOT NULL, started_at, source"
+            "SELECT run_id, source, framework, environment, browser, platform, build, started_at, "
+            f"{', '.join(PIPELINE_COLUMNS)} FROM runs ORDER BY started_at IS NOT NULL, started_at, source"
         ).fetchall()
         results = self._results_by_run()
         runs = [
@@ -186,11 +213,38 @@ class HistoryStore:
                 ),
                 started_at=_parse(started_at),
                 results=tuple(results.get(run_id, ())),
+                pipeline=PipelineJob(
+                    pipeline_id=pipeline_id, job=job, attempt=attempt, branch=branch, commit=commit
+                )
+                if pipeline_id is not None
+                else None,
             )
-            for run_id, source, framework, environment, browser, platform, build, started_at in rows
+            for (
+                run_id,
+                source,
+                framework,
+                environment,
+                browser,
+                platform,
+                build,
+                started_at,
+                pipeline_id,
+                job,
+                attempt,
+                branch,
+                commit,
+            ) in rows
         ]
         # Sorted again on real datetimes: ISO text with and without fractions does not sort reliably
         return sorted(runs, key=lambda r: (r.started_at is not None, r.started_at or _EPOCH, r.source))
+
+    def job_runs(self, pipeline_id: str, job: str, attempt: int) -> set[str]:
+        """Run ids already stored for one attempt of one pipeline job."""
+        rows = self._db.execute(
+            "SELECT run_id FROM runs WHERE pipeline_id = ? AND job = ? AND attempt = ?",
+            (pipeline_id, job, attempt),
+        )
+        return {row[0] for row in rows}
 
     def count(self) -> tuple[int, int]:
         """``(runs, results)`` stored."""
@@ -263,9 +317,16 @@ class HistoryStore:
                 f"(schema {row[0]}, this version reads {SCHEMA_VERSION})"
             )
         elif row[0] < SCHEMA_VERSION:
-            # The new tables were created above (IF NOT EXISTS); existing data is untouched
-            self._db.execute("UPDATE schema_version SET version = ?", (SCHEMA_VERSION,))
-            self._db.commit()
+            # New tables were created above (IF NOT EXISTS); new columns are added here.
+            # Existing rows keep their data; their pipeline columns are NULL (not part of one)
+            columns = {info[1] for info in self._db.execute("PRAGMA table_info(runs)")}
+            with self._transaction() as db:
+                for name, kind in PIPELINE_COLUMNS.items():
+                    if name not in columns:
+                        db.execute(f"ALTER TABLE runs ADD COLUMN {name} {kind}")
+                db.execute("UPDATE schema_version SET version = ?", (SCHEMA_VERSION,))
+        self._db.execute("CREATE INDEX IF NOT EXISTS runs_by_pipeline ON runs (pipeline_id, job, attempt)")
+        self._db.commit()
 
     @contextmanager
     def _transaction(self) -> Iterator[sqlite3.Connection]:

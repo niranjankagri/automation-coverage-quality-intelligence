@@ -85,6 +85,28 @@ class RunContext(_Frozen):
     build: str | None = None
 
 
+class PipelineJob(_Frozen):
+    """The CI pipeline execution and job a run came from (docs/pipelines.md).
+
+    One pipeline execution (a GitHub Actions run, a GitLab pipeline, a Jenkins build) usually
+    has several jobs, and each job writes its own result files. Grouping them is what lets a
+    gate refuse to decide on a pipeline whose jobs did not all report.
+
+    Attributes:
+        pipeline_id: Identifier of the pipeline execution (e.g. ``github.run_id``).
+        job: Name of the job within the pipeline (``api``, ``ui-chrome``).
+        attempt: Re-run number of the job; the highest attempt of a job replaces earlier ones.
+        branch: Branch the pipeline ran on, if known.
+        commit: Commit the pipeline tested, if known.
+    """
+
+    pipeline_id: Annotated[str, Field(min_length=1, max_length=200)]
+    job: Annotated[str, Field(min_length=1, max_length=200)]
+    attempt: Annotated[int, Field(ge=1)] = 1
+    branch: str | None = None
+    commit: str | None = None
+
+
 class TestRun(_Frozen):
     """All results imported from one result file.
 
@@ -92,6 +114,7 @@ class TestRun(_Frozen):
         run_id: SHA-256 of the file content, so importing the same file twice is detectable.
         source: File name the run was imported from (no directory, to keep local paths private).
         started_at: Earliest timestamp found in the file, if any.
+        pipeline: The pipeline job the run belongs to, when it was imported as part of one.
     """
 
     __test__ = False  # not a pytest test class, despite the name
@@ -101,6 +124,7 @@ class TestRun(_Frozen):
     context: RunContext = RunContext()
     started_at: datetime | None = None
     results: tuple[TestResult, ...]
+    pipeline: PipelineJob | None = None
 
     def outcome_counts(self) -> dict[Outcome, int]:
         """Number of results per outcome; every outcome is present, zero when absent."""
