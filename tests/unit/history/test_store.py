@@ -169,7 +169,7 @@ def test_version_2_database_gains_the_pipeline_columns(tmp_path: Path) -> None:
     assert old.pipeline is None
     assert old.context.build == "1.0"
     with closing(sqlite3.connect(path)) as db:
-        assert db.execute("SELECT version FROM schema_version").fetchone()[0] == SCHEMA_VERSION == 3
+        assert db.execute("SELECT version FROM schema_version").fetchone()[0] == SCHEMA_VERSION == 4
 
 
 # The runs table and version row as schema 2 wrote them (before pipeline columns existed)

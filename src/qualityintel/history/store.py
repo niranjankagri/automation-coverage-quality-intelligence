@@ -26,13 +26,14 @@ from pathlib import Path
 from types import TracebackType
 
 from qualityintel.history.trends import CoverageSnapshot
+from qualityintel.models.collection import PipelineCollection
 from qualityintel.models.enums import Outcome
 from qualityintel.models.metrics import Ratio
 from qualityintel.models.results import FailureDetails, PipelineJob, RunContext, TestResult, TestRun
 
-# 1: runs and results. 2: coverage snapshots. 3: pipeline columns on runs.
+# 1: runs and results. 2: coverage snapshots. 3: pipeline columns on runs. 4: collections.
 # Older files are upgraded when opened.
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 PIPELINE_COLUMNS = {
     "pipeline_id": "TEXT",
     "job": "TEXT",
@@ -77,6 +78,25 @@ CREATE TABLE IF NOT EXISTS results (
 );
 CREATE INDEX IF NOT EXISTS results_by_test ON results (classname, name);
 CREATE INDEX IF NOT EXISTS runs_by_start ON runs (started_at);
+CREATE TABLE IF NOT EXISTS collections (
+    pipeline_id  TEXT    NOT NULL,
+    attempt      INTEGER NOT NULL CHECK (attempt >= 1),
+    repository   TEXT    NOT NULL,
+    workflow     TEXT    NOT NULL,
+    run_number   INTEGER NOT NULL,
+    event        TEXT    NOT NULL,
+    branch       TEXT    NOT NULL,
+    git_commit   TEXT    NOT NULL,
+    conclusion   TEXT    NOT NULL,
+    url          TEXT    NOT NULL,
+    started_at   TEXT,
+    collected_at TEXT    NOT NULL,
+    state        TEXT    NOT NULL CHECK (state IN ('complete', 'incomplete')),
+    runs         INTEGER NOT NULL,
+    results      INTEGER NOT NULL,
+    problems     TEXT    NOT NULL,
+    PRIMARY KEY (pipeline_id, attempt)
+);
 CREATE TABLE IF NOT EXISTS coverage_snapshots (
     taken_at                    TEXT    NOT NULL,
     catalog                     TEXT    NOT NULL,
@@ -130,58 +150,62 @@ class HistoryStore:
     def add(self, run: TestRun) -> bool:
         """Store a run with its results; ``False`` when this exact run is already stored."""
         with self._transaction() as db:
-            exists = db.execute("SELECT 1 FROM runs WHERE run_id = ?", (run.run_id,)).fetchone()
-            if exists:
-                return False
-            context = run.context
-            pipeline = run.pipeline
-            db.execute(
-                "INSERT INTO runs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            return self._insert(db, run) == 1
+
+    def _insert(self, db: sqlite3.Connection, run: TestRun) -> int:
+        """Insert one run and its results inside the caller's transaction; 0 if it was already stored."""
+        exists = db.execute("SELECT 1 FROM runs WHERE run_id = ?", (run.run_id,)).fetchone()
+        if exists:
+            return 0
+        context = run.context
+        pipeline = run.pipeline
+        db.execute(
+            "INSERT INTO runs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                run.run_id,
+                run.source,
+                context.framework,
+                context.environment,
+                context.browser,
+                context.platform,
+                context.build,
+                _iso(run.started_at),
+                datetime.now(UTC).isoformat(),
+                *(
+                    (
+                        pipeline.pipeline_id,
+                        pipeline.job,
+                        pipeline.attempt,
+                        pipeline.branch,
+                        pipeline.commit,
+                    )
+                    if pipeline
+                    else (None,) * len(PIPELINE_COLUMNS)
+                ),
+            ),
+        )
+        db.executemany(
+            "INSERT INTO results VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [
                 (
                     run.run_id,
-                    run.source,
-                    context.framework,
-                    context.environment,
-                    context.browser,
-                    context.platform,
-                    context.build,
-                    _iso(run.started_at),
-                    datetime.now(UTC).isoformat(),
-                    *(
-                        (
-                            pipeline.pipeline_id,
-                            pipeline.job,
-                            pipeline.attempt,
-                            pipeline.branch,
-                            pipeline.commit,
-                        )
-                        if pipeline
-                        else (None,) * len(PIPELINE_COLUMNS)
-                    ),
-                ),
-            )
-            db.executemany(
-                "INSERT INTO results VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                [
-                    (
-                        run.run_id,
-                        position,
-                        r.name,
-                        r.classname,
-                        r.suite,
-                        r.outcome.value,
-                        r.duration_seconds,
-                        _iso(r.timestamp),
-                        r.failure.message if r.failure else None,
-                        r.failure.type if r.failure else None,
-                        r.failure.text if r.failure else None,
-                        json.dumps(list(r.test_ids)),
-                        r.retries,
-                    )
-                    for position, r in enumerate(run.results)
-                ],
-            )
-        return True
+                    position,
+                    r.name,
+                    r.classname,
+                    r.suite,
+                    r.outcome.value,
+                    r.duration_seconds,
+                    _iso(r.timestamp),
+                    r.failure.message if r.failure else None,
+                    r.failure.type if r.failure else None,
+                    r.failure.text if r.failure else None,
+                    json.dumps(list(r.test_ids)),
+                    r.retries,
+                )
+                for position, r in enumerate(run.results)
+            ],
+        )
+        return 1
 
     def add_all(self, runs: Iterable[TestRun]) -> tuple[int, int]:
         """Store several runs; returns ``(added, already stored)``."""
@@ -245,6 +269,97 @@ class HistoryStore:
             (pipeline_id, job, attempt),
         )
         return {row[0] for row in rows}
+
+    def conflicting_jobs(self, runs: list[TestRun]) -> list[str]:
+        """Job attempts already stored with other results; importing them again would mix two executions.
+
+        Re-importing exactly the same files is harmless (they are already stored).
+        """
+        new: dict[tuple[str, str, int], set[str]] = {}
+        for run in runs:
+            if run.pipeline is not None:
+                key = (run.pipeline.pipeline_id, run.pipeline.job, run.pipeline.attempt)
+                new.setdefault(key, set()).add(run.run_id)
+        messages = []
+        for (pipeline_id, job, attempt), ids in sorted(new.items()):
+            stored = self.job_runs(pipeline_id, job, attempt)
+            if stored and not ids <= stored:
+                messages.append(
+                    f"job {job} of pipeline {pipeline_id} (attempt {attempt}) is already imported with other "
+                    f"results; nothing was stored. A re-run of the job is --attempt {attempt + 1}"
+                )
+        return messages
+
+    def is_collected(self, pipeline_id: str, attempt: int) -> bool:
+        """Whether this attempt of this pipeline was collected before (whatever came of it)."""
+        row = self._db.execute(
+            "SELECT 1 FROM collections WHERE pipeline_id = ? AND attempt = ?", (pipeline_id, attempt)
+        ).fetchone()
+        return row is not None
+
+    def add_collection(self, record: PipelineCollection, runs: list[TestRun]) -> int:
+        """Store a collection record and its runs in one transaction; returns the runs added.
+
+        Raises:
+            HistoryError: The attempt was already collected, or its jobs conflict with stored ones.
+        """
+        if self.is_collected(record.pipeline_id, record.attempt):
+            raise HistoryError(f"pipeline {record.pipeline_id} attempt {record.attempt} is already collected")
+        conflicts = self.conflicting_jobs(runs)
+        if conflicts:
+            raise HistoryError(conflicts[0])
+        added = 0
+        with self._transaction() as db:
+            for run in runs:
+                added += self._insert(db, run)
+            db.execute(
+                "INSERT INTO collections VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    record.pipeline_id,
+                    record.attempt,
+                    record.repository,
+                    record.workflow,
+                    record.run_number,
+                    record.event,
+                    record.branch,
+                    record.commit,
+                    record.conclusion,
+                    record.url,
+                    _iso(record.started_at),
+                    _iso(record.collected_at),
+                    record.state,
+                    record.runs,
+                    record.results,
+                    json.dumps(list(record.problems)),
+                ),
+            )
+        return added
+
+    def collections(self) -> list[PipelineCollection]:
+        """Every collection record, newest pipeline start first."""
+        rows = self._db.execute("SELECT * FROM collections").fetchall()
+        records = [
+            PipelineCollection(
+                pipeline_id=row[0],
+                attempt=row[1],
+                repository=row[2],
+                workflow=row[3],
+                run_number=row[4],
+                event=row[5],
+                branch=row[6],
+                commit=row[7],
+                conclusion=row[8],
+                url=row[9],
+                started_at=_parse(row[10]),
+                collected_at=_parse(row[11]) or _EPOCH,
+                state=row[12],
+                runs=row[13],
+                results=row[14],
+                problems=tuple(json.loads(row[15])),
+            )
+            for row in rows
+        ]
+        return sorted(records, key=lambda r: (r.started_at or _EPOCH, r.pipeline_id, r.attempt), reverse=True)
 
     def count(self) -> tuple[int, int]:
         """``(runs, results)`` stored."""
