@@ -18,7 +18,10 @@ def test_inspect_prints_one_line_per_run(tmp_path: Path, capsys: pytest.CaptureF
     """Counts, context and the pass rate (skips left out) of each file are shown."""
     (tmp_path / "junit.xml").write_text(RESULTS, encoding="utf-8")
 
-    assert main(["inspect", str(tmp_path), "--framework", "pytest", "--build", "abc1234"]) == EXIT_OK
+    assert (
+        main(["inspect", str(tmp_path), "--context", "framework=pytest", "--context", "build=abc1234"])
+        == EXIT_OK
+    )
 
     lines = capsys.readouterr().out.splitlines()
     assert lines[0].startswith("source")
@@ -71,3 +74,14 @@ def test_inspect_shows_notes_for_duplicates_and_warnings(
     err = capsys.readouterr().err
     assert "qi: note: b.xml has the same content as a.xml; skipped" in err
     assert "qi: note: empty.xml: file contains no test cases" in err
+
+
+@pytest.mark.parametrize("pair", ["framework", "owner=me", "browser="])
+def test_bad_context_option_is_a_usage_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], pair: str
+) -> None:
+    """--context needs NAME=VALUE with a known name and a value."""
+    (tmp_path / "junit.xml").write_text(RESULTS, encoding="utf-8")
+
+    assert main(["inspect", str(tmp_path), "--context", pair]) == 2
+    assert "--context expects NAME=VALUE" in capsys.readouterr().err
