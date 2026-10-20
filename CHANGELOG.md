@@ -17,6 +17,10 @@
 - **Release status on the overview** ([docs/readiness.md](docs/readiness.md)): Ready / At risk /
   Blocked / Unknown from the release gate given with `qi dashboard --gate` plus flaky candidates,
   incomplete pipelines and stale data; unknown evidence is never ready; `/api/readiness`.
+- **Tables, filters, charts**: sortable columns, row filter, CSV download (formula-safe),
+  column chooser and paging on every table; Job filter, quick date ranges, removable filter
+  chips, copy link to the view; trend bars are keyboard links to their day's runs; requirements
+  matrix by criticality and feature with stale evidence; flaky candidates with the runs behind them.
 - **Build comparison and test investigation**: Compare page (comparable suites only; newly
   failing, recovered, slower, newly flaky, coverage snapshots); test page with context, CI
   links, requirements, pass/fail pattern, duration chart, copy identifier and link.

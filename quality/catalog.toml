@@ -163,6 +163,12 @@ title = "Builds are compared only where they ran the same suite; a test can be i
 feature = "Dashboard"
 criticality = "high"
 
+[[requirement]]
+id = "UI-06"
+title = "Tables sort, filter, page and export; filters show as chips and are shareable; charts lead to their records by keyboard; requirement and flaky views show their evidence"
+feature = "Dashboard"
+criticality = "medium"
+
 # ---- Test cases ----------------------------------------------------------------------------
 
 [[test_case]]
@@ -536,4 +542,19 @@ automated_by = [
   "tests.unit.dashboard.test_api::test_test_history_lists_requirements_and_counts",
   "tests.e2e.test_dashboard::test_compare_page_shows_two_builds_and_their_changes",
   "tests.e2e.test_dashboard::test_test_investigation_shows_context_pattern_requirements_and_copies",
+]
+
+[[test_case]]
+id = "TC-TABLES-FILTERS-CHARTS"
+title = "Table tools and CSV, filter chips and quick dates, keyboard chart links, requirement matrix, stale evidence, stability evidence, job filter"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["UI-06"]
+automated_by = [
+  "tests.e2e.test_dashboard::test_filter_chips_quick_dates_job_filter_and_table_tools",
+  "tests.e2e.test_dashboard::test_a_trend_bar_opens_the_runs_of_its_day_with_the_keyboard",
+  "tests.unit.dashboard.test_api::test_requirement_matrix_counts_match_the_requirement_list",
+  "tests.unit.dashboard.test_api::test_stale_evidence_depends_on_the_age_of_the_latest_execution",
+  "tests.unit.dashboard.test_api::test_stability_rows_link_to_the_runs_behind_them",
+  "tests.unit.dashboard.test_pipelines_api::test_job_is_a_facet_and_a_filter",
 ]
