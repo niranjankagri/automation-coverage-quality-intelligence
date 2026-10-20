@@ -169,6 +169,12 @@ title = "Tables sort, filter, page and export; filters show as chips and are sha
 feature = "Dashboard"
 criticality = "medium"
 
+[[requirement]]
+id = "UI-07"
+title = "The dashboard passes the automated WCAG 2.2 A/AA checks in both themes, works at phone to desktop widths and in Chromium, Firefox and WebKit"
+feature = "Dashboard"
+criticality = "high"
+
 # ---- Test cases ----------------------------------------------------------------------------
 
 [[test_case]]
@@ -557,4 +563,18 @@ automated_by = [
   "tests.unit.dashboard.test_api::test_stale_evidence_depends_on_the_age_of_the_latest_execution",
   "tests.unit.dashboard.test_api::test_stability_rows_link_to_the_runs_behind_them",
   "tests.unit.dashboard.test_pipelines_api::test_job_is_a_facet_and_a_filter",
+]
+
+[[test_case]]
+id = "TC-ACCESSIBILITY"
+title = "axe-core WCAG checks per page and theme, no sideways scrolling at three widths, remembered preferences, focus on navigation"
+automation_status = "automated"
+test_type = "ui"
+framework = "pytest"
+requirements = ["UI-07"]
+automated_by = [
+  "tests.e2e.test_accessibility::*",
+  "tests.e2e.test_dashboard::test_no_horizontal_overflow_at_phone_tablet_and_desktop_widths",
+  "tests.e2e.test_dashboard::test_theme_and_density_are_remembered",
+  "tests.e2e.test_dashboard::test_moving_to_another_page_puts_the_focus_on_its_heading",
 ]

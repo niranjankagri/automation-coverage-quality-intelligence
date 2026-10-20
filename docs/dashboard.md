@@ -51,6 +51,15 @@ come from the data (`/api/facets`), never from a fixed list.
 
 Coverage and pass rate are separate cards on purpose ([ADR 0004](adr/0004-separate-metrics.md)).
 
+**Accessibility and preferences:** every page is checked with axe-core against the WCAG 2.2 A/AA
+rules it covers, in light and dark themes (`tests/e2e/test_accessibility.py`; automated checks find
+a defined set of problems and do not replace a screen-reader review). The theme (Auto, Light,
+Dark) and *Compact* tables are chosen in the header and remembered in the browser; animations
+are off when the system asks for reduced motion; moving to another page puts the focus on its
+heading; no page scrolls sideways at 390, 768 or 1280 px. The browser tests run in Chromium,
+Firefox and WebKit (`QI_E2E_BROWSER`; in WebKit the skip-link test is skipped, because WebKit
+moves Tab between form controls only, like Safari by default).
+
 **Filter bar:** quick ranges (24 h, 7 days, 30 days, all dates) set *From*; each active filter is
 a chip under the bar with a remove button; *Copy link to this view* copies the address, which
 holds every filter (a shareable preset); *Clear* removes them all.
