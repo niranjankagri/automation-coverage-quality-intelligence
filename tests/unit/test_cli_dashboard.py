@@ -143,3 +143,18 @@ def test_config_never_prints_the_password(
     out = capsys.readouterr().out
     assert "password set" in out
     assert "correct horse battery" not in out
+
+
+def test_the_dashboard_serves_live_data_with_the_refresh_interval(
+    served: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """QI_REFRESH_SECONDS sets the interval, --refresh wins, a negative value is refused."""
+    monkeypatch.setenv("QI_REFRESH_SECONDS", "45")
+    main(["dashboard", "--catalog", str(SAMPLES / "catalog.toml")])
+    client = TestClient(served["app"])
+    assert client.get("/api/status").json()["refresh_seconds"] == 45
+
+    main(["dashboard", "--catalog", str(SAMPLES / "catalog.toml"), "--refresh", "0"])
+    assert TestClient(served["app"]).get("/api/status").json()["refresh_seconds"] == 0
+
+    assert main(["dashboard", "--catalog", str(SAMPLES / "catalog.toml"), "--refresh", "-1"]) == EXIT_USAGE

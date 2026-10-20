@@ -15,6 +15,7 @@ DEFAULT_DATABASE = Path(".qi") / "quality.db"
 DEFAULT_DASHBOARD_HOST = "127.0.0.1"
 DEFAULT_DASHBOARD_PORT = 8000
 DEFAULT_DASHBOARD_USER = "qi"
+DEFAULT_REFRESH_SECONDS = 30.0
 MIN_PASSWORD_LENGTH = 12
 
 
@@ -40,6 +41,7 @@ class Settings:
     dashboard_port: int
     dashboard_user: str = DEFAULT_DASHBOARD_USER
     dashboard_password: str | None = field(default=None, repr=False)
+    refresh_seconds: float = DEFAULT_REFRESH_SECONDS
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> Settings:
@@ -64,6 +66,7 @@ class Settings:
             dashboard_port=_parse_port(source.get("QI_DASHBOARD_PORT")),
             dashboard_user=source.get("QI_DASHBOARD_USER") or DEFAULT_DASHBOARD_USER,
             dashboard_password=_check_password(source.get("QI_DASHBOARD_PASSWORD")),
+            refresh_seconds=_parse_seconds(source.get("QI_REFRESH_SECONDS")),
         )
 
 
@@ -75,6 +78,19 @@ def _check_password(raw: str | None) -> str | None:
         # The value itself is never part of the message
         raise ConfigError(f"QI_DASHBOARD_PASSWORD must have at least {MIN_PASSWORD_LENGTH} characters")
     return raw
+
+
+def _parse_seconds(raw: str | None) -> float:
+    """``QI_REFRESH_SECONDS``: how often the dashboard looks for new data; 0 turns it off."""
+    if not raw:
+        return DEFAULT_REFRESH_SECONDS
+    try:
+        seconds = float(raw)
+    except ValueError:
+        raise ConfigError(f"QI_REFRESH_SECONDS must be a number of seconds, got {raw!r}") from None
+    if not 0 <= seconds <= 86_400:
+        raise ConfigError(f"QI_REFRESH_SECONDS must be between 0 and 86400, got {raw}")
+    return seconds
 
 
 def _parse_port(raw: str | None) -> int:

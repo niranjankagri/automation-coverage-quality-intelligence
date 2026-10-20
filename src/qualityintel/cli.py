@@ -43,7 +43,7 @@ from qualityintel.history.analysis import (
     trend,
 )
 from qualityintel.history.store import HistoryError, HistoryStore
-from qualityintel.history.trends import CoverageSnapshot, coverage_snapshot
+from qualityintel.history.trends import coverage_snapshot
 from qualityintel.ingest.batch import Batch, import_pipeline, import_results
 from qualityintel.ingest.catalog_file import (
     CatalogFileError,
@@ -58,6 +58,7 @@ from qualityintel.ingest.requirements_csv import (
     read_requirements_csv,
     render_requirements_toml,
 )
+from qualityintel.live import LiveData, LoadError, Sources, load_snapshot
 from qualityintel.models.catalog import Catalog
 from qualityintel.models.enums import Outcome
 from qualityintel.models.metrics import execution_pass_rate
@@ -116,6 +117,12 @@ def build_parser() -> argparse.ArgumentParser:
     dashboard.add_argument("--port", type=int, help="port (default: QI_DASHBOARD_PORT or 8000)")
     dashboard.add_argument(
         "--database", type=Path, help="also load every run stored in this history database"
+    )
+    dashboard.add_argument(
+        "--refresh",
+        type=float,
+        metavar="SECONDS",
+        help="check the sources for new data every SECONDS, 0 = never (default: QI_REFRESH_SECONDS or 30)",
     )
 
     gate = commands.add_parser("gate", help="decide a release quality gate (exit code 0 / 1 / 3)")
@@ -691,27 +698,30 @@ def _cmd_dashboard(args: argparse.Namespace) -> int:
     catalog = load_catalog_or_report(args.catalog)
     if catalog is None:
         return EXIT_INPUT
-    runs: list[TestRun] = []
-    snapshots: list[CoverageSnapshot] = []
-    if args.database is not None:
-        store = open_store(args.database)
-        if store is None:
-            return EXIT_INPUT
-        with store:
-            runs = store.runs()
-            snapshots = store.snapshots()
     if args.results:
         batch = import_results(args.results, context=context_from(args))
         report_batch_problems(batch)
         if not batch.complete:
             return EXIT_INPUT
-        known = {r.run_id for r in runs}
-        runs += [r for r in batch.runs if r.run_id not in known]
+    if args.database is not None:
+        store = open_store(args.database)
+        if store is None:
+            return EXIT_INPUT
+        store.close()
+    refresh = settings.refresh_seconds if args.refresh is None else args.refresh
+    if refresh < 0:
+        raise UsageError("--refresh must be 0 (off) or a number of seconds")
+    sources = Sources(args.catalog, args.database, tuple(args.results), context_from(args))
+    try:
+        first = load_snapshot(sources)
+    except LoadError as error:
+        print(f"qi: error: {error}", file=sys.stderr)
+        return EXIT_INPUT
+    runs = first.workspace.runs
     # Imported here so the other commands start without loading the web stack
     import uvicorn
 
     from qualityintel.dashboard.app import create_app
-    from qualityintel.workspace import Workspace
 
     host = args.host or settings.dashboard_host
     port = args.port or settings.dashboard_port
@@ -737,12 +747,8 @@ def _cmd_dashboard(args: argparse.Namespace) -> int:
             "serve it behind TLS (a reverse proxy)",
             file=sys.stderr,
         )
-    uvicorn.run(
-        create_app(Workspace(catalog, runs, snapshots), credentials),
-        host=host,
-        port=port,
-        log_level="warning",
-    )
+    live = LiveData(first, sources, interval_seconds=refresh)
+    uvicorn.run(create_app(live, credentials), host=host, port=port, log_level="warning")
     return EXIT_OK
 
 
