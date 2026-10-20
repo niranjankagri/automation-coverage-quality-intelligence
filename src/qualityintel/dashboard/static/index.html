@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quality Intelligence</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">QI</span>
+      <span>Quality Intelligence</span>
+    </div>
+    <nav aria-label="Sections">
+      <a href="#/" data-nav="overview">Overview</a>
+      <a href="#/requirements" data-nav="requirements">Requirements</a>
+      <a href="#/tests" data-nav="tests">Tests</a>
+      <a href="#/runs" data-nav="runs">Runs</a>
+    </nav>
+  </header>
+
+  <form class="filters" id="filters" aria-label="Filters">
+    <!-- One select per dimension; options are filled from /api/facets -->
+    <label>Feature <select name="feature" data-facet="features"></select></label>
+    <label>Criticality <select name="criticality" data-facet="criticalities"></select></label>
+    <label>Test type <select name="test_type" data-facet="test_types"></select></label>
+    <label>Framework <select name="framework" data-facet="frameworks"></select></label>
+    <label>Environment <select name="environment" data-facet="environments"></select></label>
+    <label>Browser <select name="browser" data-facet="browsers"></select></label>
+    <button type="button" id="clear-filters" class="ghost">Clear</button>
+  </form>
+
+  <main id="main" tabindex="-1">
+    <p class="status" id="status" role="status" aria-live="polite">Loading…</p>
+    <div id="view"></div>
+  </main>
+
+  <footer class="foot">
+    <span id="data-size"></span>
+    <a href="/docs">API documentation</a>
+  </footer>
+</body>
+</html>
