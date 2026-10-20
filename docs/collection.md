@@ -115,9 +115,11 @@ Actions is enough for `COLLECT_TOKEN`; it needs no write permission.
 
 ## History between runs
 
-Until the platform has a permanent host (plan M3), the database travels as the artifact
-`quality-history` (kept 90 days) from one successful collection to the next. A run restores
-the last successful one's history; if an earlier history exists but cannot be restored, the job
+The database's permanent home is the asset `quality.db` of the release `history` in this
+repository, which the hosted dashboard fetches ([deployment.md](deployment.md)). A run restores
+it from there (or, when the release does not exist yet, from the artifact `quality-history` of
+the last successful run, kept 90 days) and checks it with `qi history check`; after a fully
+successful collection it prunes runs older than 365 days and publishes a verified copy again; if an earlier history exists but cannot be restored, the job
 fails instead of starting an empty one. A partly failed collection uploads what it stored, but
 the next run starts from the last successful history and collects those runs again, which is
 safe because collection is idempotent.

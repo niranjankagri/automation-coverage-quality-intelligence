@@ -1,0 +1,11 @@
+# Only what the Dockerfile copies is needed; everything else stays out of the build context
+*
+!pyproject.toml
+!README.md
+!LICENSE
+!src/
+!samples/catalog.toml
+!samples/requirements.toml
+!samples/gates/
+!deploy/start.sh
+**/__pycache__

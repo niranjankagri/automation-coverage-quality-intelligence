@@ -13,8 +13,10 @@ left to the people who run it. Reviewed on 2026-10-20 (Phase 7 of the post-1.0 p
   paths are theirs; `qi` reads and writes only the paths they give.
 - **The dashboard is read-only and holds everything that was imported.** Anyone who can open it
   can read every requirement, test name and failure message in it.
-- **No network access is needed.** `qi` sends nothing anywhere; the dashboard loads nothing from
-  other origins (only `/docs`, FastAPI's API documentation page, loads its scripts from a CDN).
+- **Network access only where asked for.** Only `qi collect` (the GitHub API) and
+  `qi history fetch` (an https address given to it) use the network; nothing sends data
+  anywhere. The dashboard loads nothing from other origins (only `/docs`, FastAPI's API
+  documentation page, loads its scripts from a CDN).
 
 ## Protections
 
@@ -30,6 +32,7 @@ left to the people who run it. Reviewed on 2026-10-20 (Phase 7 of the post-1.0 p
 | Unauthenticated access to the dashboard | listens on 127.0.0.1 by default; any other address is **refused** unless `QI_DASHBOARD_PASSWORD` is set, which turns on HTTP basic authentication for every path (constant-time comparison), or public mode is chosen explicitly (`QI_DASHBOARD_PUBLIC=true`, for public data only, with a warning) | `test_cli_dashboard.py`, `test_api.py`, browser test with a login |
 | Password guessing | 10 wrong logins from one address within 5 minutes lock it out (429, `Retry-After`) until the count falls below the limit; memory bounded; client address from trusted proxies only (`QI_FORWARDED_ALLOW_IPS`) | `test_api.py::test_too_many_wrong_logins_lock_the_address_out_for_a_while`, `test_the_throttle_forgets_old_failures_and_stays_bounded` |
 | Downgrade to http, cached private data | HSTS (one year) on every answer over https; API answers `private, no-store` with a login (`no-cache` without); `Permissions-Policy`, `frame-ancestors 'none'` | `test_api.py::test_api_answers_are_not_kept_by_caches_and_https_gets_hsts` |
+| A tampered or broken published history | `qi history fetch` accepts https only (also after redirects), at most 200 MB, sends no credentials, and swaps the file in only after the integrity check passed; on any failure the old data stay | `tests/unit/history/test_fetch.py` |
 | Data kept longer than needed, lost data | `qi history prune` (retention, compacts the file), `qi history backup` / `check` / `restore` with verification ([operations.md](operations.md)) | `test_cli_history.py`, `test_store.py` |
 | Secrets in stored data and reports | test logs (`system-out`, `system-err`), attachments and environment dumps are never read; Allure `environment.properties` and JUnit properties are read through an allow-list; failure messages pass through a redaction of secret-shaped values (authorization headers, bearer tokens, `password=`/`token:`/`api_key` assignments, credentials in URLs, JWTs, AWS and GitHub keys, private keys) | `tests/unit/models/test_redaction.py`, sample hygiene tests |
 | Secrets in the tool's own output | the dashboard password is never printed (`qi config` shows only whether it is set; it is left out of the settings' repr); uvicorn's access log is off | `test_config.py`, `test_cli_dashboard.py` |

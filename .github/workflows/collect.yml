@@ -1,9 +1,10 @@
 # Collect the CI results of the producer repositories into history (docs/collection.md).
 #
-# Daily, and on demand. The history database is carried from one collection run to the next as
-# the artifact "quality-history" until the platform has a permanent host (plan M3). It fails
-# closed: when an earlier history exists but cannot be restored, the job stops instead of
-# starting over with an empty database.
+# Daily, and on demand. The history database lives as the asset quality.db of the release
+# "history" of this repository (permanent, public: results of public repositories only), which
+# the hosted dashboard fetches (docs/deployment.md); each run also keeps it as the artifact
+# "quality-history". It fails closed: when an earlier history exists but cannot be restored,
+# the job stops instead of starting over with an empty database.
 name: Collect CI results
 
 on:
@@ -16,7 +17,7 @@ on:
         default: "3"
 
 permissions:
-  contents: read
+  contents: write # publish the history as a release asset
   actions: read # list this workflow's earlier runs and download their history artifact
 
 # One collection at a time: two would race on the same history
@@ -43,13 +44,16 @@ jobs:
         run: |
           mkdir -p history
           previous=$(gh run list --workflow collect.yml --status success --limit 1 --json databaseId -q '.[0].databaseId')
-          if [ -z "$previous" ]; then
-            echo "No earlier successful collection: starting a new history."
-          else
+          if gh release view history > /dev/null 2>&1; then
+            gh release download history --pattern quality.db --dir history
+            echo "Restored the published history."
+          elif [ -n "$previous" ]; then
             gh run download "$previous" --name quality-history --dir history
-            test -s history/quality.db
             echo "Restored history of run $previous."
+          else
+            echo "No earlier history: starting a new one."
           fi
+          if [ -e history/quality.db ]; then qi history check --database history/quality.db; fi
       - name: qi collect
         env:
           # A token that may download the producers' artifacts; the workflow token is tried
@@ -67,3 +71,15 @@ jobs:
           path: history/quality.db
           retention-days: 90
           if-no-files-found: error
+      # Only a fully successful collection is published: retention, a verified copy, then the
+      # release asset the dashboard fetches (created on the first run, never marked latest)
+      - name: Publish the history
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          qi history prune --keep-days 365 --database history/quality.db
+          qi history backup publish/quality.db --database history/quality.db
+          if ! gh release view history > /dev/null 2>&1; then
+            gh release create history --title "Collected history (data)" --latest=false --prerelease --notes "The history database of the daily collection (docs/collection.md). Replaced by every successful collection; fetched by the hosted dashboard. Results of public repositories only."
+          fi
+          gh release upload history publish/quality.db --clobber

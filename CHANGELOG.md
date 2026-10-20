@@ -17,6 +17,11 @@
 - **Release status on the overview** ([docs/readiness.md](docs/readiness.md)): Ready / At risk /
   Blocked / Unknown from the release gate given with `qi dashboard --gate` plus flaky candidates,
   incomplete pipelines and stale data; unknown evidence is never ready; `/api/readiness`.
+- **Hosted demonstration (M3)**: Docker image (pinned base, non-root, health check), Render
+  blueprint deploying `main` after CI passed, `qi history fetch` (verified, atomic, ETag), the
+  collection publishes the history as a release asset, JSON access log (`QI_ACCESS_LOG`),
+  `tools/smoke.py`, CI job *Container image*, daily live check; [docs/deployment.md](docs/deployment.md).
+  Fixed: `/api/status` counted no collections for fixed data.
 - **Hosted operation (M5)**: login lock-out after 10 wrong logins (429), explicit public mode
   for public data (`QI_DASHBOARD_PUBLIC`), trusted proxies (`QI_FORWARDED_ALLOW_IPS`), HSTS over
   https, no-store API caching with a login; `qi history prune | backup | check | restore`;

@@ -148,6 +148,38 @@ jobs:
           path: reports/
           if-no-files-found: error
 
+  # The image the hosted dashboard runs (docs/deployment.md): built from this commit, started on
+  # a history of the sample runs (its own start fetches the published history, which a pull
+  # request must not depend on), then smoke-tested from outside like the live service
+  container:
+    name: Container image
+    needs: checks
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -e .
+      - run: docker build -t qi-dashboard .
+      - name: A history of the sample runs
+        run: qi history import samples/results --database seed/quality.db
+      - name: Start the container
+        run: >-
+          docker run -d --name qi -p 8000:8000 -v "$PWD/seed:/seed:ro" --entrypoint sh qi-dashboard -c
+          "cp /seed/quality.db /data/quality.db && exec qi dashboard --catalog /app/samples/catalog.toml
+          --gate /app/samples/gates/nightly.toml --database /data/quality.db --host 0.0.0.0 --port 8000"
+      - name: Smoke test
+        run: python tools/smoke.py http://127.0.0.1:8000 --wait 60
+      - name: Runs as a non-root user, logs JSON lines
+        run: |
+          test "$(docker exec qi id -u)" = "10001"
+          docker logs qi 2>&1 | grep -q '"path": "/api/health", "status": 200'
+      - name: Container log
+        if: always()
+        run: docker logs qi
+
   # The platform used as a release gate on the sample data. Each step asserts the exit code it
   # must produce, so the job proves the three outcomes on every push: passed (0), failed (1)
   # and incomplete input (3). Reports are kept as artifacts and summarised on the run page.

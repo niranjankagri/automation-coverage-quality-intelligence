@@ -12,6 +12,7 @@ then decides on this repository's own release criteria ([pipelines.md](pipelines
 | Tests (Python 3.13, latest runner image) | ubuntu-latest | the same on whatever image GitHub moves `ubuntu-latest` to next |
 | Dashboard in Chromium | ubuntu-26.04 | browser tests (incl. WCAG checks with axe-core) and screenshots |
 | Dashboard in firefox, webkit | ubuntu-26.04 | the same browser tests in the other two engines |
+| Container image | ubuntu-26.04 | builds the Docker image, starts it on a sample history, `tools/smoke.py`, non-root user, JSON log |
 | Quality gates (sample data) | ubuntu-26.04 | `qi gate` on the samples: each documented exit code |
 | Self gate (acceptance criteria) | ubuntu-26.04 | `qi gate` on this run's own unit and e2e results, as one pipeline execution |
 | Demonstration from a clean checkout | ubuntu-26.04, windows-2025 | `pip install -e .` and `python tools/demo.py` from a fresh checkout |
