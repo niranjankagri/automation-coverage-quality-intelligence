@@ -1,0 +1,78 @@
+{
+ "uuid": "f4a70279-e78b-4c79-8147-e7ac2b997230",
+ "historyId": "37755398db7967007c1729ae2ce5db48",
+ "testCaseId": "e0b8b662708c4d407b2a1f0cb11c8e54",
+ "fullName": "com.enterprise.automation.tests.ui.LoginSmokeTest.wrongPasswordIsRejected",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "ui",
+  "LoginSmokeTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.ui.LoginSmokeTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.ui.LoginSmokeTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "wrongPasswordIsRejected"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "UI"
+  },
+  {
+   "name": "feature",
+   "value": "LoginSmoke"
+  },
+  {
+   "name": "tag",
+   "value": "ui"
+  },
+  {
+   "name": "tag",
+   "value": "smoke"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.ui.LoginSmokeTest"
+  }
+ ],
+ "links": [],
+ "name": "wrongPasswordIsRejected",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480948904,
+ "stop": 1792480949690
+}

@@ -96,7 +96,24 @@ def test_all_formats_import_together_from_one_folder() -> None:
     batch = import_results([FORMATS])
 
     assert batch.complete
-    assert batch.warnings == []
     kinds = {r.context.framework for r in batch.runs}
     assert kinds == {"cypress", "testng"}
-    assert len(batch.runs) == len(CYPRESS) + len(ALLURE) * 2  # Allure and JUnit copies of each run
+    # Allure and JUnit copies of each API run, plus the nightly full run
+    assert len(batch.runs) == len(CYPRESS) + len(ALLURE) * 2 + 1
+    # The only warning: the nightly's repeated invocations share a key (as in JUnit XML)
+    assert all("everyThreadGetsItsOwnBrowser" in w for w in batch.warnings)
+
+
+def test_repeated_invocations_in_the_real_nightly_count_every_time() -> None:
+    """The 20 Oct nightly's Full suite: its CI log says 169 passed; 169 results, no invented retries.
+
+    Before the fix the four invocations of everyThreadGetsItsOwnBrowser (TestNG invocationCount)
+    were read as one test with three retries, so 166 results were imported.
+    """
+    (folder,) = sorted((FORMATS / "allure-enterprise-nightly-full").iterdir())
+    run = read_allure_folder(folder).run
+
+    assert len(run.results) == 169
+    assert run.outcome_counts()[Outcome.PASSED] == 169
+    assert sum(r.retries for r in run.results) == 0
+    assert sum(r.name == "everyThreadGetsItsOwnBrowser" for r in run.results) == 4

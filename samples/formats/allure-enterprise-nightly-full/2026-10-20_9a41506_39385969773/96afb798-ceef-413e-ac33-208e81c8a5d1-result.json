@@ -1,0 +1,74 @@
+{
+ "uuid": "96afb798-ceef-413e-ac33-208e81c8a5d1",
+ "historyId": "6725663d007ea34fce4b092290b59a5a",
+ "testCaseId": "70fcf2c13594e77b282b0fa58500cd07",
+ "fullName": "com.enterprise.automation.tests.platform.ExecutionEngineTest.metadataDescribesTheRunWithoutSecrets",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "platform",
+  "ExecutionEngineTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.platform.ExecutionEngineTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.platform.ExecutionEngineTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "metadataDescribesTheRunWithoutSecrets"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Framework"
+  },
+  {
+   "name": "feature",
+   "value": "ExecutionEngine"
+  },
+  {
+   "name": "tag",
+   "value": "unit"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.platform.ExecutionEngineTest"
+  }
+ ],
+ "links": [],
+ "name": "metadataDescribesTheRunWithoutSecrets",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480932994,
+ "stop": 1792480932996
+}

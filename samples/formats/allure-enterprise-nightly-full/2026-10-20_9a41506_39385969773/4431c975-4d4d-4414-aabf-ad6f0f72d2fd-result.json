@@ -1,0 +1,74 @@
+{
+ "uuid": "4431c975-4d4d-4414-aabf-ad6f0f72d2fd",
+ "historyId": "23aeb945d19de6706b3de4cea04659f4",
+ "testCaseId": "f58eb10e7f9a82a62c74a97e78d4201e",
+ "fullName": "com.enterprise.automation.tests.platform.TestDataTest.missingDataFilesFailClearly",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "platform",
+  "TestDataTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.platform.TestDataTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.platform.TestDataTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "missingDataFilesFailClearly"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Framework"
+  },
+  {
+   "name": "feature",
+   "value": "TestData"
+  },
+  {
+   "name": "tag",
+   "value": "unit"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.platform.TestDataTest"
+  }
+ ],
+ "links": [],
+ "name": "missingDataFilesFailClearly",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480938233,
+ "stop": 1792480938235
+}

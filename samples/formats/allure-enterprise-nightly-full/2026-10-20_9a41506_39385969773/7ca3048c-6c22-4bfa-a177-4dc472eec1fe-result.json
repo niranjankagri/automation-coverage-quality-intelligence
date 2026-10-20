@@ -1,0 +1,99 @@
+{
+ "uuid": "7ca3048c-6c22-4bfa-a177-4dc472eec1fe",
+ "historyId": "776ee00105f46a2e2fd72f58ee4e1d55",
+ "testCaseId": "bced3e69c66cb0366ccf912dd152b88f",
+ "fullName": "com.enterprise.automation.tests.ui.CustomerManagementTest.invalidInputIsRejectedPerField",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "ui",
+  "CustomerManagementTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.ui.CustomerManagementTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.ui.CustomerManagementTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "invalidInputIsRejectedPerField"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "UI"
+  },
+  {
+   "name": "feature",
+   "value": "CustomerManagement"
+  },
+  {
+   "name": "tag",
+   "value": "ui"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.ui.CustomerManagementTest"
+  }
+ ],
+ "links": [],
+ "name": "invalidInputIsRejectedPerField",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [
+  {
+   "name": "field",
+   "value": "email"
+  },
+  {
+   "name": "label",
+   "value": "Email"
+  },
+  {
+   "name": "error",
+   "value": "Email is required"
+  },
+  {
+   "name": "value",
+   "value": ""
+  },
+  {
+   "name": "testCase",
+   "value": "email missing"
+  }
+ ],
+ "start": 1792480979648,
+ "stop": 1792480981679
+}

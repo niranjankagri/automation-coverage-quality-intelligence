@@ -1,0 +1,78 @@
+{
+ "uuid": "896e48dc-271f-4dc4-bc4b-a2a014327190",
+ "historyId": "7d9c7bc890f6eb984cf1274222f4b796",
+ "testCaseId": "f14e260a0c3a5d8fd8c5c89dcb9ea63c",
+ "fullName": "com.enterprise.automation.tests.ui.CatalogSmokeTest.addingProductsFillsTheCart",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "ui",
+  "CatalogSmokeTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.ui.CatalogSmokeTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.ui.CatalogSmokeTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "addingProductsFillsTheCart"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "UI"
+  },
+  {
+   "name": "feature",
+   "value": "CatalogSmoke"
+  },
+  {
+   "name": "tag",
+   "value": "ui"
+  },
+  {
+   "name": "tag",
+   "value": "smoke"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.ui.CatalogSmokeTest"
+  }
+ ],
+ "links": [],
+ "name": "addingProductsFillsTheCart",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480956039,
+ "stop": 1792480960220
+}

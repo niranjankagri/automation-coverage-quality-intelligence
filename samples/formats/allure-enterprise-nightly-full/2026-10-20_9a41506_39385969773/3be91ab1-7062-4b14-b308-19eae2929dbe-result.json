@@ -1,0 +1,91 @@
+{
+ "uuid": "3be91ab1-7062-4b14-b308-19eae2929dbe",
+ "historyId": "b8902ae9bf7d679ac5c7b7fd695f9f7b",
+ "testCaseId": "aa9bde95e7aa555e46c76bfdbe7412b8",
+ "fullName": "com.enterprise.automation.tests.api.ProductApiTest.catalogueMatchesTheReferenceData",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "api",
+  "ProductApiTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "catalogueMatchesTheReferenceData"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "API"
+  },
+  {
+   "name": "feature",
+   "value": "ProductApi"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "smoke"
+  },
+  {
+   "name": "tag",
+   "value": "api"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  }
+ ],
+ "links": [],
+ "name": "catalogueMatchesTheReferenceData",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [
+  {
+   "name": "expected",
+   "value": "ProductData[sku=LAP-1002, name=Workstation 16, category=Laptops, price=2199.00, stock=10]"
+  },
+  {
+   "name": "sku",
+   "value": "LAP-1002"
+  }
+ ],
+ "start": 1792480927703,
+ "stop": 1792480927988
+}

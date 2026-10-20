@@ -1,0 +1,74 @@
+{
+ "uuid": "8a2d3e72-1c8d-4611-861b-6c0623cece58",
+ "historyId": "c7d8a3be42a79ca65551d88aa5bfc9ca",
+ "testCaseId": "a1bf94a173786baab68804c3f6ae3ed8",
+ "fullName": "com.enterprise.automation.tests.platform.LogComponentTest.frameworkPackagesMapToTheirLayer",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "platform",
+  "LogComponentTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.platform.LogComponentTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.platform.LogComponentTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "frameworkPackagesMapToTheirLayer"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Framework"
+  },
+  {
+   "name": "feature",
+   "value": "LogComponent"
+  },
+  {
+   "name": "tag",
+   "value": "unit"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.platform.LogComponentTest"
+  }
+ ],
+ "links": [],
+ "name": "frameworkPackagesMapToTheirLayer",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480938083,
+ "stop": 1792480938083
+}

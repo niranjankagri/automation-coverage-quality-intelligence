@@ -1,0 +1,74 @@
+{
+ "uuid": "093e16e8-d946-4cc0-ae75-7fec88aab774",
+ "historyId": "fdcc5a69aad30c452c6399a2bca4301e",
+ "testCaseId": "4b3aee959c0e95ac4500f0787870ff23",
+ "fullName": "com.enterprise.automation.tests.platform.ExecutionEngineTest.realFailuresAreNeverRetried",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "platform",
+  "ExecutionEngineTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.platform.ExecutionEngineTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.platform.ExecutionEngineTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "realFailuresAreNeverRetried"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Framework"
+  },
+  {
+   "name": "feature",
+   "value": "ExecutionEngine"
+  },
+  {
+   "name": "tag",
+   "value": "unit"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.platform.ExecutionEngineTest"
+  }
+ ],
+ "links": [],
+ "name": "realFailuresAreNeverRetried",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480932997,
+ "stop": 1792480932998
+}

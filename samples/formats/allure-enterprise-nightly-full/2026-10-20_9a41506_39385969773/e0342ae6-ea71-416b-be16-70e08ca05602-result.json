@@ -1,0 +1,87 @@
+{
+ "uuid": "e0342ae6-ea71-416b-be16-70e08ca05602",
+ "historyId": "3c5586ce38372b1826555ad3a6c13b6d",
+ "testCaseId": "46ac71af77c936156063338a81ddedf5",
+ "fullName": "com.enterprise.automation.tests.ui.ProductCatalogTest.categoryFilterShowsExactlyItsProducts",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "ui",
+  "ProductCatalogTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.ui.ProductCatalogTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.ui.ProductCatalogTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "categoryFilterShowsExactlyItsProducts"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "UI"
+  },
+  {
+   "name": "feature",
+   "value": "ProductCatalog"
+  },
+  {
+   "name": "tag",
+   "value": "ui"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.ui.ProductCatalogTest"
+  }
+ ],
+ "links": [],
+ "name": "categoryFilterShowsExactlyItsProducts",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [
+  {
+   "name": "expectedNames",
+   "value": "[27-inch 4K Monitor, 34-inch Ultrawide Monitor]"
+  },
+  {
+   "name": "category",
+   "value": "Monitors"
+  }
+ ],
+ "start": 1792480967112,
+ "stop": 1792480969334
+}

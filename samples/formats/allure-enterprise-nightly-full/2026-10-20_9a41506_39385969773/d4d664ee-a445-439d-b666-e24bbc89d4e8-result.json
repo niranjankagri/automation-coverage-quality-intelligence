@@ -1,0 +1,78 @@
+{
+ "uuid": "d4d664ee-a445-439d-b666-e24bbc89d4e8",
+ "historyId": "cc8b9a1f1e46dafd57c8e21ccc56dd4a",
+ "testCaseId": "30c84759004e6d45a75fc61e5b2be869",
+ "fullName": "com.enterprise.automation.tests.ui.LoginRegressionTest.protectedPagesRedirectToLoginWithoutASession",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "ui",
+  "LoginRegressionTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.ui.LoginRegressionTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.ui.LoginRegressionTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "protectedPagesRedirectToLoginWithoutASession"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "UI"
+  },
+  {
+   "name": "feature",
+   "value": "LoginRegression"
+  },
+  {
+   "name": "tag",
+   "value": "ui"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.ui.LoginRegressionTest"
+  }
+ ],
+ "links": [],
+ "name": "protectedPagesRedirectToLoginWithoutASession",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480968008,
+ "stop": 1792480968312
+}

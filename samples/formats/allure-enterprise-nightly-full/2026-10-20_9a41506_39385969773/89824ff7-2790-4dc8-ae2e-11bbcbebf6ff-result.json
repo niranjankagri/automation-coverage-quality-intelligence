@@ -1,0 +1,94 @@
+{
+ "uuid": "89824ff7-2790-4dc8-ae2e-11bbcbebf6ff",
+ "historyId": "3f3ac704993f41c571f7fa5ac61452e7",
+ "testCaseId": "d477aa9640d387eb666f5d41d5f089d3",
+ "fullName": "com.enterprise.automation.tests.integration.UiApiDatabaseTest.customerCreatedThroughTheApiIsStoredAndVisibleInTheUi",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "integration",
+  "UiApiDatabaseTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.integration.UiApiDatabaseTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.integration.UiApiDatabaseTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "customerCreatedThroughTheApiIsStoredAndVisibleInTheUi"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Integration"
+  },
+  {
+   "name": "feature",
+   "value": "UiApiDatabase"
+  },
+  {
+   "name": "tag",
+   "value": "ui"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "integration"
+  },
+  {
+   "name": "tag",
+   "value": "sanity"
+  },
+  {
+   "name": "tag",
+   "value": "e2e"
+  },
+  {
+   "name": "tag",
+   "value": "db"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.integration.UiApiDatabaseTest"
+  }
+ ],
+ "links": [],
+ "name": "customerCreatedThroughTheApiIsStoredAndVisibleInTheUi",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480948476,
+ "stop": 1792480950896
+}

@@ -1,0 +1,99 @@
+{
+ "uuid": "3531513f-d175-436e-a722-a7423425900b",
+ "historyId": "45470eb57bd245a6db83f2a6b927c655",
+ "testCaseId": "99ccdc14fcd66f353d528cdf84119231",
+ "fullName": "com.enterprise.automation.tests.ui.LoginRegressionTest.signInIsRejected",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "ui",
+  "LoginRegressionTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.ui.LoginRegressionTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.ui.LoginRegressionTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "signInIsRejected"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "UI"
+  },
+  {
+   "name": "feature",
+   "value": "LoginRegression"
+  },
+  {
+   "name": "tag",
+   "value": "ui"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.ui.LoginRegressionTest"
+  }
+ ],
+ "links": [],
+ "name": "signInIsRejected",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [
+  {
+   "name": "expectedField",
+   "value": "password"
+  },
+  {
+   "name": "password",
+   "value": "****"
+  },
+  {
+   "name": "expectedMessage",
+   "value": "Password is required"
+  },
+  {
+   "name": "testCase",
+   "value": "password missing"
+  },
+  {
+   "name": "username",
+   "value": "admin"
+  }
+ ],
+ "start": 1792480975009,
+ "stop": 1792480975549
+}

@@ -1,0 +1,78 @@
+{
+ "uuid": "f139660b-a0d1-4203-af7b-5eb6247ec10f",
+ "historyId": "d9401bd2b092756a1e9a40cb1756044c",
+ "testCaseId": "34987093be52940dcf7a7297116d3cde",
+ "fullName": "com.enterprise.automation.tests.ui.CustomerManagementTest.adminEditsACustomer",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "ui",
+  "CustomerManagementTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.ui.CustomerManagementTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.ui.CustomerManagementTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "adminEditsACustomer"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "UI"
+  },
+  {
+   "name": "feature",
+   "value": "CustomerManagement"
+  },
+  {
+   "name": "tag",
+   "value": "ui"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.ui.CustomerManagementTest"
+  }
+ ],
+ "links": [],
+ "name": "adminEditsACustomer",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480955078,
+ "stop": 1792480960846
+}

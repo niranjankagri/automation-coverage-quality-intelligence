@@ -1,0 +1,74 @@
+{
+ "uuid": "fcec651e-e348-48e5-9f5c-b818c5dfce3f",
+ "historyId": "69565bdb55675a186f360dafae491f2c",
+ "testCaseId": "785f107434f9f3e932e3fcfed8df39c3",
+ "fullName": "com.enterprise.automation.tests.platform.TestDataTest.orderTotalsAreComputedFromTheCatalogue",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "platform",
+  "TestDataTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.platform.TestDataTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.platform.TestDataTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "orderTotalsAreComputedFromTheCatalogue"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Framework"
+  },
+  {
+   "name": "feature",
+   "value": "TestData"
+  },
+  {
+   "name": "tag",
+   "value": "unit"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.platform.TestDataTest"
+  }
+ ],
+ "links": [],
+ "name": "orderTotalsAreComputedFromTheCatalogue",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480938237,
+ "stop": 1792480938240
+}

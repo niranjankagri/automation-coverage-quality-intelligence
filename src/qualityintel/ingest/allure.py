@@ -13,8 +13,11 @@ Mapping (fields Allure has but this model does not are listed so nothing is misr
 - key: ``testClass`` label + ``testMethod`` label (the same key the JUnit XML of TestNG/JUnit
   gives, so history continues across formats), else the ``fullName`` split at its last dot;
   parameters are appended as ``[a, b]``;
-- retries: several results with the same ``historyId`` are attempts of one test; the last one
-  is the outcome and the earlier ones count as ``retries``;
+- retries: results with the same ``historyId`` that did not pass, followed by another result
+  of that ``historyId``, are earlier attempts: they count as ``retries`` of the result after them.
+  Every passed result is its own execution, so a method that TestNG runs several times on
+  purpose (``invocationCount``) counts every time (found on the enterprise nightly: 4 passing
+  invocations of one method had been taken for 1 test with 3 retries);
 - explicit test ids: ``AS_ID`` labels and ``tms`` links;
 - run context: ``framework`` label; ``browser``, ``environment`` and the build from
   ``environment.properties``; the build is ``build``, else ``git.commit``, else
@@ -114,10 +117,10 @@ def _read(folder: Path, name: str, context: RunContext | None) -> ParsedFile:
     results = []
     framework = None
     for group in attempts.values():
-        group.sort(key=lambda e: int(e.get("stop") or e.get("start") or 0))
-        final = group[-1]
-        framework = framework or _label(final, "framework")
-        results.append(_result(final, retries=len(group) - 1, warnings=warnings))
+        group.sort(key=lambda e: int(e.get("start") or e.get("stop") or 0))
+        for final, retries in _executions(group):
+            framework = framework or _label(final, "framework")
+            results.append(_result(final, retries=retries, warnings=warnings))
 
     file_context = _environment(folder)
     if framework and "framework" not in file_context:
@@ -131,6 +134,25 @@ def _read(folder: Path, name: str, context: RunContext | None) -> ParsedFile:
         results=tuple(sorted(results, key=lambda r: r.key)),
     )
     return ParsedFile(run=run, warnings=tuple(warnings))
+
+
+def _executions(group: list[dict[str, Any]]) -> list[tuple[dict[str, Any], int]]:
+    """Split the results of one ``historyId`` (oldest first) into executions with their retries.
+
+    Attempts that did not pass belong to the next result; a passed result ends an execution.
+    Trailing attempts that never passed end in their last one.
+    """
+    executions: list[tuple[dict[str, Any], int]] = []
+    pending: list[dict[str, Any]] = []
+    for entry in group:
+        if entry.get("status") == "passed":
+            executions.append((entry, len(pending)))
+            pending = []
+        else:
+            pending.append(entry)
+    if pending:
+        executions.append((pending[-1], len(pending) - 1))
+    return executions
 
 
 def _result(entry: Mapping[str, Any], retries: int, warnings: list[str]) -> TestResult:

@@ -1,0 +1,78 @@
+{
+ "uuid": "7d816da2-f7b2-42d4-b4cb-e5b564ff60b3",
+ "historyId": "b1c4d39450d599064813138dbc1496e",
+ "testCaseId": "bcd7b87954305b036174d18ae6cec323",
+ "fullName": "com.enterprise.automation.tests.api.ProductApiTest.createdProductIsListedInItsCategory",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "api",
+  "ProductApiTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "createdProductIsListedInItsCategory"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "API"
+  },
+  {
+   "name": "feature",
+   "value": "ProductApi"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "api"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  }
+ ],
+ "links": [],
+ "name": "createdProductIsListedInItsCategory",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480929636,
+ "stop": 1792480929901
+}

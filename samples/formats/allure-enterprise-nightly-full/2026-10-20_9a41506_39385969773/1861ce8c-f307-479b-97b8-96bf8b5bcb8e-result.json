@@ -1,0 +1,82 @@
+{
+ "uuid": "1861ce8c-f307-479b-97b8-96bf8b5bcb8e",
+ "historyId": "6ca4417d584ceb855a55281b7f9838c7",
+ "testCaseId": "106b9a41fc459aa4423fb8013f84b5b2",
+ "fullName": "com.enterprise.automation.tests.ui.CheckoutTest.viewerCannotPlaceOrders",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "ui",
+  "CheckoutTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.ui.CheckoutTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.ui.CheckoutTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "viewerCannotPlaceOrders"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "UI"
+  },
+  {
+   "name": "feature",
+   "value": "Checkout"
+  },
+  {
+   "name": "tag",
+   "value": "ui"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "sanity"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.ui.CheckoutTest"
+  }
+ ],
+ "links": [],
+ "name": "viewerCannotPlaceOrders",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480971265,
+ "stop": 1792480974370
+}

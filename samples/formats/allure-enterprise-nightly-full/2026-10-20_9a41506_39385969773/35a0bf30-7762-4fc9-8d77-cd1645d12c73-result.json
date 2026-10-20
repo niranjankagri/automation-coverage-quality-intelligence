@@ -1,0 +1,78 @@
+{
+ "uuid": "35a0bf30-7762-4fc9-8d77-cd1645d12c73",
+ "historyId": "1d74e6ab5630323c84690c854f74b6c3",
+ "testCaseId": "f11ef0cc2883c84ae08b99d05eed489",
+ "fullName": "com.enterprise.automation.tests.ui.LoginSmokeTest.adminSignsInAndSeesTheDashboard",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "ui",
+  "LoginSmokeTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.ui.LoginSmokeTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.ui.LoginSmokeTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "adminSignsInAndSeesTheDashboard"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "UI"
+  },
+  {
+   "name": "feature",
+   "value": "LoginSmoke"
+  },
+  {
+   "name": "tag",
+   "value": "ui"
+  },
+  {
+   "name": "tag",
+   "value": "smoke"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.ui.LoginSmokeTest"
+  }
+ ],
+ "links": [],
+ "name": "adminSignsInAndSeesTheDashboard",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480944600,
+ "stop": 1792480945757
+}

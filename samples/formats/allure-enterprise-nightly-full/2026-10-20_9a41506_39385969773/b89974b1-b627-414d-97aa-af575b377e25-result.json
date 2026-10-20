@@ -1,0 +1,99 @@
+{
+ "uuid": "b89974b1-b627-414d-97aa-af575b377e25",
+ "historyId": "def43ad93d523cf530730e246fcb8be1",
+ "testCaseId": "bced3e69c66cb0366ccf912dd152b88f",
+ "fullName": "com.enterprise.automation.tests.ui.CustomerManagementTest.invalidInputIsRejectedPerField",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "ui",
+  "CustomerManagementTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.ui.CustomerManagementTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.ui.CustomerManagementTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "invalidInputIsRejectedPerField"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "UI"
+  },
+  {
+   "name": "feature",
+   "value": "CustomerManagement"
+  },
+  {
+   "name": "tag",
+   "value": "ui"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.ui.CustomerManagementTest"
+  }
+ ],
+ "links": [],
+ "name": "invalidInputIsRejectedPerField",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [
+  {
+   "name": "field",
+   "value": "lastName"
+  },
+  {
+   "name": "label",
+   "value": "Last name"
+  },
+  {
+   "name": "error",
+   "value": "Last name is required"
+  },
+  {
+   "name": "value",
+   "value": ""
+  },
+  {
+   "name": "testCase",
+   "value": "last name missing"
+  }
+ ],
+ "start": 1792480977197,
+ "stop": 1792480979176
+}

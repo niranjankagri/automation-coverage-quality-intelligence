@@ -1,0 +1,74 @@
+{
+ "uuid": "bad2cedd-ccce-45ef-855b-0bdc84f26edc",
+ "historyId": "d1cbc7ed2e9dda3bb5e58fcbc7f2e2b",
+ "testCaseId": "13c8426a184bd4b1e235ce4a65041604",
+ "fullName": "com.enterprise.automation.tests.platform.TestDataTest.csvIsReadWithHeadersCommentsAndQuotes",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "platform",
+  "TestDataTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.platform.TestDataTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.platform.TestDataTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "csvIsReadWithHeadersCommentsAndQuotes"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Framework"
+  },
+  {
+   "name": "feature",
+   "value": "TestData"
+  },
+  {
+   "name": "tag",
+   "value": "unit"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.platform.TestDataTest"
+  }
+ ],
+ "links": [],
+ "name": "csvIsReadWithHeadersCommentsAndQuotes",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480938185,
+ "stop": 1792480938189
+}

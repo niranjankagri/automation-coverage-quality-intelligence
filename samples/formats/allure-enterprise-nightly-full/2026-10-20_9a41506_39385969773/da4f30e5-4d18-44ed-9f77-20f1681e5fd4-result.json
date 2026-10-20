@@ -1,0 +1,78 @@
+{
+ "uuid": "da4f30e5-4d18-44ed-9f77-20f1681e5fd4",
+ "historyId": "7723d03ab6559ccd12a434205bfae002",
+ "testCaseId": "901afd0bd058322b5488ddea59b98855",
+ "fullName": "com.enterprise.automation.tests.platform.SecretMaskingTest.credentialHeadersAreMaskedCompletely",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "platform",
+  "SecretMaskingTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.platform.SecretMaskingTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.platform.SecretMaskingTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "credentialHeadersAreMaskedCompletely"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Framework"
+  },
+  {
+   "name": "feature",
+   "value": "SecretMasking"
+  },
+  {
+   "name": "tag",
+   "value": "unit"
+  },
+  {
+   "name": "tag",
+   "value": "security"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.platform.SecretMaskingTest"
+  }
+ ],
+ "links": [],
+ "name": "credentialHeadersAreMaskedCompletely",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480941088,
+ "stop": 1792480941089
+}

@@ -1,0 +1,78 @@
+{
+ "uuid": "da618676-2247-4456-982d-ad8c5f67d196",
+ "historyId": "c39410c5622a63b62acef700c3edca17",
+ "testCaseId": "3d7f28513b5a922a14baba8e4be25d92",
+ "fullName": "com.enterprise.automation.tests.api.UserApiTest.invalidAndDuplicateUsersAreRejected",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "api",
+  "UserApiTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.api.UserApiTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.api.UserApiTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "invalidAndDuplicateUsersAreRejected"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "API"
+  },
+  {
+   "name": "feature",
+   "value": "UserApi"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "api"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.api.UserApiTest"
+  }
+ ],
+ "links": [],
+ "name": "invalidAndDuplicateUsersAreRejected",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480931983,
+ "stop": 1792480932232
+}

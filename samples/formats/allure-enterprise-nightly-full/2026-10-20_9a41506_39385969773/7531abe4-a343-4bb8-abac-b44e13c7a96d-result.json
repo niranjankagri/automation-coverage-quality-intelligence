@@ -1,0 +1,74 @@
+{
+ "uuid": "7531abe4-a343-4bb8-abac-b44e13c7a96d",
+ "historyId": "70d77c93b390f41f2b6ca00b3c23f0a8",
+ "testCaseId": "d0a20cdb4609a6f505bf98788a40e095",
+ "fullName": "com.enterprise.automation.tests.platform.ConfigLoaderTest.invalidValuesFailFast",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "platform",
+  "ConfigLoaderTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.platform.ConfigLoaderTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.platform.ConfigLoaderTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "invalidValuesFailFast"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Framework"
+  },
+  {
+   "name": "feature",
+   "value": "ConfigLoader"
+  },
+  {
+   "name": "tag",
+   "value": "unit"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.platform.ConfigLoaderTest"
+  }
+ ],
+ "links": [],
+ "name": "invalidValuesFailFast",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480938106,
+ "stop": 1792480938109
+}

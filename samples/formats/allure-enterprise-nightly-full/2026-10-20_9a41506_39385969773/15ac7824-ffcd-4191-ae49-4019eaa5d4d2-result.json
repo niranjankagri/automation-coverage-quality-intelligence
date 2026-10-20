@@ -1,0 +1,74 @@
+{
+ "uuid": "15ac7824-ffcd-4191-ae49-4019eaa5d4d2",
+ "historyId": "8d4985ff99975cdbda0eefb5d0fd782",
+ "testCaseId": "def9ce6815ebee197da9c1f3da06c0bb",
+ "fullName": "com.enterprise.automation.tests.platform.ConfigLoaderTest.envSystemPropertySwitchesTheEnvironmentFile",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "platform",
+  "ConfigLoaderTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.platform.ConfigLoaderTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.platform.ConfigLoaderTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "envSystemPropertySwitchesTheEnvironmentFile"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Framework"
+  },
+  {
+   "name": "feature",
+   "value": "ConfigLoader"
+  },
+  {
+   "name": "tag",
+   "value": "unit"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.platform.ConfigLoaderTest"
+  }
+ ],
+ "links": [],
+ "name": "envSystemPropertySwitchesTheEnvironmentFile",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480938100,
+ "stop": 1792480938102
+}

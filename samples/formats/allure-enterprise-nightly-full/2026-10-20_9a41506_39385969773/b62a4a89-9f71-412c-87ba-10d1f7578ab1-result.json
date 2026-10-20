@@ -1,0 +1,74 @@
+{
+ "uuid": "b62a4a89-9f71-412c-87ba-10d1f7578ab1",
+ "historyId": "92c47db2b800b02a90536319fb6cf504",
+ "testCaseId": "b60252e91f4f32168557f6bc2f2306f3",
+ "fullName": "com.enterprise.automation.tests.platform.ScreenshotUtilsTest.aClosedBrowserGivesNoScreenshotInsteadOfAnError",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "platform",
+  "ScreenshotUtilsTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.platform.ScreenshotUtilsTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.platform.ScreenshotUtilsTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "aClosedBrowserGivesNoScreenshotInsteadOfAnError"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Framework"
+  },
+  {
+   "name": "feature",
+   "value": "ScreenshotUtils"
+  },
+  {
+   "name": "tag",
+   "value": "platform"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.platform.ScreenshotUtilsTest"
+  }
+ ],
+ "links": [],
+ "name": "aClosedBrowserGivesNoScreenshotInsteadOfAnError",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480938244,
+ "stop": 1792480939666
+}

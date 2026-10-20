@@ -1,0 +1,78 @@
+{
+ "uuid": "f0a47795-cf97-4341-8941-6b86a52911c2",
+ "historyId": "30decdb06f381f37ee7549fa776b1ac0",
+ "testCaseId": "3b367f4b243aaa8f3e567845d44b5fef",
+ "fullName": "com.enterprise.automation.tests.api.ProductApiTest.deleteDeactivatesInsteadOfRemoving",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "api",
+  "ProductApiTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "deleteDeactivatesInsteadOfRemoving"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "API"
+  },
+  {
+   "name": "feature",
+   "value": "ProductApi"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "api"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  }
+ ],
+ "links": [],
+ "name": "deleteDeactivatesInsteadOfRemoving",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480930229,
+ "stop": 1792480930879
+}

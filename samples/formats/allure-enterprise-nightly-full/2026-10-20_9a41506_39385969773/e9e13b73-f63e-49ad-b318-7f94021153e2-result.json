@@ -1,0 +1,74 @@
+{
+ "uuid": "e9e13b73-f63e-49ad-b318-7f94021153e2",
+ "historyId": "121cbe283d72e2fd8bed334fcd5d9b55",
+ "testCaseId": "5733c3ecb06dfde610ef4db6052abca2",
+ "fullName": "com.enterprise.automation.tests.platform.TestDataTest.cleanupRunsNewestFirstAndSurvivesFailures",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "platform",
+  "TestDataTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.platform.TestDataTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.platform.TestDataTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "cleanupRunsNewestFirstAndSurvivesFailures"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Framework"
+  },
+  {
+   "name": "feature",
+   "value": "TestData"
+  },
+  {
+   "name": "tag",
+   "value": "unit"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.platform.TestDataTest"
+  }
+ ],
+ "links": [],
+ "name": "cleanupRunsNewestFirstAndSurvivesFailures",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480938176,
+ "stop": 1792480938183
+}

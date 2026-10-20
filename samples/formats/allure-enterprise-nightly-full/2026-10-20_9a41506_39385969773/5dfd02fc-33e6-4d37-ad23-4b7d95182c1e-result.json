@@ -1,0 +1,78 @@
+{
+ "uuid": "5dfd02fc-33e6-4d37-ad23-4b7d95182c1e",
+ "historyId": "dd92b0888cc20debe021f3cce5fd72b9",
+ "testCaseId": "b7fc4b3b40f44e80514d1a02dc6c0c1b",
+ "fullName": "com.enterprise.automation.tests.api.UserApiTest.adminListsUsers",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "api",
+  "UserApiTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.api.UserApiTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.api.UserApiTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "adminListsUsers"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "API"
+  },
+  {
+   "name": "feature",
+   "value": "UserApi"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "api"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.api.UserApiTest"
+  }
+ ],
+ "links": [],
+ "name": "adminListsUsers",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480931503,
+ "stop": 1792480931623
+}

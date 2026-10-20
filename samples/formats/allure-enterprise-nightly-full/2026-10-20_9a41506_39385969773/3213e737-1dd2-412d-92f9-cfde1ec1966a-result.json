@@ -1,0 +1,91 @@
+{
+ "uuid": "3213e737-1dd2-412d-92f9-cfde1ec1966a",
+ "historyId": "22a4ce35281bc66a081395313051442c",
+ "testCaseId": "aa9bde95e7aa555e46c76bfdbe7412b8",
+ "fullName": "com.enterprise.automation.tests.api.ProductApiTest.catalogueMatchesTheReferenceData",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "api",
+  "ProductApiTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "catalogueMatchesTheReferenceData"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "API"
+  },
+  {
+   "name": "feature",
+   "value": "ProductApi"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "smoke"
+  },
+  {
+   "name": "tag",
+   "value": "api"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  }
+ ],
+ "links": [],
+ "name": "catalogueMatchesTheReferenceData",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [
+  {
+   "name": "expected",
+   "value": "ProductData[sku=LAP-1001, name=Ultrabook 14, category=Laptops, price=1199.00, stock=25]"
+  },
+  {
+   "name": "sku",
+   "value": "LAP-1001"
+  }
+ ],
+ "start": 1792480925663,
+ "stop": 1792480927695
+}

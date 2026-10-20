@@ -1,0 +1,78 @@
+{
+ "uuid": "462e88e0-37d7-47f3-a739-c470b1842ee2",
+ "historyId": "4b1d7f25337d362d05ca9255557b3b73",
+ "testCaseId": "6d1b4f626fe5e2c494a84a21a54b32fa",
+ "fullName": "com.enterprise.automation.tests.ui.CheckoutTest.orderNeedsACustomer",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "ui",
+  "CheckoutTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.ui.CheckoutTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.ui.CheckoutTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "orderNeedsACustomer"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "UI"
+  },
+  {
+   "name": "feature",
+   "value": "Checkout"
+  },
+  {
+   "name": "tag",
+   "value": "ui"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.ui.CheckoutTest"
+  }
+ ],
+ "links": [],
+ "name": "orderNeedsACustomer",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480958758,
+ "stop": 1792480961891
+}

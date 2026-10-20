@@ -1,0 +1,99 @@
+{
+ "uuid": "801d0c99-a04f-4210-ac77-71fc12afe497",
+ "historyId": "cb489ad142e315d2a0a1794299cade75",
+ "testCaseId": "bced3e69c66cb0366ccf912dd152b88f",
+ "fullName": "com.enterprise.automation.tests.ui.CustomerManagementTest.invalidInputIsRejectedPerField",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "ui",
+  "CustomerManagementTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.ui.CustomerManagementTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.ui.CustomerManagementTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "invalidInputIsRejectedPerField"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "UI"
+  },
+  {
+   "name": "feature",
+   "value": "CustomerManagement"
+  },
+  {
+   "name": "tag",
+   "value": "ui"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.ui.CustomerManagementTest"
+  }
+ ],
+ "links": [],
+ "name": "invalidInputIsRejectedPerField",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [
+  {
+   "name": "field",
+   "value": "phone"
+  },
+  {
+   "name": "label",
+   "value": "Phone"
+  },
+  {
+   "name": "error",
+   "value": "Phone must contain 7-20 digits, spaces, +, - or ()"
+  },
+  {
+   "name": "value",
+   "value": "12345"
+  },
+  {
+   "name": "testCase",
+   "value": "phone too short"
+  }
+ ],
+ "start": 1792480989975,
+ "stop": 1792480991675
+}

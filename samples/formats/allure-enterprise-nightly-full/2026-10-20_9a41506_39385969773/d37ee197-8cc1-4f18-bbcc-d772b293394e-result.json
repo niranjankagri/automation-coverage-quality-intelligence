@@ -1,0 +1,82 @@
+{
+ "uuid": "d37ee197-8cc1-4f18-bbcc-d772b293394e",
+ "historyId": "c715541d44fe8a6188eb9ccaf1d6374",
+ "testCaseId": "d08b50b3b1fea985e8728a4c6b56ec43",
+ "fullName": "com.enterprise.automation.tests.e2e.PurchaseJourneyTest.adminCancelsAnOrder",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "e2e",
+  "PurchaseJourneyTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.e2e.PurchaseJourneyTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.e2e.PurchaseJourneyTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "adminCancelsAnOrder"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "End-to-end"
+  },
+  {
+   "name": "feature",
+   "value": "PurchaseJourney"
+  },
+  {
+   "name": "tag",
+   "value": "ui"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "e2e"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.e2e.PurchaseJourneyTest"
+  }
+ ],
+ "links": [],
+ "name": "adminCancelsAnOrder",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480942340,
+ "stop": 1792480947641
+}

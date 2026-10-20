@@ -1,0 +1,87 @@
+{
+ "uuid": "c95ee1f8-dac6-4688-8b54-bcf4fff92f95",
+ "historyId": "e586d2c77ea26899b1890cbf4dcd3c79",
+ "testCaseId": "46ac71af77c936156063338a81ddedf5",
+ "fullName": "com.enterprise.automation.tests.ui.ProductCatalogTest.categoryFilterShowsExactlyItsProducts",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "ui",
+  "ProductCatalogTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.ui.ProductCatalogTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.ui.ProductCatalogTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "categoryFilterShowsExactlyItsProducts"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "UI"
+  },
+  {
+   "name": "feature",
+   "value": "ProductCatalog"
+  },
+  {
+   "name": "tag",
+   "value": "ui"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.ui.ProductCatalogTest"
+  }
+ ],
+ "links": [],
+ "name": "categoryFilterShowsExactlyItsProducts",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [
+  {
+   "name": "expectedNames",
+   "value": "[Noise-Cancelling Headphones]"
+  },
+  {
+   "name": "category",
+   "value": "Audio"
+  }
+ ],
+ "start": 1792480960559,
+ "stop": 1792480963089
+}

@@ -1,0 +1,82 @@
+{
+ "uuid": "3fad8261-8624-4c58-94fe-c51de15499f3",
+ "historyId": "d994348f13586d79ca313f64e246f4a8",
+ "testCaseId": "e0ee773051676b6e1340b130e00050e2",
+ "fullName": "com.enterprise.automation.tests.api.AuthApiTest.viewerCanReadButNotWrite",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "api",
+  "AuthApiTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.api.AuthApiTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.api.AuthApiTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "viewerCanReadButNotWrite"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "API"
+  },
+  {
+   "name": "feature",
+   "value": "AuthApi"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "sanity"
+  },
+  {
+   "name": "tag",
+   "value": "api"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.api.AuthApiTest"
+  }
+ ],
+ "links": [],
+ "name": "viewerCanReadButNotWrite",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480929285,
+ "stop": 1792480930234
+}

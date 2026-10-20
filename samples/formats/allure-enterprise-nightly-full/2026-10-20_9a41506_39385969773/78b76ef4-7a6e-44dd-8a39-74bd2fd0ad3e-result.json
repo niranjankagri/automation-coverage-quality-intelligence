@@ -1,0 +1,74 @@
+{
+ "uuid": "78b76ef4-7a6e-44dd-8a39-74bd2fd0ad3e",
+ "historyId": "f96e3666a6db105b342031e5c2516730",
+ "testCaseId": "6a6ee7ff3245040ff6fcc29c6ef46cbd",
+ "fullName": "com.enterprise.automation.tests.platform.ConfigLoaderTest.localIsTheDefaultEnvironment",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "platform",
+  "ConfigLoaderTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.platform.ConfigLoaderTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.platform.ConfigLoaderTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "localIsTheDefaultEnvironment"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Framework"
+  },
+  {
+   "name": "feature",
+   "value": "ConfigLoader"
+  },
+  {
+   "name": "tag",
+   "value": "unit"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.platform.ConfigLoaderTest"
+  }
+ ],
+ "links": [],
+ "name": "localIsTheDefaultEnvironment",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480938112,
+ "stop": 1792480938113
+}

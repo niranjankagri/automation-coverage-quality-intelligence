@@ -1,0 +1,74 @@
+{
+ "uuid": "17ff4d90-d2aa-4ebe-8738-f1d9db8700e8",
+ "historyId": "20056d252bde434f5ee60f8913d638dc",
+ "testCaseId": "52fade9f9986b12d18ead8e94d7c38c8",
+ "fullName": "com.enterprise.automation.tests.platform.ConfigLoaderTest.credentialsNeverPrintTheirPassword",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "platform",
+  "ConfigLoaderTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.platform.ConfigLoaderTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.platform.ConfigLoaderTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "credentialsNeverPrintTheirPassword"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Framework"
+  },
+  {
+   "name": "feature",
+   "value": "ConfigLoader"
+  },
+  {
+   "name": "tag",
+   "value": "unit"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.platform.ConfigLoaderTest"
+  }
+ ],
+ "links": [],
+ "name": "credentialsNeverPrintTheirPassword",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480938088,
+ "stop": 1792480938095
+}

@@ -1,0 +1,82 @@
+{
+ "uuid": "dd75a01f-2a93-4799-b41e-57130c486255",
+ "historyId": "9fb8d85aa75570e6a3f0fe26d5dfa12d",
+ "testCaseId": "52913db26e0208d57d06339674bf342",
+ "fullName": "com.enterprise.automation.tests.ui.LoginRegressionTest.viewerSignsInWithTheReadOnlyRole",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "ui",
+  "LoginRegressionTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.ui.LoginRegressionTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.ui.LoginRegressionTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "viewerSignsInWithTheReadOnlyRole"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "UI"
+  },
+  {
+   "name": "feature",
+   "value": "LoginRegression"
+  },
+  {
+   "name": "tag",
+   "value": "ui"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "sanity"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.ui.LoginRegressionTest"
+  }
+ ],
+ "links": [],
+ "name": "viewerSignsInWithTheReadOnlyRole",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480976248,
+ "stop": 1792480977193
+}

@@ -1,0 +1,86 @@
+{
+ "uuid": "d6a0251c-e25b-4511-bcf2-b05fee51d81d",
+ "historyId": "1326700d6ec464000af29da2e495c7",
+ "testCaseId": "7828a6ba9afe6c1b58a9c4c71eb41f32",
+ "fullName": "com.enterprise.automation.tests.integration.ApiToDatabaseTest.passwordsAreStoredHashedAndSalted",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "integration",
+  "ApiToDatabaseTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.integration.ApiToDatabaseTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.integration.ApiToDatabaseTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "passwordsAreStoredHashedAndSalted"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Integration"
+  },
+  {
+   "name": "feature",
+   "value": "ApiToDatabase"
+  },
+  {
+   "name": "tag",
+   "value": "security"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "integration"
+  },
+  {
+   "name": "tag",
+   "value": "db"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.integration.ApiToDatabaseTest"
+  }
+ ],
+ "links": [],
+ "name": "passwordsAreStoredHashedAndSalted",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480928855,
+ "stop": 1792480929116
+}

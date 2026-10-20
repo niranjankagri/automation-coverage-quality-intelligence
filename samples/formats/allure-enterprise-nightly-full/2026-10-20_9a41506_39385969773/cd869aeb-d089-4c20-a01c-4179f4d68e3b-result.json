@@ -1,0 +1,74 @@
+{
+ "uuid": "cd869aeb-d089-4c20-a01c-4179f4d68e3b",
+ "historyId": "faa0fb48c5e47f0dfac1777dd862830c",
+ "testCaseId": "fa5842b7c0454db416b05287115ed8d6",
+ "fullName": "com.enterprise.automation.tests.platform.ExecutionEngineTest.executionSettingsComeFromConfiguration",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "platform",
+  "ExecutionEngineTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.platform.ExecutionEngineTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.platform.ExecutionEngineTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "executionSettingsComeFromConfiguration"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Framework"
+  },
+  {
+   "name": "feature",
+   "value": "ExecutionEngine"
+  },
+  {
+   "name": "tag",
+   "value": "unit"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.platform.ExecutionEngineTest"
+  }
+ ],
+ "links": [],
+ "name": "executionSettingsComeFromConfiguration",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480932984,
+ "stop": 1792480932988
+}

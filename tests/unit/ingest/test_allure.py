@@ -186,3 +186,34 @@ def test_same_folder_content_gives_the_same_run_id(tmp_path: Path) -> None:
     second = read_allure_folder(folder(tmp_path / "b", result("a", "passed")))
 
     assert first.run.run_id == second.run.run_id
+
+
+def test_repeated_invocations_count_every_time_and_only_failed_attempts_are_retries(tmp_path: Path) -> None:
+    """TestNG invocationCount: 4 passes of one method are 4 executions, not 1 test with 3 retries."""
+    four = [result("everyThread", "passed", history="h", start=1000 + i) for i in range(4)]
+    retried = [
+        result("flaky", "failed", history="f", start=1000),
+        result("flaky", "passed", history="f", start=2000),
+    ]
+    twice_failed = [
+        result("broken", "failed", history="b", start=1000),
+        result("broken", "failed", history="b", start=2000),
+    ]
+    passed_then_failed = [
+        result("p", "passed", history="p", start=1000),
+        result("p", "failed", history="p", start=2000),
+    ]
+
+    run = read_allure_folder(folder(tmp_path, *four, *retried, *twice_failed, *passed_then_failed)).run
+
+    outcomes = sorted((r.name, r.outcome.value, r.retries) for r in run.results)
+    assert outcomes == [
+        ("broken", "failed", 1),
+        ("everyThread", "passed", 0),
+        ("everyThread", "passed", 0),
+        ("everyThread", "passed", 0),
+        ("everyThread", "passed", 0),
+        ("flaky", "passed", 1),
+        ("p", "failed", 0),
+        ("p", "passed", 0),
+    ]

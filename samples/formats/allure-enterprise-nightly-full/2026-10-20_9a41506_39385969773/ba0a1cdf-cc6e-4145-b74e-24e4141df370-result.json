@@ -1,0 +1,99 @@
+{
+ "uuid": "ba0a1cdf-cc6e-4145-b74e-24e4141df370",
+ "historyId": "39c5731a4a435657fd26d39edd782c48",
+ "testCaseId": "99ccdc14fcd66f353d528cdf84119231",
+ "fullName": "com.enterprise.automation.tests.ui.LoginRegressionTest.signInIsRejected",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "ui",
+  "LoginRegressionTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.ui.LoginRegressionTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.ui.LoginRegressionTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "signInIsRejected"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "UI"
+  },
+  {
+   "name": "feature",
+   "value": "LoginRegression"
+  },
+  {
+   "name": "tag",
+   "value": "ui"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.ui.LoginRegressionTest"
+  }
+ ],
+ "links": [],
+ "name": "signInIsRejected",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [
+  {
+   "name": "expectedField",
+   "value": "form"
+  },
+  {
+   "name": "password",
+   "value": "****"
+  },
+  {
+   "name": "expectedMessage",
+   "value": "Invalid username or password"
+  },
+  {
+   "name": "testCase",
+   "value": "unknown user"
+  },
+  {
+   "name": "username",
+   "value": "nobody"
+  }
+ ],
+ "start": 1792480970709,
+ "stop": 1792480971641
+}

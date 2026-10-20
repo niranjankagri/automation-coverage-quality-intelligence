@@ -1,0 +1,87 @@
+{
+ "uuid": "c0a779cd-12b5-4a93-8396-d8145774da0e",
+ "historyId": "e449b811d4bdd6b74b261e39fcc991e6",
+ "testCaseId": "793c8c5bcfa5caf813498a53d3fe68a8",
+ "fullName": "com.enterprise.automation.tests.ui.ProductCatalogTest.productIsListedWithItsDetails",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "ui",
+  "ProductCatalogTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.ui.ProductCatalogTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.ui.ProductCatalogTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "productIsListedWithItsDetails"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "UI"
+  },
+  {
+   "name": "feature",
+   "value": "ProductCatalog"
+  },
+  {
+   "name": "tag",
+   "value": "ui"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.ui.ProductCatalogTest"
+  }
+ ],
+ "links": [],
+ "name": "productIsListedWithItsDetails",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [
+  {
+   "name": "expected",
+   "value": "ProductData[sku=ACC-3002, name=Wireless Mouse, category=Accessories, price=49.00, stock=150]"
+  },
+  {
+   "name": "sku",
+   "value": "ACC-3002"
+  }
+ ],
+ "start": 1792480982644,
+ "stop": 1792480984016
+}

@@ -1,0 +1,99 @@
+{
+ "uuid": "fe47d710-9b86-4d56-8a52-ac04922abcac",
+ "historyId": "d6a51cb32ef4953f5639e27eac12b0e4",
+ "testCaseId": "a8ca41c7f1cd7d397d60bc8ce4271dc0",
+ "fullName": "com.enterprise.automation.tests.api.CustomerApiTest.invalidFieldsGive400WithTheFieldMessage",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "api",
+  "CustomerApiTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.api.CustomerApiTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.api.CustomerApiTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "invalidFieldsGive400WithTheFieldMessage"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "API"
+  },
+  {
+   "name": "feature",
+   "value": "CustomerApi"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "api"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.api.CustomerApiTest"
+  }
+ ],
+ "links": [],
+ "name": "invalidFieldsGive400WithTheFieldMessage",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [
+  {
+   "name": "field",
+   "value": "lastName"
+  },
+  {
+   "name": "expected",
+   "value": "Last name is required"
+  },
+  {
+   "name": "label",
+   "value": "Last name"
+  },
+  {
+   "name": "value",
+   "value": ""
+  },
+  {
+   "name": "testCase",
+   "value": "last name missing"
+  }
+ ],
+ "start": 1792480934367,
+ "stop": 1792480934486
+}

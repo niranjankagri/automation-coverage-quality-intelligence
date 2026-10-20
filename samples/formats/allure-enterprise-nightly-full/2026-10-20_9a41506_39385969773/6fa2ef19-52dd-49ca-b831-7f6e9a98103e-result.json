@@ -1,0 +1,87 @@
+{
+ "uuid": "6fa2ef19-52dd-49ca-b831-7f6e9a98103e",
+ "historyId": "c0ee94bded5ffaab765be0dd4bf720b1",
+ "testCaseId": "46ac71af77c936156063338a81ddedf5",
+ "fullName": "com.enterprise.automation.tests.ui.ProductCatalogTest.categoryFilterShowsExactlyItsProducts",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "ui",
+  "ProductCatalogTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.ui.ProductCatalogTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.ui.ProductCatalogTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "categoryFilterShowsExactlyItsProducts"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "UI"
+  },
+  {
+   "name": "feature",
+   "value": "ProductCatalog"
+  },
+  {
+   "name": "tag",
+   "value": "ui"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.ui.ProductCatalogTest"
+  }
+ ],
+ "links": [],
+ "name": "categoryFilterShowsExactlyItsProducts",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [
+  {
+   "name": "expectedNames",
+   "value": "[Wireless Keyboard, Wireless Mouse, USB-C Dock]"
+  },
+  {
+   "name": "category",
+   "value": "Accessories"
+  }
+ ],
+ "start": 1792480957391,
+ "stop": 1792480959832
+}

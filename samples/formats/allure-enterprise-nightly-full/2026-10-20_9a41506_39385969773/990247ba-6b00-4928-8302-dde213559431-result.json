@@ -1,0 +1,78 @@
+{
+ "uuid": "990247ba-6b00-4928-8302-dde213559431",
+ "historyId": "fad33bc5f9408046361a1e78ae6b3c0a",
+ "testCaseId": "49099706d3f0b8045b5bb046221a9a8e",
+ "fullName": "com.enterprise.automation.tests.db.DatabaseLayerTest.catalogueSizeMatches",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "db",
+  "DatabaseLayerTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.db.DatabaseLayerTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.db.DatabaseLayerTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "catalogueSizeMatches"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Database"
+  },
+  {
+   "name": "feature",
+   "value": "DatabaseLayer"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "db"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.db.DatabaseLayerTest"
+  }
+ ],
+ "links": [],
+ "name": "catalogueSizeMatches",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480925955,
+ "stop": 1792480925985
+}

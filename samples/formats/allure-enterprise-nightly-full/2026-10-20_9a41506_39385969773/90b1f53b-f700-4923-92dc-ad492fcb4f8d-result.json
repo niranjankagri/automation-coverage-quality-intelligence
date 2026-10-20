@@ -1,0 +1,74 @@
+{
+ "uuid": "90b1f53b-f700-4923-92dc-ad492fcb4f8d",
+ "historyId": "ee9e205113d61098882741c6b3303a40",
+ "testCaseId": "45c7efd7bd9fb3178bc7d543d8341ae4",
+ "fullName": "com.enterprise.automation.tests.platform.TestDataTest.catalogueIsReadFromJson",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "platform",
+  "TestDataTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.platform.TestDataTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.platform.TestDataTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "catalogueIsReadFromJson"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Framework"
+  },
+  {
+   "name": "feature",
+   "value": "TestData"
+  },
+  {
+   "name": "tag",
+   "value": "unit"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.platform.TestDataTest"
+  }
+ ],
+ "links": [],
+ "name": "catalogueIsReadFromJson",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480938127,
+ "stop": 1792480938173
+}

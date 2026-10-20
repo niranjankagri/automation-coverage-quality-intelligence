@@ -1,0 +1,78 @@
+{
+ "uuid": "129af482-22bd-4d5b-9aa0-dc7ab1d32b76",
+ "historyId": "8fbb4c818317b8be8f05efff86f1bea4",
+ "testCaseId": "8bff9fcca24993e9e70a2b3fef7d9e36",
+ "fullName": "com.enterprise.automation.tests.api.CustomerApiTest.duplicateEmailGives409",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "api",
+  "CustomerApiTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.api.CustomerApiTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.api.CustomerApiTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "duplicateEmailGives409"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "API"
+  },
+  {
+   "name": "feature",
+   "value": "CustomerApi"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "api"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.api.CustomerApiTest"
+  }
+ ],
+ "links": [],
+ "name": "duplicateEmailGives409",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480933380,
+ "stop": 1792480933654
+}

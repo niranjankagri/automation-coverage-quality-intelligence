@@ -1,0 +1,74 @@
+{
+ "uuid": "3c4537b9-d262-4546-ae49-fe4dc83ee7ec",
+ "historyId": "761d5404ae74db2b46b04e0e7ac3a487",
+ "testCaseId": "db3a25cbfd83e39f79b29fc97c12c88f",
+ "fullName": "com.enterprise.automation.tests.platform.TestDataTest.generatedCustomersAreValidAndUniqueEvenInParallel",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "platform",
+  "TestDataTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.platform.TestDataTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.platform.TestDataTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "generatedCustomersAreValidAndUniqueEvenInParallel"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Framework"
+  },
+  {
+   "name": "feature",
+   "value": "TestData"
+  },
+  {
+   "name": "tag",
+   "value": "unit"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.platform.TestDataTest"
+  }
+ ],
+ "links": [],
+ "name": "generatedCustomersAreValidAndUniqueEvenInParallel",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480938194,
+ "stop": 1792480938224
+}

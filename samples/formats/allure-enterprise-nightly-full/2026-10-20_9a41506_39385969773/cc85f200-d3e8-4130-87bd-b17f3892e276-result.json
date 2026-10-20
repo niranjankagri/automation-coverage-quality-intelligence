@@ -1,0 +1,86 @@
+{
+ "uuid": "cc85f200-d3e8-4130-87bd-b17f3892e276",
+ "historyId": "99e3e9eba392ad6b50ff65eee4470849",
+ "testCaseId": "1c85894b13c16f71de54f3fe6ea65c36",
+ "fullName": "com.enterprise.automation.tests.integration.ApiToDatabaseTest.placedOrderIsStoredWithItsLinesAndReservesStock",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "integration",
+  "ApiToDatabaseTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.integration.ApiToDatabaseTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.integration.ApiToDatabaseTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "placedOrderIsStoredWithItsLinesAndReservesStock"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Integration"
+  },
+  {
+   "name": "feature",
+   "value": "ApiToDatabase"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "integration"
+  },
+  {
+   "name": "tag",
+   "value": "sanity"
+  },
+  {
+   "name": "tag",
+   "value": "db"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.integration.ApiToDatabaseTest"
+  }
+ ],
+ "links": [],
+ "name": "placedOrderIsStoredWithItsLinesAndReservesStock",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480929373,
+ "stop": 1792480929745
+}

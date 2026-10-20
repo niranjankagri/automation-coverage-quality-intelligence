@@ -1,0 +1,99 @@
+{
+ "uuid": "f8eb000e-2668-4851-91d5-60a8e8bbe792",
+ "historyId": "ec52d20706fb03659c2f63521c653bbe",
+ "testCaseId": "a8ca41c7f1cd7d397d60bc8ce4271dc0",
+ "fullName": "com.enterprise.automation.tests.api.CustomerApiTest.invalidFieldsGive400WithTheFieldMessage",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "api",
+  "CustomerApiTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.api.CustomerApiTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.api.CustomerApiTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "invalidFieldsGive400WithTheFieldMessage"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "API"
+  },
+  {
+   "name": "feature",
+   "value": "CustomerApi"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "api"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.api.CustomerApiTest"
+  }
+ ],
+ "links": [],
+ "name": "invalidFieldsGive400WithTheFieldMessage",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [
+  {
+   "name": "field",
+   "value": "email"
+  },
+  {
+   "name": "expected",
+   "value": "Email must be a valid email address"
+  },
+  {
+   "name": "label",
+   "value": "Email"
+  },
+  {
+   "name": "value",
+   "value": "ava@"
+  },
+  {
+   "name": "testCase",
+   "value": "email without domain"
+  }
+ ],
+ "start": 1792480934736,
+ "stop": 1792480934855
+}

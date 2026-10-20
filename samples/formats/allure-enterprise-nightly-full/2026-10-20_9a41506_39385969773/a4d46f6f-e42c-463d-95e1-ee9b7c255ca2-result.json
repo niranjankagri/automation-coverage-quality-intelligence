@@ -1,0 +1,82 @@
+{
+ "uuid": "a4d46f6f-e42c-463d-95e1-ee9b7c255ca2",
+ "historyId": "312193721721d902e4c5979d821a8082",
+ "testCaseId": "77078c150d847d7a7522b945c2d9eff4",
+ "fullName": "com.enterprise.automation.tests.integration.ApiToDatabaseTest.cancellingAndDeletingOrdersGiveStockBackInTheDatabase",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "integration",
+  "ApiToDatabaseTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.integration.ApiToDatabaseTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.integration.ApiToDatabaseTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "cancellingAndDeletingOrdersGiveStockBackInTheDatabase"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Integration"
+  },
+  {
+   "name": "feature",
+   "value": "ApiToDatabase"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "integration"
+  },
+  {
+   "name": "tag",
+   "value": "db"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.integration.ApiToDatabaseTest"
+  }
+ ],
+ "links": [],
+ "name": "cancellingAndDeletingOrdersGiveStockBackInTheDatabase",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480925040,
+ "stop": 1792480928312
+}

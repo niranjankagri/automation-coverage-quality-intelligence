@@ -1,0 +1,90 @@
+{
+ "uuid": "561dccbf-d991-4ea5-976d-bfc98400206b",
+ "historyId": "161f9d20135c8d6a845f9a9e285565c5",
+ "testCaseId": "39277e525da6a2607974fd906a9652a6",
+ "fullName": "com.enterprise.automation.tests.integration.UiApiDatabaseTest.orderPlacedInTheUiIsConsistentInApiAndDatabase",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "integration",
+  "UiApiDatabaseTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.integration.UiApiDatabaseTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.integration.UiApiDatabaseTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "orderPlacedInTheUiIsConsistentInApiAndDatabase"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Integration"
+  },
+  {
+   "name": "feature",
+   "value": "UiApiDatabase"
+  },
+  {
+   "name": "tag",
+   "value": "ui"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "integration"
+  },
+  {
+   "name": "tag",
+   "value": "e2e"
+  },
+  {
+   "name": "tag",
+   "value": "db"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.integration.UiApiDatabaseTest"
+  }
+ ],
+ "links": [],
+ "name": "orderPlacedInTheUiIsConsistentInApiAndDatabase",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480952034,
+ "stop": 1792480955758
+}

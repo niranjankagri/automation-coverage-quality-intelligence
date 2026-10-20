@@ -1,0 +1,78 @@
+{
+ "uuid": "fa184a50-0378-40f6-819c-4778fb8b2c9b",
+ "historyId": "bd815afa0fbe794eed45d3e9b173225a",
+ "testCaseId": "c5adbe7dbc8514a586027b71b2186a40",
+ "fullName": "com.enterprise.automation.tests.ui.NavigationSmokeTest.everySectionOpensFromTheMenu",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "ui",
+  "NavigationSmokeTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.ui.NavigationSmokeTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.ui.NavigationSmokeTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "everySectionOpensFromTheMenu"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "UI"
+  },
+  {
+   "name": "feature",
+   "value": "NavigationSmoke"
+  },
+  {
+   "name": "tag",
+   "value": "ui"
+  },
+  {
+   "name": "tag",
+   "value": "smoke"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.ui.NavigationSmokeTest"
+  }
+ ],
+ "links": [],
+ "name": "everySectionOpensFromTheMenu",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480952514,
+ "stop": 1792480955462
+}

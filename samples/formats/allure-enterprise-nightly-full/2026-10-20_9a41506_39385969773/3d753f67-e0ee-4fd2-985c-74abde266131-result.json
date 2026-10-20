@@ -1,0 +1,74 @@
+{
+ "uuid": "3d753f67-e0ee-4fd2-985c-74abde266131",
+ "historyId": "7bf4f074439d78d970c3921ac8647028",
+ "testCaseId": "dd55e1aff206817df437eaf5b5fb4713",
+ "fullName": "com.enterprise.automation.tests.foundation.FrameworkFoundationTest.frameworkIdentityComesFromTheBuild",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "foundation",
+  "FrameworkFoundationTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.foundation.FrameworkFoundationTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.foundation.FrameworkFoundationTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "frameworkIdentityComesFromTheBuild"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Framework"
+  },
+  {
+   "name": "feature",
+   "value": "FrameworkFoundation"
+  },
+  {
+   "name": "tag",
+   "value": "unit"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.foundation.FrameworkFoundationTest"
+  }
+ ],
+ "links": [],
+ "name": "Framework identity is filled in from the Maven build",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480925038,
+ "stop": 1792480925252
+}

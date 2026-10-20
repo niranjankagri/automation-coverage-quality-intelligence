@@ -1,0 +1,82 @@
+{
+ "uuid": "4a14babd-1727-4d10-b8ae-89bf6320cc0c",
+ "historyId": "ae108bda4f094c63964cc1159a307bfb",
+ "testCaseId": "4b4d05cb5852a5424f2cf2c4d746a122",
+ "fullName": "com.enterprise.automation.tests.db.DatabaseLayerTest.connectsAndReadsTheSchema",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "db",
+  "DatabaseLayerTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.db.DatabaseLayerTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.db.DatabaseLayerTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "connectsAndReadsTheSchema"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Database"
+  },
+  {
+   "name": "feature",
+   "value": "DatabaseLayer"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "smoke"
+  },
+  {
+   "name": "tag",
+   "value": "db"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.db.DatabaseLayerTest"
+  }
+ ],
+ "links": [],
+ "name": "connectsAndReadsTheSchema",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480925992,
+ "stop": 1792480926056
+}

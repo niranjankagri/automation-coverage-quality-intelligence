@@ -1,0 +1,74 @@
+{
+ "uuid": "0538b70e-e6d8-42c4-8d04-c2a3b67efe69",
+ "historyId": "99b719aa6265a19acd26ad8dfb1807a3",
+ "testCaseId": "617a5caec932dedea62b73a563a2d83e",
+ "fullName": "com.enterprise.automation.tests.platform.DriverManagerTest.everyThreadGetsItsOwnBrowser",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "platform",
+  "DriverManagerTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.platform.DriverManagerTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.platform.DriverManagerTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "everyThreadGetsItsOwnBrowser"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Framework"
+  },
+  {
+   "name": "feature",
+   "value": "DriverManager"
+  },
+  {
+   "name": "tag",
+   "value": "platform"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.platform.DriverManagerTest"
+  }
+ ],
+ "links": [],
+ "name": "everyThreadGetsItsOwnBrowser",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480941178,
+ "stop": 1792480942304
+}

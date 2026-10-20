@@ -1,0 +1,82 @@
+{
+ "uuid": "753f2765-214d-42eb-aeec-a3afcce0e804",
+ "historyId": "5270198526e3d0a0c3b35d0e3d0b42d",
+ "testCaseId": "d0a9144ca1f2f9cfe5a425c83a55081a",
+ "fullName": "com.enterprise.automation.tests.integration.ApiToDatabaseTest.updatesAndDeletesReachTheDatabase",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "integration",
+  "ApiToDatabaseTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.integration.ApiToDatabaseTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.integration.ApiToDatabaseTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "updatesAndDeletesReachTheDatabase"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "Integration"
+  },
+  {
+   "name": "feature",
+   "value": "ApiToDatabase"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "integration"
+  },
+  {
+   "name": "tag",
+   "value": "db"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.integration.ApiToDatabaseTest"
+  }
+ ],
+ "links": [],
+ "name": "updatesAndDeletesReachTheDatabase",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480930772,
+ "stop": 1792480931160
+}

@@ -1,0 +1,78 @@
+{
+ "uuid": "f4520b2d-050a-4742-bd25-11a207abf8b3",
+ "historyId": "f1cbe4d157f8fc3887221c0570580c7a",
+ "testCaseId": "cfae985691950fe48665dbf012d0e4a5",
+ "fullName": "com.enterprise.automation.tests.api.OrderApiTest.cancellingGivesTheStockBack",
+ "titlePath": [
+  "Full",
+  "Full",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "api",
+  "OrderApiTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.api.OrderApiTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.api.OrderApiTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "cancellingGivesTheStockBack"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "API"
+  },
+  {
+   "name": "feature",
+   "value": "OrderApi"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "api"
+  },
+  {
+   "name": "parentSuite",
+   "value": "Full"
+  },
+  {
+   "name": "suite",
+   "value": "Full"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.api.OrderApiTest"
+  }
+ ],
+ "links": [],
+ "name": "cancellingGivesTheStockBack",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792480931722,
+ "stop": 1792480932221
+}
