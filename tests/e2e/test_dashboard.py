@@ -125,7 +125,7 @@ def test_unknown_page_and_unknown_requirement_show_errors(page: Page) -> None:
 def test_layout_fits_small_screens(page: Page, width: int) -> None:
     """Phone and tablet width: no sideways scrolling of the page; wide tables scroll inside."""
     page.set_viewport_size({"width": width, "height": 800})
-    for path in ("/", "/#/requirements", "/#/tests", "/#/runs"):
+    for path in ("/", "/#/requirements", "/#/tests", "/#/runs", "/#/stability"):
         page.goto(path)
         expect(page.locator("#view h1")).to_be_visible()
         overflow = page.evaluate(
@@ -143,3 +143,19 @@ def test_keyboard_users_can_skip_to_the_content(page: Page) -> None:
     expect(page.get_by_role("link", name="Skip to content")).to_be_focused()
     page.keyboard.press("Enter")
     expect(page.locator("main")).to_be_focused()
+
+
+def test_stability_page_shows_flaky_candidates_with_evidence(page: Page) -> None:
+    """Four flaky candidates; each row says why; a smaller window forgets the 13 Oct failure."""
+    page.goto("/#/stability")
+
+    expect(page.get_by_role("heading", name="Stability", exact=True)).to_be_visible()
+    expect(card(page, "Flaky candidate")).to_contain_text("4")
+    edits_row = page.locator("tbody tr").filter(has_text="adminEditsACustomer")
+    expect(edits_row).to_contain_text("passed and failed on the same build (f5a40d5)")
+    expect(page.locator("ol.strip")).to_have_count(5)
+
+    page.get_by_label("Window").select_option("5")
+
+    expect(page).to_have_url(re.compile(r"window=5"))
+    expect(page.locator("tbody tr").filter(has_text="adminEditsACustomer")).to_have_count(0)

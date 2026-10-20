@@ -148,4 +148,29 @@ def test_openapi_documentation_lists_every_route(client: TestClient) -> None:
         "/api/tests/history",
         "/api/runs",
         "/api/runs/{run_id}",
+        "/api/stability",
     }
+
+
+def test_stability_lists_the_real_flaky_candidates(client: TestClient) -> None:
+    """Four flaky candidates with reasons; stable tests are left out unless asked for."""
+    body = client.get("/api/stability").json()
+
+    assert body["status_counts"] == {"flaky candidate": 4, "stable": 217}
+    assert len(body["rows"]) == 4
+    edits = next(r for r in body["rows"] if r["key"].endswith("adminEditsACustomer"))
+    assert edits["context"] == "testng / ci / firefox / linux"
+    assert edits["test_cases"] == ["TC-ADMIN-CUSTOMERS-UI"]
+    assert "passed and failed on the same build (f5a40d5)" in edits["reasons"]
+    assert len(client.get("/api/stability?include_stable=true").json()["rows"]) == 221
+
+
+def test_stability_window_and_trends(client: TestClient) -> None:
+    """A window of 3 forgets the 13 Oct failure; trends have one series per context."""
+    body = client.get("/api/stability", params={"window": 3}).json()
+
+    assert body["window"] == 3
+    assert not any(r["key"].endswith("adminEditsACustomer") for r in body["rows"])
+    assert len(body["trends"]) == 5
+    assert len(body["trends"]["testng / ci / firefox / linux"]) == 13
+    assert client.get("/api/stability", params={"window": 0}).status_code == 422

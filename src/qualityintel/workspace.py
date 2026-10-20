@@ -14,6 +14,15 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
 
+from qualityintel.history.analysis import (
+    DEFAULTS,
+    HistorySettings,
+    Stability,
+    duration_regressions,
+    recurring_failures,
+    stability_report,
+    trend,
+)
 from qualityintel.ingest.batch import Batch, import_results
 from qualityintel.ingest.catalog_file import load_catalog
 from qualityintel.models.catalog import Catalog, Requirement
@@ -175,6 +184,62 @@ class RunDetail(View):
 
     run: RunView
     executions: tuple[ExecutionView, ...]
+
+
+class StabilityRow(View):
+    """One test in one run context, classified from its history."""
+
+    key: str
+    context: str
+    status: str
+    verdicts: int
+    failures: int
+    failure_rate: RatioView
+    reasons: tuple[str, ...]
+    last_outcome: Outcome
+    last_failure: str
+    test_cases: tuple[str, ...]
+
+
+class RecurringView(View):
+    """A failure signature seen in several runs."""
+
+    signature: str
+    occurrences: int
+    runs: int
+    tests: tuple[str, ...]
+
+
+class RegressionView(View):
+    """A test that became clearly slower and stayed slower."""
+
+    key: str
+    context: str
+    baseline_seconds: float
+    latest_seconds: float
+    baseline_runs: int
+
+
+class TrendPoint(View):
+    """One run in a context's trend."""
+
+    run_id: str
+    source: str
+    started_at: datetime | None
+    build: str | None
+    pass_rate: RatioView
+    failed: int
+
+
+class StabilityView(View):
+    """Everything the history analysis says about the chosen runs."""
+
+    status_counts: dict[str, int]
+    rows: tuple[StabilityRow, ...]
+    recurring_failures: tuple[RecurringView, ...]
+    duration_regressions: tuple[RegressionView, ...]
+    trends: dict[str, tuple[TrendPoint, ...]]
+    window: int
 
 
 class Facets(View):
@@ -357,6 +422,65 @@ class Workspace:
         results = sorted(run.results, key=lambda r: (order[r.outcome], r.key))
         return RunDetail(run=_run_view(run), executions=tuple(_execution_view(run, r) for r in results))
 
+    def stability(
+        self, scope: Scope = EVERYTHING, settings: HistorySettings = DEFAULTS, include_stable: bool = False
+    ) -> StabilityView:
+        """History classification of every test in the chosen runs (docs/metrics.md, history)."""
+        runs = self._runs(scope)
+        cases = self._case_ids_by_key(runs)
+        classified = stability_report(runs, settings)
+        counts: dict[str, int] = {}
+        for row in classified:
+            counts[row.status.value] = counts.get(row.status.value, 0) + 1
+        shown = [r for r in classified if include_stable or r.status is not Stability.STABLE]
+        return StabilityView(
+            status_counts=counts,
+            rows=tuple(
+                StabilityRow(
+                    key=r.key,
+                    context=_context_label(r.context),
+                    status=r.status.value,
+                    verdicts=r.verdicts,
+                    failures=r.failures,
+                    failure_rate=RatioView.of(r.failure_rate),
+                    reasons=r.reasons,
+                    last_outcome=r.last_outcome,
+                    last_failure=r.last_failure,
+                    test_cases=cases.get(r.key, ()),
+                )
+                for r in shown
+            ),
+            recurring_failures=tuple(
+                RecurringView(signature=f.signature, occurrences=f.occurrences, runs=f.runs, tests=f.tests)
+                for f in recurring_failures(runs)
+            ),
+            duration_regressions=tuple(
+                RegressionView(
+                    key=r.key,
+                    context=_context_label(r.context),
+                    baseline_seconds=r.baseline_seconds,
+                    latest_seconds=r.latest_seconds,
+                    baseline_runs=r.baseline_runs,
+                )
+                for r in duration_regressions(runs, settings)
+            ),
+            trends={
+                _context_label(context): tuple(
+                    TrendPoint(
+                        run_id=p.run.run_id,
+                        source=p.run.source,
+                        started_at=p.run.started_at,
+                        build=p.run.context.build,
+                        pass_rate=RatioView.of(p.pass_rate),
+                        failed=p.failed,
+                    )
+                    for p in points
+                )
+                for context, points in trend(runs).items()
+            },
+            window=settings.window,
+        )
+
     # ---- helpers -------------------------------------------------------------------------
 
     def _runs(self, scope: Scope) -> tuple[TestRun, ...]:
@@ -429,6 +553,11 @@ def _execution_view(run: TestRun, result: TestResult) -> ExecutionView:
         started_at=run.started_at,
         context=run.context,
     )
+
+
+def _context_label(context: tuple[str | None, ...]) -> str:
+    """Framework / environment / browser / platform, '-' for missing parts."""
+    return " / ".join(part or "-" for part in context)
 
 
 def _sorted(values: Iterable[str | None]) -> tuple[str, ...]:

@@ -143,6 +143,16 @@ dl.meta { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; 
 dl.meta dt { color: var(--muted); }
 dl.meta dd { margin: 0; }
 
+ul.reasons { margin: 0; padding-left: 18px; }
+.badge.flaky-candidate, .badge.new-failure, .badge.recovered { background: var(--warn-bg); color: var(--warn); }
+.badge.consistently-failing { background: var(--bad-bg); color: var(--bad); }
+.badge.stable { background: var(--good-bg); color: var(--good); }
+ol.strip { display: flex; flex-wrap: wrap; gap: 4px; list-style: none; margin: 10px 0 6px; padding: 0; }
+ol.strip a { display: block; width: 14px; height: 22px; border-radius: 3px; }
+ol.strip a.good { background: var(--good); }
+ol.strip a.bad { background: var(--bad); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
 .foot { display: flex; justify-content: space-between; gap: 12px; padding: 16px 24px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); }
 
 @media (max-width: 640px) {

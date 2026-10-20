@@ -16,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from qualityintel import __version__
+from qualityintel.history.analysis import DEFAULTS, HistorySettings
 from qualityintel.models.enums import Criticality, Outcome, TestType
 from qualityintel.traceability.coverage import UNSPECIFIED, Filters
 from qualityintel.traceability.report import RunFilters
@@ -26,6 +27,7 @@ from qualityintel.workspace import (
     RunDetail,
     RunView,
     Scope,
+    StabilityView,
     Summary,
     TestHistory,
     TestRow,
@@ -161,6 +163,15 @@ def create_app(workspace: Workspace) -> FastAPI:
             return workspace.test_history(key, chosen)
         except KeyError:
             raise HTTPException(status_code=404, detail=f"no executions of {key!r}") from None
+
+    @app.get("/api/stability", tags=["history"])
+    def stability(
+        chosen: RunScope,
+        window: Annotated[int, Query(ge=1, le=100)] = DEFAULTS.window,
+        include_stable: bool = False,
+    ) -> StabilityView:
+        """Flaky candidates, consistent and new failures, recurring failures, slow-downs, trends."""
+        return workspace.stability(chosen, HistorySettings(window=window), include_stable=include_stable)
 
     @app.get("/api/runs", tags=["executions"])
     def runs(chosen: RunScope) -> tuple[RunView, ...]:

@@ -343,6 +343,70 @@ async function runDetail(runId) {
   ];
 }
 
+async function stabilityView() {
+  const windowSize = route().params.get("window") ?? "10";
+  const d = await api(`/api/stability${apiQuery(RUN_FILTERS, { window: windowSize })}`);
+  const windowSelect = h("select", { id: "window" }, ["5", "10", "20", "50"].map((v) => h("option", { value: v }, `last ${v} verdicts`)));
+  windowSelect.value = windowSize;
+  windowSelect.addEventListener("change", () => (location.hash = link("/stability", { window: windowSelect.value })));
+  const order = ["consistently failing", "new failure", "flaky candidate", "recovered", "insufficient data", "stable"];
+  return [
+    h("h1", {}, "Stability"),
+    h("p", { class: "lead" }, "Each test is judged per run context (framework, environment, browser, platform) from its last verdicts. The rules are in docs/metrics.md; every row lists the evidence."),
+    h("div", { class: "toolbar" }, h("label", { for: "window" }, "Window", windowSelect)),
+    h("div", { class: "cards" }, order.map((s) => countCard(s[0].toUpperCase() + s.slice(1), d.status_counts[s] ?? 0))),
+    h("h2", {}, `Tests that need attention (${d.rows.length})`),
+    table(
+      ["Test", "Context", "Status", { label: "Failure rate", num: true }, "Evidence", "Test case"],
+      d.rows.map((r) =>
+        h(
+          "tr",
+          {},
+          h("td", {}, h("a", { class: "key", href: link("/test", { key: r.key }) }, r.key), r.last_failure ? h("span", { class: "sub" }, `last failure: ${r.last_failure.split("\n")[0].slice(0, 160)}`) : null),
+          h("td", {}, r.context),
+          h("td", {}, badge(r.status)),
+          h("td", { class: "num" }, r.failure_rate.text),
+          h("td", {}, h("ul", { class: "reasons" }, r.reasons.map((reason) => h("li", {}, reason)))),
+          h("td", {}, r.test_cases.join(", ") || "–"),
+        ),
+      ),
+      "No test needs attention in this window: every test is stable or has too little history.",
+    ),
+    h("h2", {}, `Recurring failures (${d.recurring_failures.length})`),
+    table(
+      ["Failure signature", { label: "Runs", num: true }, { label: "Times", num: true }, "Tests"],
+      d.recurring_failures.map((f) => h("tr", {}, h("td", { class: "key" }, f.signature), h("td", { class: "num" }, f.runs), h("td", { class: "num" }, f.occurrences), h("td", {}, f.tests.map((t) => h("span", { class: "sub key" }, t))))),
+      "No failure cause appeared in more than one run.",
+    ),
+    h("h2", {}, `Duration regressions (${d.duration_regressions.length})`),
+    table(
+      ["Test", "Context", { label: "Baseline", num: true }, { label: "Latest", num: true }],
+      d.duration_regressions.map((r) => h("tr", {}, h("td", {}, h("a", { class: "key", href: link("/test", { key: r.key }) }, r.key)), h("td", {}, r.context), h("td", { class: "num" }, `${formatSeconds(r.baseline_seconds)} (${r.baseline_runs} runs)`), h("td", { class: "num" }, formatSeconds(r.latest_seconds)))),
+      "No test got clearly slower in two runs in a row.",
+    ),
+    h("h2", {}, "Runs per context (oldest to newest)"),
+    Object.keys(d.trends).length
+      ? h(
+          "div",
+          { class: "cards" },
+          Object.entries(d.trends).map(([context, points]) =>
+            h(
+              "div",
+              { class: "card" },
+              h("div", { class: "label" }, context),
+              h(
+                "ol",
+                { class: "strip", "aria-label": `${points.length} runs` },
+                points.map((p) => h("li", {}, h("a", { href: link(`/run/${p.run_id}`), class: p.failed ? "bad" : "good", title: `${formatDate(p.started_at)} · build ${p.build ?? "–"} · ${p.pass_rate.text}` }, h("span", { class: "sr" }, `${formatDate(p.started_at)}: ${p.pass_rate.text}`)))),
+              ),
+              h("div", { class: "detail" }, `${points.filter((p) => p.failed).length} of ${points.length} runs with failures`),
+            ),
+          ),
+        )
+      : h("p", { class: "empty" }, "No runs in this scope."),
+  ];
+}
+
 // ---- main loop -------------------------------------------------------------------------
 
 const VIEWS = {
@@ -353,6 +417,7 @@ const VIEWS = {
   test: testHistory,
   runs: runsView,
   run: (parts) => runDetail(parts[1]),
+  stability: stabilityView,
 };
 
 async function render() {
