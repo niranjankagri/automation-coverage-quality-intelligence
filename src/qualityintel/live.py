@@ -185,7 +185,14 @@ class LiveData:
     @classmethod
     def fixed(cls, workspace: Workspace) -> LiveData:
         """Data that never changes (the version is constant)."""
-        return cls(Snapshot(workspace=workspace, version="fixed", loaded_at=datetime.now(UTC)))
+        return cls(
+            Snapshot(
+                workspace=workspace,
+                version="fixed",
+                loaded_at=datetime.now(UTC),
+                collections=tuple(workspace.collections),
+            )
+        )
 
     def current(self) -> Snapshot:
         """The snapshot to answer one request with (never a half-built one)."""

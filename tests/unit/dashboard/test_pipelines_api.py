@@ -216,3 +216,13 @@ def test_job_is_a_facet_and_a_filter(client: TestClient) -> None:
     runs = client.get("/api/runs", params={"job": "ui-firefox"}).json()
 
     assert [r["pipeline"]["job"] for r in runs] == ["ui-firefox"]
+
+
+def test_status_counts_the_collection_records_of_fixed_data(collected: TestClient) -> None:
+    """Fixed data (a Workspace, not a database) reports the same records the pages show."""
+    status = collected.get("/api/status").json()
+    pipelines = collected.get("/api/pipelines").json()
+
+    assert status["collections"] > 0
+    assert status["latest_collection_at"] is not None
+    assert status["collections"] == sum(len(p["attempts"]) for p in pipelines["pipelines"] if p["attempts"])
