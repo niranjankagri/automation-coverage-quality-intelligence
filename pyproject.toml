@@ -44,7 +44,7 @@ qualityintel = ["py.typed"]
 [tool.ruff]
 line-length = 110
 target-version = "py312"
-src = ["src", "tests"]
+src = ["src", "tests", "tools"]
 
 [tool.ruff.lint]
 # E/W pycodestyle, F pyflakes, I import order, B bugbear, UP pyupgrade, PT pytest style,
@@ -68,7 +68,7 @@ known-first-party = ["qualityintel"]
 [tool.mypy]
 python_version = "3.12"
 strict = true
-files = ["src", "tests"]
+files = ["src", "tests", "tools"]
 plugins = ["pydantic.mypy"]
 
 [tool.pydantic-mypy]
