@@ -37,7 +37,7 @@ from qualityintel.history.analysis import (
 )
 from qualityintel.history.store import HistoryError, HistoryStore
 from qualityintel.history.trends import CoverageSnapshot, coverage_snapshot
-from qualityintel.ingest.batch import Batch, import_results
+from qualityintel.ingest.batch import Batch, import_pipeline, import_results
 from qualityintel.ingest.catalog_file import (
     CatalogFileError,
     load_catalog,
@@ -65,6 +65,7 @@ from qualityintel.reporting.gate_report import (
 )
 from qualityintel.reporting.text import render_comparison, render_history, render_traceability
 from qualityintel.traceability.coverage import Filters
+from qualityintel.traceability.pipelines import pipeline_execution
 from qualityintel.traceability.report import RunFilters, build_report
 
 EXIT_OK = 0
@@ -114,6 +115,7 @@ def build_parser() -> argparse.ArgumentParser:
     gate.add_argument("--catalog", required=True, type=Path, help="requirement catalog (TOML)")
     gate.add_argument("--config", required=True, type=Path, help="gate definition (TOML)")
     add_result_arguments(gate, required=False)
+    add_pipeline_arguments(gate)
     gate.add_argument("--json", type=Path, metavar="FILE", help="write the machine-readable report")
     gate.add_argument("--html", type=Path, metavar="FILE", help="write the HTML report")
     gate.add_argument(
@@ -144,7 +146,8 @@ def build_parser() -> argparse.ArgumentParser:
     history_commands = history.add_subparsers(dest="history_command", metavar="<action>", required=True)
 
     store = history_commands.add_parser("import", help="store result files in the history database")
-    add_result_arguments(store, required=True)
+    add_result_arguments(store, required=False)
+    add_pipeline_arguments(store)
     store.add_argument(
         "--catalog",
         type=Path,
@@ -185,6 +188,52 @@ def add_result_arguments(parser: argparse.ArgumentParser, required: bool) -> Non
         default=[],
         metavar="NAME=VALUE",
         help=f"run context for files that do not record it ({', '.join(CONTEXT_NAMES)}); repeatable",
+    )
+
+
+def add_pipeline_arguments(parser: argparse.ArgumentParser) -> None:
+    """Options that import results as the jobs of one pipeline execution (docs/pipelines.md)."""
+    group = parser.add_argument_group("pipeline execution (instead of RESULTS)")
+    group.add_argument("--pipeline", metavar="ID", help="pipeline execution id, e.g. the CI run id")
+    group.add_argument(
+        "--job",
+        action="append",
+        default=[],
+        metavar="NAME=PATH",
+        help="results of one job (file, directory or quoted pattern); repeat per job or path",
+    )
+    group.add_argument("--attempt", type=int, default=1, help="re-run number of the jobs given (default 1)")
+    group.add_argument("--branch", help="branch the pipeline ran on")
+    group.add_argument("--commit", help="commit the pipeline tested")
+
+
+def read_inputs(args: argparse.Namespace) -> Batch:
+    """Result inputs as given: plain RESULTS, or ``--pipeline`` with ``--job NAME=PATH``."""
+    if args.pipeline is None:
+        if args.job or args.branch or args.commit or args.attempt != 1:
+            raise UsageError("--job, --attempt, --branch and --commit need --pipeline")
+        if not args.results:
+            raise UsageError("give result files, or --pipeline with --job NAME=PATH")
+        return import_results(args.results, context=context_from(args))
+    if args.results:
+        raise UsageError("with --pipeline, give every result input as --job NAME=PATH (to know its job)")
+    if not args.job:
+        raise UsageError("--pipeline needs at least one --job NAME=PATH")
+    if args.attempt < 1:
+        raise UsageError("--attempt must be at least 1")
+    jobs: dict[str, list[str]] = {}
+    for pair in args.job:
+        name, sep, path = pair.partition("=")
+        if not sep or not name.strip() or not path:
+            raise UsageError(f"--job expects NAME=PATH: {pair!r}")
+        jobs.setdefault(name.strip(), []).append(path)
+    return import_pipeline(
+        jobs,
+        args.pipeline,
+        attempt=args.attempt,
+        branch=args.branch,
+        commit=args.commit,
+        context=context_from(args),
     )
 
 
@@ -340,7 +389,7 @@ def _cmd_history(args: argparse.Namespace) -> int:
         return EXIT_USAGE
 
     if args.history_command == "import":
-        batch = import_results(args.results, context=context_from(args))
+        batch = read_inputs(args)
         report_batch_problems(batch)
         if not batch.complete:
             return EXIT_INPUT
@@ -353,6 +402,11 @@ def _cmd_history(args: argparse.Namespace) -> int:
         if store is None:
             return EXIT_INPUT
         with store:
+            refused = already_imported_jobs(store, batch.runs)
+            if refused:
+                for message in refused:
+                    print(f"qi: error: {message}", file=sys.stderr)
+                return EXIT_INPUT
             added, known = store.add_all(batch.runs)
             run_count, result_count = store.count()
             if catalog is not None:
@@ -420,6 +474,28 @@ def _cmd_history(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def already_imported_jobs(store: HistoryStore, runs: list[TestRun]) -> list[str]:
+    """Job attempts that are already stored with other results (importing them again is refused).
+
+    Re-importing exactly the same files is harmless (they are already stored); different files
+    for a job attempt that is already there would mix two executions of that job.
+    """
+    new: dict[tuple[str, str, int], set[str]] = {}
+    for run in runs:
+        if run.pipeline is not None:
+            key = (run.pipeline.pipeline_id, run.pipeline.job, run.pipeline.attempt)
+            new.setdefault(key, set()).add(run.run_id)
+    messages = []
+    for (pipeline_id, job, attempt), ids in sorted(new.items()):
+        stored = store.job_runs(pipeline_id, job, attempt)
+        if stored and not ids <= stored:
+            messages.append(
+                f"job {job} of pipeline {pipeline_id} (attempt {attempt}) is already imported with other "
+                f"results; nothing was stored. A re-run of the job is --attempt {attempt + 1}"
+            )
+    return messages
+
+
 def _cmd_gate(args: argparse.Namespace) -> int:
     """Evaluate a gate and write its reports; the exit code is the verdict."""
     try:
@@ -440,11 +516,21 @@ def _cmd_gate(args: argparse.Namespace) -> int:
 
     problems: list[str] = []
     runs: list[TestRun] = []
-    if args.results:
-        batch = import_results(args.results, context=context_from(args))
+    execution = None
+    # Any input option is checked, so a --job without --pipeline is an error, not ignored
+    pipeline_options = (args.pipeline, args.job, args.branch, args.commit, args.attempt != 1)
+    if args.results or any(pipeline_options):
+        batch = read_inputs(args)
         report_batch_problems(batch)
         problems = [str(error) for error in batch.errors]
         runs = batch.runs
+        if args.pipeline is not None:
+            # The gate file's job list wins; without one, the jobs named on the command line
+            expected = config.pipeline.jobs or tuple(
+                dict.fromkeys(p.partition("=")[0].strip() for p in args.job)
+            )
+            execution = pipeline_execution(runs, args.pipeline, expected)
+            runs = execution.runs
     scope = config.scope
     frameworks = frozenset(scope.framework)
     report = build_report(
@@ -463,7 +549,7 @@ def _cmd_gate(args: argparse.Namespace) -> int:
             browsers=frozenset(scope.browser),
         ),
     )
-    result = evaluate(report, config, problems)
+    result = evaluate(report, config, problems, execution)
     document = gate_document(result, report, args.catalog.name)
     _write_gate_reports(document, args)
     print(to_text(document), end="")

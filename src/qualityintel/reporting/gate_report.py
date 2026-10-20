@@ -17,6 +17,7 @@ from typing import Any
 from qualityintel import __version__
 from qualityintel.gates.evaluate import GateResult, GateStatus
 from qualityintel.models.enums import Outcome
+from qualityintel.traceability.pipelines import PipelineExecution
 from qualityintel.traceability.report import TraceabilityReport
 
 SCHEMA_VERSION = 1
@@ -51,6 +52,7 @@ def gate_document(
             "scope": result.config.scope.model_dump(),
         },
         "input_problems": list(result.input_problems),
+        "pipeline": _pipeline(result.pipeline),
         "rules": [
             {
                 "name": rule.name,
@@ -99,6 +101,49 @@ def gate_document(
     }
 
 
+def _pipeline(execution: PipelineExecution | None) -> dict[str, Any] | None:
+    """The pipeline execution the gate ran on (None when it was not run on one)."""
+    if execution is None:
+        return None
+    return {
+        "id": execution.pipeline_id,
+        "state": execution.state.value,
+        "branch": execution.branch,
+        "commit": execution.commit,
+        "missing_jobs": list(execution.missing),
+        "jobs": [
+            {
+                "name": job.name,
+                "attempt": job.attempt,
+                "expected": job.expected,
+                "runs": len(job.runs),
+                "superseded_runs": len(job.superseded),
+                "outcomes": {o.value: n for o, n in job.outcome_counts.items()},
+            }
+            for job in execution.jobs
+        ],
+    }
+
+
+def _pipeline_line(pipeline: dict[str, Any]) -> str:
+    """``pipeline 123 on main at abc: complete (3 jobs)``."""
+    where = "".join(
+        f" {word} {pipeline[key]}" for word, key in (("on", "branch"), ("at", "commit")) if pipeline[key]
+    )
+    jobs = len([job for job in pipeline["jobs"] if job["expected"]])
+    missing = f", missing: {', '.join(pipeline['missing_jobs'])}" if pipeline["missing_jobs"] else ""
+    return f"pipeline {pipeline['id']}{where}: {pipeline['state']} ({jobs} job(s) reported{missing})"
+
+
+def _job_results(job: dict[str, Any]) -> str:
+    """``120 passed, 1 failed`` (outcomes that occurred) plus attempt and extra-job notes."""
+    shown = ", ".join(f"{n} {outcome}" for outcome, n in job["outcomes"].items() if n) or "no results"
+    notes = [f"attempt {job['attempt']}"] if job["attempt"] > 1 else []
+    if not job["expected"]:
+        notes.append("not an expected job")
+    return shown + (f" ({'; '.join(notes)})" if notes else "")
+
+
 def to_json(document: dict[str, Any]) -> str:
     """Pretty JSON with a trailing newline."""
     return json.dumps(document, indent=2, ensure_ascii=False) + "\n"
@@ -114,6 +159,14 @@ def to_markdown(document: dict[str, Any]) -> str:
     ]
     if document["input_problems"]:
         lines += ["**Input problems**", "", *(f"- {_md(p)}" for p in document["input_problems"]), ""]
+    pipeline = document.get("pipeline")
+    if pipeline:
+        lines += [f"**{_md(_pipeline_line(pipeline))}**", "", "| Job | Runs | Results |", "|---|---|---|"]
+        lines += [
+            f"| {_md(job['name'])} | {job['runs']} | {_md(_job_results(job))} |" for job in pipeline["jobs"]
+        ]
+        lines += [f"| {_md(name)} | 0 | missing |" for name in pipeline["missing_jobs"]]
+        lines.append("")
     lines += ["| Rule | Actual | Expected | Result |", "|---|---|---|---|"]
     for rule in document["rules"]:
         result = "fail" if rule["fails_gate"] else rule["status"]
@@ -188,6 +241,21 @@ def to_html(document: dict[str, Any]) -> str:
     )
     problems = "".join(f"<li>{_h(p)}</li>" for p in document["input_problems"])
     inputs = document["inputs"]
+    pipeline = document.get("pipeline")
+    pipeline_html = ""
+    if pipeline:
+        job_rows = "".join(
+            f"<tr><td>{_h(job['name'])}</td><td>{job['runs']}</td><td>{_h(_job_results(job))}</td></tr>"
+            for job in pipeline["jobs"]
+        ) + "".join(
+            f"<tr class='bad'><td>{_h(name)}</td><td>0</td><td>missing</td></tr>"
+            for name in pipeline["missing_jobs"]
+        )
+        pipeline_html = (
+            f"<section><h2>Pipeline</h2><p>{_h(_pipeline_line(pipeline))}</p><div class='wrap'><table>"
+            f"<thead><tr><th>Job</th><th>Runs</th><th>Results</th></tr></thead><tbody>{job_rows}</tbody>"
+            "</table></div></section>"
+        )
     return _TEMPLATE.substitute(
         title=_h(f"{gate['name']}: {status}"),
         status=_h(status),
@@ -198,6 +266,7 @@ def to_html(document: dict[str, Any]) -> str:
             f"qi {document['tool']['version']}"
         ),
         problems=f"<section><h2>Input problems</h2><ul>{problems}</ul></section>" if problems else "",
+        pipeline=pipeline_html,
         rule_rows=rule_rows or "<tr><td colspan='5'>no rules</td></tr>",
         cards=cards,
         gaps=gap_rows,
@@ -244,6 +313,12 @@ def to_text(document: dict[str, Any]) -> str:
         f"GATE {gate['name']}: {_STATUS_TEXT[GateStatus(gate['status'])]} (exit code {gate['exit_code']})"
     ]
     lines += [f"  input problem: {problem}" for problem in document["input_problems"]]
+    pipeline = document.get("pipeline")
+    if pipeline:
+        lines.append(f"  {_pipeline_line(pipeline)}")
+        lines += [
+            f"    job {job['name']:<20} {job['runs']} run(s), {_job_results(job)}" for job in pipeline["jobs"]
+        ]
     for rule in document["rules"]:
         result = "FAIL" if rule["fails_gate"] else rule["status"]
         lines.append(f"  {result:<15} {rule['name']:<42} {rule['actual']:<22} expected {rule['expected']}")
@@ -268,6 +343,7 @@ def incomplete_document(gate_name: str, problems: list[str], catalog_name: str) 
             "scope": {},
         },
         "input_problems": problems,
+        "pipeline": None,
         "rules": [],
         "metrics": {
             "requirement_coverage": empty,

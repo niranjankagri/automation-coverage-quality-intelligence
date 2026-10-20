@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import glob
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -21,7 +21,7 @@ from qualityintel.ingest.allure import is_allure_folder, read_allure_folder
 from qualityintel.ingest.errors import IngestError, NoResultFilesError, UnsupportedFormatError
 from qualityintel.ingest.junit import DEFAULT_ID_PATTERN, ParsedFile, read_junit_file
 from qualityintel.ingest.mochawesome import read_mochawesome_file
-from qualityintel.models.results import RunContext, TestRun
+from qualityintel.models.results import PipelineJob, RunContext, TestRun
 
 _GLOB_CHARS = re.compile(r"[*?\[]")
 # Files found when a directory is searched (HTML only when named explicitly: report folders
@@ -120,6 +120,38 @@ def import_results(
         seen[run.run_id] = name
         batch.runs.append(run)
         batch.warnings.extend(f"{name}: {warning}" for warning in parsed.warnings)
+    return batch
+
+
+def import_pipeline(
+    jobs: Mapping[str, Sequence[str | Path]],
+    pipeline_id: str,
+    attempt: int = 1,
+    branch: str | None = None,
+    commit: str | None = None,
+    context: RunContext | None = None,
+    id_pattern: re.Pattern[str] = DEFAULT_ID_PATTERN,
+) -> Batch:
+    """Import the inputs of every job of one pipeline execution (docs/pipelines.md).
+
+    Each job's runs carry its :class:`PipelineJob` and a source prefixed with the job name
+    (``api/junit.xml``). The same file content under two jobs is imported once, for the first.
+    """
+    batch = Batch()
+    seen: dict[str, str] = {}
+    for job, inputs in jobs.items():
+        tag = PipelineJob(pipeline_id=pipeline_id, job=job, attempt=attempt, branch=branch, commit=commit)
+        part = import_results(inputs, context=context, id_pattern=id_pattern)
+        batch.errors.extend(part.errors)
+        batch.duplicates.extend(f"{job}: {note}" for note in part.duplicates)
+        batch.warnings.extend(f"{job}/{warning}" for warning in part.warnings)
+        for run in part.runs:
+            source = f"{job}/{run.source}"
+            if run.run_id in seen:
+                batch.duplicates.append(f"{source} has the same content as {seen[run.run_id]}; skipped")
+                continue
+            seen[run.run_id] = source
+            batch.runs.append(run.model_copy(update={"pipeline": tag, "source": source}))
     return batch
 
 

@@ -8,7 +8,9 @@ from qualityintel.gates.config import GateConfig, GateConfigError, load_gate_con
 from qualityintel.gates.evaluate import GateStatus, RuleResult, RuleStatus, evaluate
 from qualityintel.models.catalog import Catalog
 from qualityintel.models.enums import Outcome
+from qualityintel.models.results import PipelineJob
 from qualityintel.traceability.coverage import Filters
+from qualityintel.traceability.pipelines import pipeline_execution
 from qualityintel.traceability.report import build_report
 
 from ..traceability.helpers import case, catalog, req, result, run
@@ -228,3 +230,35 @@ def test_empty_scope_coverage_is_not_applicable() -> None:
 
     assert evaluate(report, config(coverage={"min_requirement_coverage": 0})).status is GateStatus.PASSED
     assert evaluate(scoped, config(coverage={"min_requirement_coverage": 0})).status is GateStatus.FAILED
+
+
+def test_pipeline_jobs_are_read_and_typos_are_refused(tmp_path: Path) -> None:
+    """[pipeline] jobs makes results required; an unknown key there is an error."""
+    path = tmp_path / "gate.toml"
+    path.write_text(
+        '[pipeline]\njobs = ["api", "ui"]\n[coverage]\nmin_requirement_coverage = 1\n', encoding="utf-8"
+    )
+    loaded = load_gate_config(path)
+
+    assert loaded.pipeline.jobs == ("api", "ui")
+    assert loaded.needs_results
+    path.write_text('[pipeline]\njob = ["api"]\n[coverage]\nmin_requirement_coverage = 1\n', encoding="utf-8")
+    with pytest.raises(GateConfigError, match=r"pipeline\.job: Extra inputs are not permitted"):
+        load_gate_config(path)
+
+
+def test_an_incomplete_pipeline_never_passes_even_if_every_rule_does(shop: Catalog) -> None:
+    """Passing API results of a pipeline whose UI job is missing: incomplete, exit 3."""
+    api = run(result("A")).model_copy(update={"pipeline": PipelineJob(pipeline_id="9", job="api")})
+    execution = pipeline_execution([api], "9", ("api", "ui"))
+
+    gate = evaluate(
+        build_report(shop, execution.runs), config(execution={"min_pass_rate": 0}), pipeline=execution
+    )
+
+    assert all(not r.counts_as_failure for r in gate.rules)
+    assert gate.status is GateStatus.INCOMPLETE
+    assert gate.input_problems == [
+        "pipeline 9: job ui reported no results (not run, cancelled or interrupted)"
+    ]
+    assert gate.pipeline is execution

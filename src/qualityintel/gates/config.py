@@ -16,6 +16,9 @@ hard-coded. Percentages are written as percent (``95`` = 95 %). Example
     [scope]
     criticality = ["critical", "high"]
 
+    [pipeline]
+    jobs = ["api", "ui-chrome"]   # every one must report, or the gate is incomplete
+
 Unknown keys are errors: a misspelt threshold must not silently switch a rule off.
 """
 
@@ -74,6 +77,12 @@ class Scope(_Section):
     browser: tuple[str, ...] = ()
 
 
+class PipelineRules(_Section):
+    """Jobs a pipeline execution must have reported before the gate decides (docs/pipelines.md)."""
+
+    jobs: tuple[Annotated[str, Field(min_length=1)], ...] = ()
+
+
 class GateConfig(_Section):
     """A complete gate definition.
 
@@ -87,11 +96,14 @@ class GateConfig(_Section):
     coverage: CoverageRules = CoverageRules()
     execution: ExecutionRules = ExecutionRules()
     scope: Scope = Scope()
+    pipeline: PipelineRules = PipelineRules()
 
     @property
     def needs_results(self) -> bool:
-        """True when any execution rule is configured (then result files are required)."""
-        return any(value is not None for value in self.execution.model_dump().values())
+        """True when any execution rule or pipeline job is configured (then results are required)."""
+        return bool(self.pipeline.jobs) or any(
+            value is not None for value in self.execution.model_dump().values()
+        )
 
     @property
     def rule_count(self) -> int:

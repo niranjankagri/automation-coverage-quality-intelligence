@@ -6,6 +6,7 @@ import pytest
 from qualityintel.gates.config import GateConfig
 from qualityintel.gates.evaluate import evaluate
 from qualityintel.models.enums import Outcome
+from qualityintel.models.results import PipelineJob
 from qualityintel.reporting.gate_report import (
     gate_document,
     incomplete_document,
@@ -14,6 +15,7 @@ from qualityintel.reporting.gate_report import (
     to_markdown,
     to_text,
 )
+from qualityintel.traceability.pipelines import pipeline_execution
 from qualityintel.traceability.report import build_report
 
 from ..traceability.helpers import case, catalog, req, result, run
@@ -45,6 +47,7 @@ def test_json_document_has_stable_keys_and_values() -> None:
         "generated_at",
         "gate",
         "input_problems",
+        "pipeline",
         "rules",
         "metrics",
         "gaps",
@@ -102,3 +105,25 @@ def test_incomplete_document_renders_in_every_format() -> None:
     assert "INCOMPLETE" in to_text(data)
     assert "catalog.toml: not valid TOML" in to_html(data)
     assert "⚠️" in to_markdown(data)
+
+
+def test_pipeline_section_is_in_every_format_and_escaped() -> None:
+    """Job names come from the command line: escaped in HTML and Markdown like any other text."""
+    hostile_job = run(result("A")).model_copy(
+        update={"pipeline": PipelineJob(pipeline_id="9", job=HOSTILE, commit="abc")}
+    )
+    execution = pipeline_execution([hostile_job], "9", (HOSTILE, "ui"))
+    cat = catalog([req("R1")], [case("A", "R1", automated_by=("suite::*",))])
+    report = build_report(cat, execution.runs)
+    config = GateConfig.model_validate({"execution": {"max_failed_tests": 0}})
+    data = gate_document(evaluate(report, config, pipeline=execution), report, "catalog.toml")
+
+    assert data["pipeline"]["state"] == "incomplete"
+    assert data["pipeline"]["missing_jobs"] == ["ui"]
+    page = to_html(data)
+    assert "<script>" not in page
+    assert "&lt;script&gt;" in page
+    assert "<tr class='bad'><td>ui</td><td>0</td><td>missing</td></tr>" in page
+    assert "| ui | 0 | missing |" in to_markdown(data)
+    assert r"\| pipe" in to_markdown(data)
+    assert "pipeline 9 at abc: incomplete (1 job(s) reported, missing: ui)" in to_text(data)

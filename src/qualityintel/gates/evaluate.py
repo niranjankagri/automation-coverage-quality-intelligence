@@ -5,8 +5,8 @@ A gate ends in one of three states, each with its own exit code (docs/quality-ga
 - ``passed`` (0): every configured rule passed;
 - ``failed`` (1): at least one rule failed;
 - ``incomplete`` (3): the input cannot support a decision (result files missing, unreadable
-  or empty although execution rules are configured). Rules are still listed for the report,
-  but the verdict is never "passed".
+  or empty although execution rules are configured, or a pipeline execution whose jobs did not
+  all report). Rules are still listed for the report, but the verdict is never "passed".
 """
 
 from __future__ import annotations
@@ -18,6 +18,7 @@ from enum import StrEnum
 from qualityintel.gates.config import GateConfig
 from qualityintel.models.enums import Outcome
 from qualityintel.models.metrics import Ratio
+from qualityintel.traceability.pipelines import PipelineExecution
 from qualityintel.traceability.report import FAILING, TraceabilityReport
 
 
@@ -69,6 +70,7 @@ class GateResult:
     status: GateStatus
     rules: list[RuleResult]
     input_problems: list[str] = field(default_factory=list)
+    pipeline: PipelineExecution | None = None
 
     @property
     def exit_code(self) -> int:
@@ -82,7 +84,10 @@ class GateResult:
 
 
 def evaluate(
-    report: TraceabilityReport, config: GateConfig, input_problems: Sequence[str] = ()
+    report: TraceabilityReport,
+    config: GateConfig,
+    input_problems: Sequence[str] = (),
+    pipeline: PipelineExecution | None = None,
 ) -> GateResult:
     """Apply every configured rule; decide passed, failed or incomplete.
 
@@ -91,8 +96,17 @@ def evaluate(
         config: The gate definition.
         input_problems: Errors found while reading inputs (unreadable files, patterns that
             matched nothing). Any problem makes the gate incomplete.
+        pipeline: The pipeline execution the results came from, if the gate is run on one.
+            Its problems (missing jobs, jobs without results, mixed commits) are input problems.
     """
     problems = list(input_problems)
+    if pipeline is not None:
+        problems.extend(pipeline.problems)
+    elif config.pipeline.jobs:
+        problems.append(
+            f"the gate expects the pipeline jobs {', '.join(config.pipeline.jobs)}, "
+            "but the results were not given as a pipeline (--pipeline with --job NAME=PATH)"
+        )
     if config.needs_results and not report.snapshot:
         problems.append("execution rules are configured but no test results were read")
     elif config.needs_results and sum(report.outcome_counts.values()) == 0:
@@ -105,7 +119,7 @@ def evaluate(
         status = GateStatus.FAILED
     else:
         status = GateStatus.PASSED
-    return GateResult(config=config, status=status, rules=rules, input_problems=problems)
+    return GateResult(config=config, status=status, rules=rules, input_problems=problems, pipeline=pipeline)
 
 
 def _coverage_rules(report: TraceabilityReport, config: GateConfig) -> list[RuleResult]:
