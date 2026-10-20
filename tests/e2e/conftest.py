@@ -207,6 +207,11 @@ def _page(browser: Browser, url: str) -> Iterator[Page]:
     yield new_page
     context.close()
     allowed = [e for e in errors if "Failed to load resource" in e]  # deliberate 404/500 in some tests
+    if ENGINE == "webkit":
+        # WebKit logs a request to this page's own API that a reload cancelled as failing "due to
+        # access control checks"; there is no access control on a same-origin request
+        own_api = f"{url.removeprefix('http:')}/api/"
+        allowed += [e for e in errors if "access control checks" in e and own_api in e]
     assert [e for e in errors if e not in allowed] == []
 
 
