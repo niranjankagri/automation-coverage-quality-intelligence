@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- **Portfolio:** featured project 17 on https://niranjankagri.github.io with genuine dashboard screenshots.
+- **Clean-checkout validation:** README steps run from fresh clones in cmd.exe and Git Bash
+  ([docs/validation.md](docs/validation.md)); fixed the Git Bash activation line, documented the
+  Windows long-path limit of the `e2e` extra; CI runs the tests and the demonstration on Windows too.
+- **Requirements import from CSV** (`qi requirements import`): documented format (id, title,
+  description, component, priority, criticality, risk, platforms), row-level errors, preview by
+  default, all-or-nothing `--apply`, re-import without duplicates, hand-written files never
+  overwritten, rollback when the catalog would break. Catalogs can `include` other files; the
+  sample requirements now come from `samples/requirements.csv`. Requirements have an optional
+  description, shown on the dashboard.
+
 ## 1.0.0 (2026-10-20)
 
 First complete release: all eight milestones of the project plan, each built and pushed in small

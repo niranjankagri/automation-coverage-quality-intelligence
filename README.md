@@ -43,8 +43,8 @@ PowerShell: activate with `.venv\Scripts\Activate.ps1` (if scripts are blocked:
 `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`). Git Bash: `source .venv/Scripts/activate`.
 Linux / macOS: `python3 -m venv .venv` and `source .venv/bin/activate`; the other lines are the same.
 
-`tools/demo.py` runs ten documented steps and checks each exit code; it ends with
-`10 of 10 steps behaved as documented`. The dashboard then runs on http://127.0.0.1:8000 (stop it
+`tools/demo.py` runs eleven documented steps and checks each exit code; it ends with
+`11 of 11 steps behaved as documented`. The dashboard then runs on http://127.0.0.1:8000 (stop it
 with Ctrl+C). These exact steps were run from a fresh clone on Windows (cmd, Git Bash) and run in
 CI on Linux and Windows on every push: [docs/validation.md](docs/validation.md).
 
@@ -53,6 +53,7 @@ CI on Linux and Windows on every push: [docs/validation.md](docs/validation.md).
 | Area | Commands | What you get | Docs |
 |---|---|---|---|
 | Ingestion | `qi inspect` | JUnit XML from files, folders or quoted patterns; outcomes, reruns, nested suites, explicit test ids, run context; every unreadable file reported | [ingestion](docs/ingestion.md) |
+| Requirements | `qi requirements import` | CSV export (id, title, description, component, priority, criticality ...) into the catalog: preview, row-level errors, all-or-nothing, re-import without duplicates, test-case links preserved | [requirements import](docs/requirements-import.md) |
 | Traceability | `qi coverage` | requirement coverage, automation coverage, automated requirement coverage; gaps; breakdowns by feature, criticality, test type, platform; execution status per requirement | [traceability](docs/traceability.md), [metrics](docs/metrics.md) |
 | History | `qi history import / report / compare` | SQLite history; stability classes with evidence (flaky candidates, consistent and new failures); recurring failures; duration regressions; trends | [history](docs/history.md) |
 | Quality gates | `qi gate` | configurable rules; passed / failed / incomplete as exit codes 0 / 1 / 3; JSON, HTML and Markdown reports | [quality gates](docs/quality-gates.md) |
@@ -64,9 +65,10 @@ The 43 result files in [`samples/results`](samples/README.md) come from GitHub A
 public test repositories (pytest, Robot Framework, Maven Surefire/TestNG with Selenium, Playwright
 Test), sanitised before committing. They include real failures: a Selenium timeout in the
 enterprise nightly of 13 Oct, and a Playwright run on 19 Oct that needed three attempts while the
-public demo site was down. Only the requirement catalog is synthetic
-([`samples/catalog.toml`](samples/catalog.toml)): 42 requirements for the four demo
-applications those repositories test, with deliberate gaps.
+public demo site was down. Only the requirements are synthetic: 42 requirements for the four demo applications those
+repositories test, with deliberate gaps, kept as a CSV export
+([`samples/requirements.csv`](samples/requirements.csv)) and imported into the catalog
+([`samples/catalog.toml`](samples/catalog.toml) holds the hand-written test cases and links).
 
 What the platform finds in it (each number checked by a test):
 
@@ -163,10 +165,10 @@ Development setup: `pip install -e ".[dev,e2e]"`, `playwright install chromium`,
 ## Documentation
 
 [Architecture](docs/architecture.md) · [Metric definitions](docs/metrics.md) ·
-[Ingestion](docs/ingestion.md) · [Traceability](docs/traceability.md) · [History](docs/history.md) ·
+[Ingestion](docs/ingestion.md) · [Requirements import](docs/requirements-import.md) · [Traceability](docs/traceability.md) · [History](docs/history.md) ·
 [Quality gates](docs/quality-gates.md) · [Dashboard and API](docs/dashboard.md) ·
 [Limitations and future work](docs/limitations.md) · [Decision records](docs/adr/) ·
-[Sample data](samples/README.md) · [Changelog](CHANGELOG.md)
+[Sample data](samples/README.md) · [Clean-checkout validation](docs/validation.md) · [Changelog](CHANGELOG.md)
 
 ## License
 

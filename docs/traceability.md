@@ -15,12 +15,16 @@ Metric formulas, filters and status rules: [metrics.md](metrics.md).
 ## The catalog file
 
 TOML, two kinds of entries. A full example with 42 requirements and 44 test cases is
-[samples/catalog.toml](../samples/catalog.toml).
+[samples/catalog.toml](../samples/catalog.toml), which takes its requirements from a generated
+file: `include = ["requirements.toml"]` adds the entries of other files (paths inside the catalog's
+folder, no nesting). Requirements can be kept by hand in the catalog or imported from a CSV export
+([requirements-import.md](requirements-import.md)); test cases and their links stay hand-written.
 
 ```toml
 [[requirement]]
 id = "SHOP-006"                       # unique; letters, digits, . _ -
 title = "Customers can check out and place an order"
+description = "Logged-in customers can order ..."   # optional, up to 4,000 characters
 feature = "Toolshop / Checkout"       # optional, grouping in reports
 criticality = "critical"              # critical | high | medium | low (optional)
 priority = "p1"                       # p1..p4 (optional)
