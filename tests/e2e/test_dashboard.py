@@ -42,7 +42,7 @@ def test_metric_card_drills_down_to_the_requirements_behind_it(page: Page) -> No
     card(page, "Requirement coverage").click()
 
     expect(page.get_by_role("heading", name="Requirements", exact=True)).to_be_visible()
-    expect(page.locator("tbody tr")).to_have_count(4)
+    expect(page.get_by_role("region", name="Requirement list").locator("tbody tr")).to_have_count(4)
     expect(page.get_by_label("Status")).to_have_value("no tests")
 
 
@@ -55,9 +55,9 @@ def test_filter_changes_every_number_and_stays_in_the_url(page: Page) -> None:
     expect(card(page, "Requirements in scope")).to_contain_text("13")
     expect(page).to_have_url(re.compile(r"criticality=critical"))
     page.get_by_role("link", name="Requirements", exact=True).click()
-    expect(page.locator("tbody tr")).to_have_count(13)
+    expect(page.get_by_role("region", name="Requirement list").locator("tbody tr")).to_have_count(13)
     page.get_by_role("button", name="Clear").click()
-    expect(page.locator("tbody tr")).to_have_count(42)
+    expect(page.get_by_role("region", name="Requirement list").locator("tbody tr")).to_have_count(42)
 
 
 def test_requirement_detail_shows_cases_and_latest_executions(page: Page) -> None:
@@ -327,7 +327,7 @@ def test_new_history_appears_without_a_restart_and_the_filters_stay(
 
     expect(rows).to_have_count(4)
     expect(page).to_have_url(re.compile(r"#/runs\?framework=pytest$"))
-    expect(page.get_by_label("Framework")).to_have_value("pytest")
+    expect(page.locator('#filters select[name="framework"]')).to_have_value("pytest")
     expect(page.locator("#data-stale")).to_be_hidden()
 
 
@@ -353,14 +353,18 @@ def test_the_repository_selection_is_kept_across_pages_and_reloads(pipelines_pag
     """Chosen once, in the address, applied on every page."""
     page = pipelines_page
     page.goto("/#/runs")
-    page.get_by_label("Repository").select_option("niranjankagri/cypress-typescript-framework")
+    page.locator('#filters select[name="repository"]').select_option(
+        "niranjankagri/cypress-typescript-framework"
+    )
 
     expect(page).to_have_url(re.compile(r"repository=niranjankagri%2Fcypress-typescript-framework"))
     expect(page.locator("#view tbody tr")).to_have_count(9)
     page.get_by_role("link", name="Pipelines", exact=True).click()
     expect(page).to_have_url(re.compile(r"#/pipelines\?.*repository="))
     page.reload()
-    expect(page.get_by_label("Repository")).to_have_value("niranjankagri/cypress-typescript-framework")
+    expect(page.locator('#filters select[name="repository"]')).to_have_value(
+        "niranjankagri/cypress-typescript-framework"
+    )
 
 
 def test_overview_shows_the_release_status_with_its_reasons(page: Page) -> None:
@@ -425,3 +429,45 @@ def test_compare_page_shows_two_builds_and_their_changes(page: Page) -> None:
     expect(page.get_by_role("navigation", name="Change type")).to_contain_text("slower (")
     page.locator("#view tbody tr a.key").first.click()
     expect(page).to_have_url(re.compile(r"#/test\?"))
+
+
+def test_filter_chips_quick_dates_job_filter_and_table_tools(page: Page) -> None:
+    """Active filters as removable chips; a quick range sets From; tables sort and export CSV."""
+    page.goto("/#/runs?framework=testng")
+    chip = page.get_by_role("list", name="Active filters")
+    expect(chip).to_contain_text("Framework: testng")
+
+    page.get_by_role("button", name="30 days").click()
+    expect(page).to_have_url(re.compile(r"since=\d{4}-\d{2}-\d{2}"))
+    expect(chip).to_contain_text("From:")
+    page.get_by_role("button", name="All dates").click()
+    page.get_by_role("button", name="Remove filter Framework: testng").click()
+    expect(page).not_to_have_url(re.compile(r"framework="))
+
+    page.goto("/#/runs")
+    rows = page.locator("#view tbody tr")
+    page.get_by_role("button", name=re.compile(r"^passed")).click()  # sort by passed, ascending
+    expect(page.locator("#view th[aria-sort=ascending]")).to_have_count(1)
+    first = rows.first.locator("td").nth(6).inner_text()
+    page.get_by_role("button", name=re.compile(r"^passed")).click()
+    assert int(rows.first.locator("td").nth(6).inner_text()) >= int(first)
+    page.get_by_label("Filter rows").fill("robot")
+    expect(rows).to_have_count(11)
+    with page.expect_download() as download:
+        page.get_by_role("button", name="Download CSV").click()
+    text = Path(download.value.path()).read_text(encoding="utf-8")
+    assert text.splitlines()[0].startswith("Run,Pipeline / job,Framework")
+    assert len(text.strip().splitlines()) == 12  # header + the 11 filtered rows
+    expect(page.locator('#filters select[name="job"]')).to_be_attached()
+
+
+def test_a_trend_bar_opens_the_runs_of_its_day_with_the_keyboard(page: Page) -> None:
+    """Each day's bar is a link with its numbers as name; Enter on it lists that day's runs."""
+    page.goto("/#/trends")
+    bar = page.get_by_role("link", name=re.compile(r"^10-13: .*Open the runs"))
+    expect(bar).to_have_count(1)
+    bar.focus()
+    page.keyboard.press("Enter")
+
+    expect(page).to_have_url(re.compile(r"#/runs\?.*since=2026-10-13.*until=2026-10-13"))
+    expect(page.get_by_role("heading", name="Runs", exact=True)).to_be_visible()

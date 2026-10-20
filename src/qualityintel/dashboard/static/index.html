@@ -37,10 +37,19 @@
     <label>Environment <select name="environment" data-facet="environments"></select></label>
     <label>Browser <select name="browser" data-facet="browsers"></select></label>
     <label>Build <select name="build" data-facet="builds"></select></label>
+    <label>Job <select name="job" data-facet="jobs"></select></label>
     <label>From <input type="date" name="since"></label>
     <label>To <input type="date" name="until"></label>
+    <span class="quick-dates" role="group" aria-label="Quick date range">
+      <button type="button" class="ghost" data-days="1">24 h</button>
+      <button type="button" class="ghost" data-days="7">7 days</button>
+      <button type="button" class="ghost" data-days="30">30 days</button>
+      <button type="button" class="ghost" data-days="0">All dates</button>
+    </span>
     <button type="button" id="clear-filters" class="ghost">Clear</button>
+    <button type="button" id="copy-view" class="ghost">Copy link to this view</button>
   </form>
+  <ul class="chips active-filters" id="active-filters" aria-label="Active filters"></ul>
 
   <div class="databar" role="region" aria-label="Data freshness">
     <span id="data-fresh">Loading data status…</span>

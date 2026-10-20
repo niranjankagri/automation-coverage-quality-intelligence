@@ -3,8 +3,9 @@
 // All text is set with textContent (test names contain quotes, brackets and < >).
 "use strict";
 
-const FILTERS = ["repository", "feature", "criticality", "test_type", "framework", "environment", "browser", "build", "since", "until"];
-const RUN_FILTERS = ["repository", "framework", "environment", "browser", "build", "since", "until"];
+const FILTERS = ["repository", "feature", "criticality", "test_type", "framework", "environment", "browser", "build", "job", "since", "until"];
+const RUN_FILTERS = ["repository", "framework", "environment", "browser", "build", "job", "since", "until"];
+const FILTER_NAMES = { repository: "Repository", feature: "Feature", criticality: "Criticality", test_type: "Test type", framework: "Framework", environment: "Environment", browser: "Browser", build: "Build", job: "Job", since: "From", until: "To" };
 const OUTCOMES = ["passed", "failed", "error", "skipped"];
 const view = document.getElementById("view");
 const statusLine = document.getElementById("status");
@@ -41,17 +42,122 @@ function formatSeconds(value) {
   return value === null || value === undefined ? "–" : `${value.toFixed(value < 10 ? 2 : 1)} s`;
 }
 
-function table(headers, rows, emptyText) {
+let tableCount = 0;
+
+/** A cell for a spreadsheet: one line, and text a spreadsheet would run as a formula made inert. */
+function csvCell(text) {
+  const flat = text.replace(/\s+/g, " ").trim();
+  const safe = /^[=+\-@]/.test(flat) ? `'${flat}` : flat;
+  return /[",;\n]/.test(safe) ? `"${safe.replaceAll('"', '""')}"` : safe;
+}
+
+/**
+ * Data table. Every column sorts (a button in its header). With 6 or more rows a toolbar adds a
+ * row filter, a CSV download of the filtered and sorted rows, and a column chooser; long tables
+ * show 50 rows per page. Sorting and filtering only reorder what the API returned: no figure is
+ * computed here.
+ */
+function table(headers, rows, emptyText, options = {}) {
+  rows = rows.flat().filter(Boolean);
   if (!rows.length) return h("div", { class: "table-wrap" }, h("p", { class: "empty" }, emptyText));
+  const id = ++tableCount;
+  const labels = headers.map((x) => x.label ?? x);
+  const tools = options.tools ?? rows.length >= 6;
+  const pageSize = options.pageSize ?? 50;
+  const state = { col: null, dir: 1, page: 0, needle: "", hidden: new Set() };
+  const tbody = h("tbody", {});
+  const ths = headers.map((x, i) => {
+    const th = h("th", { scope: "col", class: x.num ? "num" : null });
+    if (!labels[i]) return th;
+    const button = h("button", { type: "button", class: "sort" }, labels[i]);
+    button.addEventListener("click", () => {
+      state.dir = state.col === i ? -state.dir : 1;
+      state.col = i;
+      draw();
+    });
+    th.append(button);
+    return th;
+  });
+  const value = (tr, i) => {
+    const text = (tr.children[i]?.textContent ?? "").trim();
+    if (!headers[i].num) return text.toLowerCase();
+    const match = text.replace(/,/g, "").match(/-?\d+(\.\d+)?/);
+    return match ? parseFloat(match[0]) : -Infinity;
+  };
+  const chosen = () => {
+    let list = state.needle ? rows.filter((tr) => tr.textContent.toLowerCase().includes(state.needle)) : rows;
+    if (state.col !== null) {
+      const i = state.col;
+      list = [...list].sort((a, b) => {
+        const x = value(a, i);
+        const y = value(b, i);
+        return (x < y ? -1 : x > y ? 1 : 0) * state.dir;
+      });
+    }
+    return list;
+  };
+  const pager = h("span", { class: "pager", "aria-live": "polite" });
+  const prev = h("button", { type: "button", class: "ghost" }, "Previous");
+  const next = h("button", { type: "button", class: "ghost" }, "Next");
+  prev.addEventListener("click", () => { state.page -= 1; draw(); });
+  next.addEventListener("click", () => { state.page += 1; draw(); });
+  const showColumns = (tr) => [...tr.children].forEach((cell, i) => (cell.style.display = state.hidden.has(i) ? "none" : ""));
+  function draw() {
+    const list = chosen();
+    const pages = Math.max(1, Math.ceil(list.length / pageSize));
+    state.page = Math.max(0, Math.min(state.page, pages - 1));
+    const first = state.page * pageSize;
+    const shown = list.slice(first, first + pageSize);
+    shown.forEach(showColumns);
+    tbody.replaceChildren(...shown);
+    ths.forEach((th, i) => {
+      th.style.display = state.hidden.has(i) ? "none" : "";
+      if (state.col === i) th.setAttribute("aria-sort", state.dir === 1 ? "ascending" : "descending");
+      else th.removeAttribute("aria-sort");
+    });
+    pager.textContent = list.length ? `Rows ${first + 1}–${first + shown.length} of ${list.length}${list.length < rows.length ? ` (filtered from ${rows.length})` : ""}` : `No row matches (of ${rows.length})`;
+    prev.disabled = state.page === 0;
+    next.disabled = state.page >= pages - 1;
+    pagerBox.hidden = list.length <= pageSize && !state.needle;
+  }
+  const pagerBox = h("div", { class: "pagerbox" }, pager, " ", prev, " ", next);
+  const bar = [];
+  if (tools) {
+    const searchId = options.searchId ?? `table-filter-${id}`;
+    const search = h("input", { type: "search", id: searchId, placeholder: options.searchPlaceholder ?? "text in any column" });
+    search.addEventListener("input", () => { state.needle = search.value.trim().toLowerCase(); state.page = 0; draw(); });
+    const csv = h("button", { type: "button", class: "ghost" }, "Download CSV");
+    csv.addEventListener("click", () => {
+      const columns = labels.map((_, i) => i).filter((i) => !state.hidden.has(i));
+      const lines = [columns.map((i) => csvCell(String(labels[i]))).join(","), ...chosen().map((tr) => columns.map((i) => csvCell(tr.children[i]?.textContent ?? "")).join(","))];
+      const blob = new Blob([`${lines.join("\r\n")}\r\n`], { type: "text/csv;charset=utf-8" });
+      const a = h("a", { href: URL.createObjectURL(blob), download: `${(options.name ?? document.title.split(" · ")[0]).replace(/[^\w.-]+/g, "-").toLowerCase()}.csv` });
+      document.body.append(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    });
+    bar.push(h("label", { for: searchId }, options.searchLabel ?? "Filter rows", search), csv);
+    if (labels.filter(Boolean).length >= 5) {
+      const boxes = labels.map((label, i) =>
+        label
+          ? h("label", { class: "inline" }, (() => {
+              const box = h("input", { type: "checkbox", checked: true });
+              box.addEventListener("change", () => { if (box.checked) state.hidden.delete(i); else state.hidden.add(i); draw(); });
+              return box;
+            })(), ` ${label}`)
+          : null,
+      );
+      bar.push(h("details", { class: "columns" }, h("summary", {}, "Columns"), h("div", {}, boxes)));
+    }
+  }
+  draw();
   return h(
     "div",
-    { class: "table-wrap" },
-    h(
-      "table",
-      {},
-      h("thead", {}, h("tr", {}, headers.map((x) => h("th", { scope: "col", class: x.num ? "num" : null }, x.label ?? x)))),
-      h("tbody", {}, rows),
-    ),
+    { class: "table-block" },
+    bar.length ? h("div", { class: "toolbar table-tools" }, bar) : null,
+    h("div", { class: "table-wrap" }, h("table", {}, h("thead", {}, h("tr", {}, ths)), tbody)),
+    pagerBox,
   );
 }
 
@@ -120,6 +226,52 @@ document.getElementById("filters").addEventListener("change", (event) => {
   else params.delete(event.target.name);
   const query = params.toString();
   location.hash = `#/${parts.map(encodeURIComponent).join("/")}${query ? `?${query}` : ""}`;
+});
+
+/** Set (or remove, with an empty value) filters in the address; the view follows the address. */
+function setFilters(values) {
+  const { parts, params } = route();
+  for (const [name, value] of Object.entries(values)) {
+    if (value) params.set(name, value);
+    else params.delete(name);
+  }
+  const query = params.toString();
+  location.hash = `#/${parts.map(encodeURIComponent).join("/")}${query ? `?${query}` : ""}`;
+}
+
+/** One removable chip per active filter, under the filter bar. */
+function showActiveFilters() {
+  const params = route().params;
+  const list = document.getElementById("active-filters");
+  const active = FILTERS.filter((name) => params.get(name));
+  list.replaceChildren(
+    ...active.map((name) => {
+      const remove = h("button", { type: "button", class: "chip-remove", "aria-label": `Remove filter ${FILTER_NAMES[name]}: ${params.get(name)}` }, "×");
+      remove.addEventListener("click", () => setFilters({ [name]: "" }));
+      return h("li", {}, h("span", { class: "chip" }, `${FILTER_NAMES[name]}: ${params.get(name)}`, remove));
+    }),
+  );
+  list.hidden = active.length === 0;
+}
+
+for (const button of document.querySelectorAll(".quick-dates button")) {
+  button.addEventListener("click", () => {
+    const days = Number(button.dataset.days);
+    if (!days) return setFilters({ since: "", until: "" });
+    const since = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
+    setFilters({ since, until: "" });
+  });
+}
+
+document.getElementById("copy-view").addEventListener("click", async (event) => {
+  const button = event.currentTarget;
+  try {
+    await navigator.clipboard.writeText(location.href);
+    button.textContent = "Link copied";
+  } catch (_) {
+    button.textContent = "Copy the address bar to share this view";
+  }
+  setTimeout(() => (button.textContent = "Copy link to this view"), 2500);
 });
 
 document.getElementById("clear-filters").addEventListener("click", () => {
@@ -246,23 +398,73 @@ async function overview() {
   ];
 }
 
+function matrixTable(title, rows) {
+  const coverage = ["no tests", "not automated", "automated"];
+  const execution = ["failing", "not run", "skipped", "passing"];
+  return [
+    h("h3", {}, title),
+    table(
+      [title.replace("By ", ""), { label: "Total", num: true }, ...coverage.map((c) => ({ label: c, num: true })), ...execution.map((e) => ({ label: e, num: true })), { label: "Stale evidence", num: true }],
+      rows.map((r) =>
+        h(
+          "tr",
+          {},
+          h("td", {}, r.group),
+          h("td", { class: "num" }, String(r.total)),
+          coverage.map((c) => h("td", { class: "num" }, r.coverage[c] ? h("a", { href: link("/requirements", { status: c, [title === "By criticality" ? "criticality" : "feature"]: r.group }) }, String(r.coverage[c])) : "0")),
+          execution.map((e) => h("td", { class: "num" }, String(r.execution[e] ?? 0))),
+          h("td", { class: "num" }, String(r.stale)),
+        ),
+      ),
+      "No requirements in scope.",
+      { tools: false },
+    ),
+  ];
+}
+
 async function requirementsView() {
   const status = route().params.get("status") ?? "";
-  const rows = await api(`/api/requirements${apiQuery(FILTERS, { status })}`);
+  const [rows, matrix] = await Promise.all([api(`/api/requirements${apiQuery(FILTERS, { status })}`), api(`/api/requirements/matrix${apiQuery(FILTERS)}`)]);
   const statusSelect = h("select", { id: "status-filter" }, ["", "no tests", "not automated", "automated", "passing", "failing", "not run", "skipped"].map((v) => h("option", { value: v }, v || "Any")));
   statusSelect.value = status;
   statusSelect.addEventListener("change", () => (location.hash = link("/requirements", { status: statusSelect.value })));
   return [
     h("h1", {}, "Requirements"),
     h("p", { class: "lead" }, `${rows.length} requirement(s) in scope.`),
-    h("div", { class: "toolbar" }, h("label", { for: "status-filter" }, "Status", statusSelect)),
-    table(
-      ["Requirement", "Feature", "Criticality", { label: "Automated / cases", num: true }, "Coverage", "Execution"],
+    h(
+      "details",
+      { class: "matrix", open: status ? null : "" },
+      h("summary", {}, "Coverage by criticality and feature"),
+      h("p", { class: "sub" }, `Counts come from the API for the scope above. Evidence is stale when the latest execution of a requirement's tests is older than ${matrix.stale_days} days. Click a coverage count to list those requirements.`),
+      matrixTable("By criticality", matrix.by_criticality),
+      matrixTable("By feature", matrix.by_feature),
+    ),
+    h(
+      "div",
+      { class: "toolbar" },
+      h("label", { for: "status-filter" }, "Status", statusSelect),
+      h("a", { href: link("/requirements", { status: "no tests", criticality: "critical" }) }, "Uncovered critical requirements"),
+    ),
+    h("h2", { id: "requirement-list", class: "visually-hidden" }, "Requirement list"),
+    h("section", { "aria-labelledby": "requirement-list" }, table(
+      ["Requirement", "Feature", "Criticality", { label: "Automated / cases", num: true }, "Coverage", "Execution", "Latest evidence"],
       rows.map((r) =>
-        h("tr", {}, h("td", {}, h("a", { href: link(`/requirement/${encodeURIComponent(r.id)}`) }, r.id), h("span", { class: "sub" }, r.title)), h("td", {}, r.feature), h("td", {}, r.criticality === "critical" ? badge("critical") : r.criticality), h("td", { class: "num" }, `${r.automated_test_cases} / ${r.test_cases}`), h("td", {}, badge(r.coverage_status)), h("td", {}, badge(r.execution_status))),
+        h(
+          "tr",
+          {},
+          h("td", {}, h("a", { href: link(`/requirement/${encodeURIComponent(r.id)}`) }, r.id), h("span", { class: "sub" }, r.title)),
+          h("td", {}, r.feature),
+          h("td", {}, r.criticality === "critical" ? badge("critical") : r.criticality),
+          h("td", { class: "num" }, `${r.automated_test_cases} / ${r.test_cases}`),
+          h("td", {}, badge(r.coverage_status)),
+          h("td", {}, badge(r.execution_status)),
+          h("td", { class: "nowrap" }, r.last_executed_at ? formatDate(r.last_executed_at) : "none", r.stale ? [" ", badge("stale")] : null),
+        ),
       ),
       "No requirements match these filters.",
-    ),
+      { tools: true, name: status ? `requirements-${status}` : "requirements" },
+    )),
+    h("p", { class: "sub" }, "Coverage over time (recorded catalog snapshots) is on the Trends page."),
   ];
 }
 
@@ -315,7 +517,6 @@ async function requirementDetail(id) {
 async function testsView() {
   const outcome = route().params.get("outcome") ?? "";
   const rows = await api(`/api/tests${apiQuery(RUN_FILTERS, { outcome })}`);
-  const search = h("input", { type: "search", id: "test-search", placeholder: "part of the name" });
   const outcomeSelect = h("select", { id: "outcome-filter" }, ["", ...OUTCOMES].map((v) => h("option", { value: v }, v || "Any")));
   outcomeSelect.value = outcome;
   outcomeSelect.addEventListener("change", () => (location.hash = link("/tests", { outcome: outcomeSelect.value })));
@@ -335,15 +536,11 @@ async function testsView() {
     );
     return tr;
   });
-  search.addEventListener("input", () => {
-    const needle = search.value.trim().toLowerCase();
-    for (const tr of body) tr.hidden = needle !== "" && !tr.dataset.key.includes(needle);
-  });
   return [
     h("h1", {}, "Tests"),
     h("p", { class: "lead" }, `${rows.length} test(s) across all loaded runs; tests with failures first.`),
-    h("div", { class: "toolbar" }, h("label", { for: "test-search" }, "Search", search), h("label", { for: "outcome-filter" }, "Latest outcome", outcomeSelect)),
-    table(["Test", "Framework", { label: "Runs", num: true }, { label: "Passed", num: true }, { label: "Failed", num: true }, { label: "Errors", num: true }, { label: "Skipped", num: true }, "Latest", "Test case"], body, "No tests in the loaded runs match these filters."),
+    h("div", { class: "toolbar" }, h("label", { for: "outcome-filter" }, "Latest outcome", outcomeSelect)),
+    table(["Test", "Framework", { label: "Runs", num: true }, { label: "Passed", num: true }, { label: "Failed", num: true }, { label: "Errors", num: true }, { label: "Skipped", num: true }, "Latest", "Test case"], body, "No tests in the loaded runs match these filters.", { tools: true, searchLabel: "Search", searchId: "test-search", searchPlaceholder: "part of the name", name: "tests" }),
   ];
 }
 
@@ -641,17 +838,21 @@ async function stabilityView() {
     h("div", { class: "toolbar" }, h("label", { for: "window" }, "Window", windowSelect)),
     h("div", { class: "cards" }, order.map((s) => countCard(s[0].toUpperCase() + s.slice(1), d.status_counts[s] ?? 0))),
     h("h2", {}, `Tests that need attention (${d.rows.length})`),
+    h("p", { class: "sub" }, "A flaky candidate is a suspicion from the observations listed, not a proven root cause. Sort by failure rate (frequency), last failure (recency) or affected builds."),
     table(
-      ["Test", "Context", "Status", { label: "Failure rate", num: true }, "Evidence", "Test case"],
+      ["Test", "Context", "Status", { label: "Failure rate", num: true }, "Last failure", { label: "Affected builds", num: true }, "Evidence", "Runs", "Test case"],
       d.rows.map((r) =>
         h(
           "tr",
           {},
           h("td", {}, h("a", { class: "key", href: link("/test", { key: r.key }) }, r.key), r.last_failure ? h("span", { class: "sub" }, `last failure: ${r.last_failure.split("\n")[0].slice(0, 160)}`) : null),
           h("td", {}, r.context),
-          h("td", {}, badge(r.status)),
+          h("td", {}, badge(r.status), r.status === "flaky candidate" ? h("span", { class: "sub" }, "suspected") : null),
           h("td", { class: "num" }, r.failure_rate.text),
+          h("td", { class: "nowrap" }, formatDate(r.last_failed_at)),
+          h("td", { class: "num" }, String(r.affected_builds.length), r.affected_builds.length ? h("span", { class: "sub" }, r.affected_builds.join(", ")) : null),
           h("td", {}, h("ul", { class: "reasons" }, r.reasons.map((reason) => h("li", {}, reason)))),
+          h("td", {}, r.last_failing_run_id ? h("a", { href: link(`/run/${r.last_failing_run_id}`) }, "last failing") : "–", r.last_passing_run_id ? [" · ", h("a", { href: link(`/run/${r.last_passing_run_id}`) }, "last passing")] : null),
           h("td", {}, r.test_cases.join(", ") || "–"),
         ),
       ),
@@ -724,7 +925,11 @@ function frame(labels, max, unit) {
 }
 
 /** Stacked bars: one bar per label, one segment per series ({name, cls, values}). */
-function stackedBars(labels, series, unit = "") {
+/**
+ * Stacked bars. With ``hrefs`` (one per label) every bar is a link, reachable with Tab, whose
+ * accessible name lists that bar's numbers (e.g. to the runs of that day).
+ */
+function stackedBars(labels, series, unit = "", hrefs = null) {
   const totals = labels.map((_, i) => series.reduce((sum, item) => sum + (item.values[i] ?? 0), 0));
   const max = Math.max(1, ...totals);
   const f = frame(labels, max, unit);
@@ -732,16 +937,24 @@ function stackedBars(labels, series, unit = "") {
   const bars = [];
   labels.forEach((label, i) => {
     let base = 0;
+    const pieces = [];
     for (const item of series) {
       const value = item.values[i] ?? 0;
       if (value > 0) {
         const top = f.y(base + value);
-        bars.push(s("rect", { class: item.cls, x: f.x(i) - barWidth / 2, y: top, width: barWidth, height: f.y(base) - top }, s("title", {}, `${label}: ${item.name} ${value}`)));
+        pieces.push(s("rect", { class: item.cls, x: f.x(i) - barWidth / 2, y: top, width: barWidth, height: f.y(base) - top }, s("title", {}, `${label}: ${item.name} ${value}`)));
       }
       base += value;
     }
+    if (hrefs && pieces.length) {
+      const summary = `${label}: ${series.map((item) => `${item.values[i] ?? 0} ${item.name}`).join(", ")}. Open the runs.`;
+      bars.push(s("a", { href: hrefs[i], class: "bar-link", "aria-label": summary }, s("title", {}, summary), pieces));
+    } else {
+      bars.push(...pieces);
+    }
   });
-  return s("svg", { viewBox: `0 0 ${CHART.width} ${CHART.height}`, class: "chart-svg", "aria-hidden": "true" }, f.parts, bars);
+  const attrs = { viewBox: `0 0 ${CHART.width} ${CHART.height}`, class: "chart-svg" };
+  return s("svg", hrefs ? { ...attrs, role: "group", "aria-label": "Bars, one link per day" } : { ...attrs, "aria-hidden": "true" }, f.parts, bars);
 }
 
 /** Lines: one per series ({name, cls, values}); a null value leaves a gap. */
@@ -777,6 +990,7 @@ function chartFigure(title, svg, series, labels, summary, format = (v) => v, dra
         ["", ...series.map((item) => ({ label: item.name, num: true }))],
         labels.map((label, i) => h("tr", {}, h("td", { class: "nowrap" }, label), series.map((item) => h("td", { class: "num" }, item.values[i] === null ? "–" : format(item.values[i]))))),
         "No data.",
+        { tools: false, pageSize: 1000 },
       ),
     ),
   );
@@ -810,7 +1024,7 @@ async function trendsView() {
       h(
         "div",
         { class: "charts" },
-        chartFigure("Test results", stackedBars(labels, outcomeSeries), outcomeSeries, days, `${days.length} days from ${days[0]} to ${days.at(-1)}`),
+        chartFigure("Test results", stackedBars(labels, outcomeSeries, "", days.map((day) => link("/runs", { since: day, until: day }))), outcomeSeries, days, `${days.length} days from ${days[0]} to ${days.at(-1)}`),
         chartFigure("Execution pass rate", lineChart(labels, [{ name: "pass rate", cls: "s-rate", values: d.daily.map((p) => p.pass_rate.percent) }], { max: 100, unit: "%" }), [{ name: "pass rate", cls: "s-rate", values: d.daily.map((p) => p.pass_rate.text) }], days, "passed of passed, failed and error; skipped not counted"),
         chartFigure("Test duration", lineChart(labels, [{ name: "seconds", cls: "s-duration", values: d.daily.map((p) => p.duration_seconds) }], { unit: "s" }), [{ name: "seconds", cls: "s-duration", values: d.daily.map((p) => p.duration_seconds) }], days, "sum of the recorded test durations in the day's snapshot", (v) => v.toFixed(1)),
         chartFigure("Requirements by execution status", stackedBars(labels, statusSeries), statusSeries, days, "current catalog applied to each day's snapshot"),
@@ -890,6 +1104,7 @@ async function render() {
     else a.removeAttribute("aria-current");
   }
   syncFilterForm();
+  showActiveFilters();
   const handler = VIEWS[name];
   statusLine.textContent = "Loading…";
   try {

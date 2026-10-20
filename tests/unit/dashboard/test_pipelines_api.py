@@ -208,3 +208,11 @@ def test_collection_health_per_repository(collected: TestClient) -> None:
     assert row["last_collected_at"].startswith("2026-10-19T12")
     assert row["fresh"] is False  # the records are from October; now is later
     assert "more than the expected 26 h" in row["freshness"]
+
+
+def test_job_is_a_facet_and_a_filter(client: TestClient) -> None:
+    """The Job filter: values from the data; ui-firefox keeps only the one Firefox run."""
+    assert "ui-firefox" in client.get("/api/facets").json()["jobs"]
+    runs = client.get("/api/runs", params={"job": "ui-firefox"}).json()
+
+    assert [r["pipeline"]["job"] for r in runs] == ["ui-firefox"]

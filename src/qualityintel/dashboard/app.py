@@ -34,6 +34,7 @@ from qualityintel.workspace import (
     PipelinesView,
     ReadinessView,
     RequirementDetail,
+    RequirementMatrix,
     RequirementRow,
     RunDetail,
     RunView,
@@ -68,6 +69,7 @@ def run_scope(
     since: date | None = None,
     until: date | None = None,
     repository: ListQuery = None,
+    job: ListQuery = None,
 ) -> Scope:
     """Run filters from query parameters (``?browser=firefox&browser=chrome&since=2026-10-13``)."""
     if since is not None and until is not None and since > until:
@@ -79,6 +81,7 @@ def run_scope(
             browsers=frozenset(browser or ()),
             builds=frozenset(build or ()),
             repositories=frozenset(repository or ()),
+            jobs=frozenset(job or ()),
             since=since,
             until=until,
         )
@@ -97,11 +100,12 @@ def full_scope(
     since: date | None = None,
     until: date | None = None,
     repository: ListQuery = None,
+    job: ListQuery = None,
 ) -> Scope:
     """Catalog and run filters; values that can never match an enum are a client error."""
     _check("criticality", criticality or [], {c.value for c in Criticality})
     _check("test_type", test_type or [], {t.value for t in TestType})
-    runs = run_scope(framework, environment, browser, build, since, until, repository).run_filters
+    runs = run_scope(framework, environment, browser, build, since, until, repository, job).run_filters
     return Scope(
         filters=Filters(
             features=frozenset(feature or ()),
@@ -294,6 +298,11 @@ def create_app(
         if status is not None:
             _check("status", [status], REQUIREMENT_STATUSES)
         return current().requirements(chosen, status=status)
+
+    @app.get("/api/requirements/matrix", tags=["coverage"])
+    def requirement_matrix(chosen: FullScope) -> RequirementMatrix:
+        """Requirements in scope by criticality and by feature, with coverage, execution and stale counts."""
+        return current().requirement_matrix(chosen)
 
     @app.get("/api/requirements/{requirement_id}", tags=["coverage"])
     def requirement(requirement_id: str, chosen: RunScope) -> RequirementDetail:

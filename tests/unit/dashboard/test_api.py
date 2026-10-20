@@ -147,6 +147,7 @@ def test_openapi_documentation_lists_every_route(client: TestClient) -> None:
         "/api/summary",
         "/api/readiness",
         "/api/requirements",
+        "/api/requirements/matrix",
         "/api/requirements/{requirement_id}",
         "/api/tests",
         "/api/tests/history",
@@ -353,3 +354,45 @@ def test_test_history_lists_requirements_and_counts(client: TestClient) -> None:
     assert (body["passed"], body["failed"]) == (12, 1)
     assert body["requirements"]
     assert body["executions"][0]["pipeline"] is None  # sample files are not pipeline runs
+
+
+def test_requirement_matrix_counts_match_the_requirement_list(client: TestClient) -> None:
+    """By criticality: totals add up to the 42 requirements and equal the list's own counts."""
+    matrix = client.get("/api/requirements/matrix").json()
+    rows = client.get("/api/requirements").json()
+
+    assert sum(r["total"] for r in matrix["by_criticality"]) == len(rows) == 42
+    critical = next(r for r in matrix["by_criticality"] if r["group"] == "critical")
+    listed = [r for r in rows if r["criticality"] == "critical"]
+    assert critical["total"] == len(listed) == 13
+    assert critical["coverage"].get("no tests", 0) == sum(r["coverage_status"] == "no tests" for r in listed)
+    assert matrix["stale_days"] == 14
+
+
+def test_stale_evidence_depends_on_the_age_of_the_latest_execution() -> None:
+    """Seen on 20 Oct the October samples are fresh; seen on 30 Nov the executed ones are stale."""
+    from datetime import UTC, datetime
+
+    workspace, _ = Workspace.load(SAMPLES / "catalog.toml", [SAMPLES / "results"])
+    fresh = workspace.requirement_matrix(now=datetime(2026, 10, 20, tzinfo=UTC))
+    later = workspace.requirement_matrix(now=datetime(2026, 11, 30, tzinfo=UTC))
+    executed = sum(
+        1 for r in TestClient(create_app(workspace)).get("/api/requirements").json() if r["last_executed_at"]
+    )
+
+    assert sum(r.stale for r in fresh.by_criticality) == 0
+    assert sum(r.stale for r in later.by_criticality) == executed > 0
+
+
+def test_stability_rows_link_to_the_runs_behind_them(client: TestClient) -> None:
+    """Every flaky candidate names its last failing and passing run and the builds involved."""
+    rows = client.get("/api/stability").json()["rows"]
+    flaky = [r for r in rows if r["status"] == "flaky candidate"]
+    run_ids = {r["run_id"] for r in client.get("/api/runs").json()}
+
+    assert len(flaky) == 4
+    for row in flaky:
+        assert row["last_failing_run_id"] in run_ids
+        assert row["last_passing_run_id"] in run_ids
+        assert row["last_failed_at"] is not None
+        assert row["affected_builds"]

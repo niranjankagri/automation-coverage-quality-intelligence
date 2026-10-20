@@ -22,8 +22,10 @@ from qualityintel.history.analysis import (
     duration_regressions,
     recurring_failures,
     stability_report,
+    timelines,
     trend,
 )
+from qualityintel.history.analysis import Execution as HistoryExecution
 from qualityintel.history.builds import BuildSide, builds_in_order, compare_builds
 from qualityintel.history.trends import CoverageSnapshot, coverage_changes, daily_trend
 from qualityintel.ingest.batch import Batch, import_results
@@ -209,6 +211,8 @@ class RequirementRow(View):
     automated_test_cases: int
     coverage_status: str
     execution_status: str
+    last_executed_at: datetime | None = None
+    stale: bool = False
 
 
 class TestCaseView(View):
@@ -345,6 +349,28 @@ class StabilityRow(View):
     last_outcome: Outcome
     last_failure: str
     test_cases: tuple[str, ...]
+    affected_builds: tuple[str, ...] = ()
+    last_failed_at: datetime | None = None
+    last_failing_run_id: str | None = None
+    last_passing_run_id: str | None = None
+
+
+class MatrixRow(View):
+    """Requirements of one criticality (or feature) by coverage and execution status."""
+
+    group: str
+    total: int
+    coverage: dict[str, int]
+    execution: dict[str, int]
+    stale: int
+
+
+class RequirementMatrix(View):
+    """Requirements by criticality and by feature (docs/dashboard.md, Requirements)."""
+
+    by_criticality: tuple[MatrixRow, ...]
+    by_feature: tuple[MatrixRow, ...]
+    stale_days: int
 
 
 class RecurringView(View):
@@ -473,6 +499,7 @@ class Facets(View):
     browsers: tuple[str, ...]
     builds: tuple[str, ...]
     repositories: tuple[str, ...] = ()
+    jobs: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -502,6 +529,8 @@ class Workspace:
         self.snapshots = tuple(snapshots)
         self.collections = tuple(collections)
         self.gate = gate
+        # Evidence older than this is stale (docs/dashboard.md); a deployment can change it
+        self.stale_days = 14
         self.runs = tuple(sorted(runs, key=lambda r: (r.started_at is None, r.started_at, r.source)))
         self._runs_by_id = {run.run_id: run for run in self.runs}
 
@@ -533,6 +562,7 @@ class Workspace:
             repositories=_sorted(
                 r.pipeline.repository for r in self.runs if r.pipeline and r.pipeline.repository
             ),
+            jobs=_sorted(r.pipeline.job for r in self.runs if r.pipeline),
         )
 
     def readiness(
@@ -901,6 +931,8 @@ class Workspace:
         for row in classified:
             counts[row.status.value] = counts.get(row.status.value, 0) + 1
         shown = [r for r in classified if include_stable or r.status is not Stability.STABLE]
+        lines = timelines(runs)
+        evidence = {(r.context, r.key): _evidence(lines.get((r.context, r.key), [])) for r in shown}
         return StabilityView(
             status_counts=counts,
             rows=tuple(
@@ -915,6 +947,10 @@ class Workspace:
                     last_outcome=r.last_outcome,
                     last_failure=r.last_failure,
                     test_cases=cases.get(r.key, ()),
+                    last_failed_at=evidence[(r.context, r.key)][0],
+                    last_failing_run_id=evidence[(r.context, r.key)][1],
+                    last_passing_run_id=evidence[(r.context, r.key)][2],
+                    affected_builds=r.mixed_builds,
                 )
                 for r in shown
             ),
@@ -1033,7 +1069,41 @@ class Workspace:
                 found.setdefault(execution.result.key, set()).add(case_id)
         return {key: tuple(sorted(ids)) for key, ids in found.items()}
 
-    def _row(self, requirement: Requirement, report: TraceabilityReport) -> RequirementRow:
+    def requirement_matrix(self, scope: Scope = EVERYTHING, now: datetime | None = None) -> RequirementMatrix:
+        """Requirements in scope counted by criticality and by feature, with coverage and execution status."""
+        report = self._report(scope)
+        rows = [self._row(row.requirement, report, now) for row in report.coverage.requirements]
+
+        def group(attribute: str) -> tuple[MatrixRow, ...]:
+            groups: dict[str, list[RequirementRow]] = {}
+            for row in rows:
+                groups.setdefault(getattr(row, attribute), []).append(row)
+            result = []
+            for name in sorted(groups):
+                members = groups[name]
+                coverage: dict[str, int] = {}
+                execution: dict[str, int] = {}
+                for member in members:
+                    coverage[member.coverage_status] = coverage.get(member.coverage_status, 0) + 1
+                    execution[member.execution_status] = execution.get(member.execution_status, 0) + 1
+                result.append(
+                    MatrixRow(
+                        group=name,
+                        total=len(members),
+                        coverage=dict(sorted(coverage.items())),
+                        execution=dict(sorted(execution.items())),
+                        stale=sum(member.stale for member in members),
+                    )
+                )
+            return tuple(result)
+
+        return RequirementMatrix(
+            by_criticality=group("criticality"), by_feature=group("feature"), stale_days=self.stale_days
+        )
+
+    def _row(
+        self, requirement: Requirement, report: TraceabilityReport, now: datetime | None = None
+    ) -> RequirementRow:
         """List row for one requirement, counting only the test cases that are in the scope."""
         in_scope = next(
             (row for row in report.coverage.requirements if row.requirement.id == requirement.id), None
@@ -1041,6 +1111,14 @@ class Workspace:
         cases = in_scope.test_cases if in_scope else self.catalog.test_cases_for(requirement.id)
         automated = sum(1 for c in cases if c.automation_status is AutomationStatus.AUTOMATED)
         coverage_status = "no tests" if not cases else "automated" if automated else "not automated"
+        starts = [
+            e.run.started_at
+            for c in cases
+            if c.id in report.cases
+            for e in report.cases[c.id].executions
+            if e.run.started_at is not None
+        ]
+        last = max(starts, default=None)
         return RequirementRow(
             id=requirement.id,
             title=requirement.title,
@@ -1054,6 +1132,8 @@ class Workspace:
             automated_test_cases=automated,
             coverage_status=coverage_status,
             execution_status=report.requirement_status.get(requirement.id, "not automated"),
+            last_executed_at=last,
+            stale=last is not None and (now or datetime.now(UTC)) - last > timedelta(days=self.stale_days),
         )
 
 
@@ -1152,6 +1232,17 @@ def _pipeline_view(execution: PipelineExecution, records: Sequence[PipelineColle
             )
             for c in ordered
         ),
+    )
+
+
+def _evidence(line: Sequence[HistoryExecution]) -> tuple[datetime | None, str | None, str | None]:
+    """The runs behind a stability classification: last failure time, last failing and passing run."""
+    failing = [e for e in line if e.result.outcome in (Outcome.FAILED, Outcome.ERROR)]
+    passing = [e for e in line if e.result.outcome is Outcome.PASSED]
+    return (
+        failing[-1].run.started_at if failing else None,
+        failing[-1].run.run_id if failing else None,
+        passing[-1].run.run_id if passing else None,
     )
 
 

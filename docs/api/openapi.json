@@ -670,6 +670,14 @@
             "title": "Frameworks",
             "type": "array"
           },
+          "jobs": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Jobs",
+            "type": "array"
+          },
           "platforms": {
             "items": {
               "type": "string"
@@ -780,6 +788,46 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "MatrixRow": {
+        "description": "Requirements of one criticality (or feature) by coverage and execution status.",
+        "properties": {
+          "coverage": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Coverage",
+            "type": "object"
+          },
+          "execution": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Execution",
+            "type": "object"
+          },
+          "group": {
+            "title": "Group",
+            "type": "string"
+          },
+          "stale": {
+            "title": "Stale",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "group",
+          "total",
+          "coverage",
+          "execution",
+          "stale"
+        ],
+        "title": "MatrixRow",
         "type": "object"
       },
       "Outcome": {
@@ -1454,6 +1502,36 @@
         "title": "RequirementDetail",
         "type": "object"
       },
+      "RequirementMatrix": {
+        "description": "Requirements by criticality and by feature (docs/dashboard.md, Requirements).",
+        "properties": {
+          "by_criticality": {
+            "items": {
+              "$ref": "#/components/schemas/MatrixRow"
+            },
+            "title": "By Criticality",
+            "type": "array"
+          },
+          "by_feature": {
+            "items": {
+              "$ref": "#/components/schemas/MatrixRow"
+            },
+            "title": "By Feature",
+            "type": "array"
+          },
+          "stale_days": {
+            "title": "Stale Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "by_criticality",
+          "by_feature",
+          "stale_days"
+        ],
+        "title": "RequirementMatrix",
+        "type": "object"
+      },
       "RequirementRow": {
         "description": "A requirement in lists.",
         "properties": {
@@ -1492,6 +1570,18 @@
             "title": "Id",
             "type": "string"
           },
+          "last_executed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Executed At"
+          },
           "platforms": {
             "items": {
               "type": "string"
@@ -1506,6 +1596,11 @@
           "risk": {
             "title": "Risk",
             "type": "string"
+          },
+          "stale": {
+            "default": false,
+            "title": "Stale",
+            "type": "boolean"
           },
           "test_cases": {
             "title": "Test Cases",
@@ -1745,6 +1840,14 @@
       "StabilityRow": {
         "description": "One test in one run context, classified from its history.",
         "properties": {
+          "affected_builds": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Affected Builds",
+            "type": "array"
+          },
           "context": {
             "title": "Context",
             "type": "string"
@@ -1760,12 +1863,46 @@
             "title": "Key",
             "type": "string"
           },
+          "last_failed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Failed At"
+          },
+          "last_failing_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Failing Run Id"
+          },
           "last_failure": {
             "title": "Last Failure",
             "type": "string"
           },
           "last_outcome": {
             "$ref": "#/components/schemas/Outcome"
+          },
+          "last_passing_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Passing Run Id"
           },
           "reasons": {
             "items": {
@@ -2446,6 +2583,25 @@
               ],
               "title": "Repository"
             }
+          },
+          {
+            "in": "query",
+            "name": "job",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job"
+            }
           }
         ],
         "responses": {
@@ -2656,6 +2812,25 @@
                 }
               ],
               "title": "Repository"
+            }
+          },
+          {
+            "in": "query",
+            "name": "job",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job"
             }
           }
         ],
@@ -2921,6 +3096,25 @@
               ],
               "title": "Repository"
             }
+          },
+          {
+            "in": "query",
+            "name": "job",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job"
+            }
           }
         ],
         "responses": {
@@ -3159,6 +3353,25 @@
                 }
               ],
               "title": "Repository"
+            }
+          },
+          {
+            "in": "query",
+            "name": "job",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job"
             }
           }
         ],
@@ -3415,6 +3628,25 @@
               ],
               "title": "Repository"
             }
+          },
+          {
+            "in": "query",
+            "name": "job",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job"
+            }
           }
         ],
         "responses": {
@@ -3444,6 +3676,264 @@
           }
         },
         "summary": "Requirements",
+        "tags": [
+          "coverage"
+        ]
+      }
+    },
+    "/api/requirements/matrix": {
+      "get": {
+        "description": "Requirements in scope by criticality and by feature, with coverage, execution and stale counts.",
+        "operationId": "requirement_matrix_api_requirements_matrix_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "feature",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Feature"
+            }
+          },
+          {
+            "in": "query",
+            "name": "criticality",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Criticality"
+            }
+          },
+          {
+            "in": "query",
+            "name": "platform",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Platform"
+            }
+          },
+          {
+            "in": "query",
+            "name": "test_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Test Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "framework",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Framework"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment"
+            }
+          },
+          {
+            "in": "query",
+            "name": "browser",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Browser"
+            }
+          },
+          {
+            "in": "query",
+            "name": "build",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Build"
+            }
+          },
+          {
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "in": "query",
+            "name": "until",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Until"
+            }
+          },
+          {
+            "in": "query",
+            "name": "repository",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repository"
+            }
+          },
+          {
+            "in": "query",
+            "name": "job",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequirementMatrix"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Requirement Matrix",
         "tags": [
           "coverage"
         ]
@@ -3590,6 +4080,25 @@
                 }
               ],
               "title": "Repository"
+            }
+          },
+          {
+            "in": "query",
+            "name": "job",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job"
             }
           }
         ],
@@ -3753,6 +4262,25 @@
                 }
               ],
               "title": "Repository"
+            }
+          },
+          {
+            "in": "query",
+            "name": "job",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job"
             }
           }
         ],
@@ -3985,6 +4513,25 @@
                 }
               ],
               "title": "Repository"
+            }
+          },
+          {
+            "in": "query",
+            "name": "job",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job"
             }
           }
         ],
@@ -4269,6 +4816,25 @@
               ],
               "title": "Repository"
             }
+          },
+          {
+            "in": "query",
+            "name": "job",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job"
+            }
           }
         ],
         "responses": {
@@ -4448,6 +5014,25 @@
               ],
               "title": "Repository"
             }
+          },
+          {
+            "in": "query",
+            "name": "job",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job"
+            }
           }
         ],
         "responses": {
@@ -4624,6 +5209,25 @@
                 }
               ],
               "title": "Repository"
+            }
+          },
+          {
+            "in": "query",
+            "name": "job",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job"
             }
           }
         ],
@@ -4863,6 +5467,25 @@
                 }
               ],
               "title": "Repository"
+            }
+          },
+          {
+            "in": "query",
+            "name": "job",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job"
             }
           }
         ],

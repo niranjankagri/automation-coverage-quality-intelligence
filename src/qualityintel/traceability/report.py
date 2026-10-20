@@ -40,6 +40,7 @@ class RunFilters:
     platforms: frozenset[str] = frozenset()
     builds: frozenset[str] = frozenset()
     repositories: frozenset[str] = frozenset()
+    jobs: frozenset[str] = frozenset()
     since: date | None = None
     until: date | None = None
 
@@ -61,6 +62,7 @@ class RunFilters:
                 (self.platforms, context.platform),
                 (self.builds, context.build),
                 (self.repositories, run.pipeline.repository if run.pipeline else None),
+                (self.jobs, run.pipeline.job if run.pipeline else None),
             )
         )
 
