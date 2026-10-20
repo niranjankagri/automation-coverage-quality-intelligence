@@ -3,8 +3,8 @@
 // All text is set with textContent (test names contain quotes, brackets and < >).
 "use strict";
 
-const FILTERS = ["feature", "criticality", "test_type", "framework", "environment", "browser"];
-const RUN_FILTERS = ["framework", "environment", "browser"];
+const FILTERS = ["feature", "criticality", "test_type", "framework", "environment", "browser", "build", "since", "until"];
+const RUN_FILTERS = ["framework", "environment", "browser", "build", "since", "until"];
 const OUTCOMES = ["passed", "failed", "error", "skipped"];
 const view = document.getElementById("view");
 const statusLine = document.getElementById("status");
@@ -108,7 +108,7 @@ async function loadFacets() {
 
 function syncFilterForm() {
   const params = route().params;
-  for (const select of document.querySelectorAll("#filters select")) select.value = params.get(select.name) ?? "";
+  for (const field of document.querySelectorAll("#filters select, #filters input")) field.value = params.get(field.name) ?? "";
 }
 
 document.getElementById("filters").addEventListener("change", (event) => {
@@ -408,6 +408,170 @@ async function stabilityView() {
   ];
 }
 
+// ---- charts (inline SVG, no library; every chart also has its numbers as a table) ---------
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+const CHART = { width: 640, height: 220, left: 46, right: 26, top: 12, bottom: 30 };
+
+/** Create an SVG element with attributes and children. */
+function s(tag, attrs = {}, ...children) {
+  const el = document.createElementNS(SVG_NS, tag);
+  for (const [name, value] of Object.entries(attrs)) el.setAttribute(name, String(value));
+  for (const child of children.flat()) if (child) el.append(child instanceof Node ? child : document.createTextNode(String(child)));
+  return el;
+}
+
+/** Axes, grid lines and x labels shared by both chart types; returns the plotting helpers. */
+function frame(labels, max, unit) {
+  const w = CHART.width - CHART.left - CHART.right;
+  const hgt = CHART.height - CHART.top - CHART.bottom;
+  const x = (i) => CHART.left + (labels.length === 1 ? w / 2 : (i * w) / (labels.length - 1));
+  const y = (v) => CHART.top + hgt - (max === 0 ? 0 : (v / max) * hgt);
+  const parts = [];
+  for (const tick of [0, max / 2, max]) {
+    parts.push(s("line", { class: "grid", x1: CHART.left, x2: CHART.width - CHART.right, y1: y(tick), y2: y(tick) }));
+    parts.push(s("text", { class: "axis", x: CHART.left - 6, y: y(tick) + 4, "text-anchor": "end" }, `${+tick.toFixed(1)}${unit}`));
+  }
+  const step = Math.max(1, Math.ceil(labels.length / 8));
+  labels.forEach((label, i) => {
+    if (i % step === 0 || i === labels.length - 1) parts.push(s("text", { class: "axis", x: x(i), y: CHART.height - 10, "text-anchor": "middle" }, label));
+  });
+  return { x, y, w, parts };
+}
+
+/** Stacked bars: one bar per label, one segment per series ({name, cls, values}). */
+function stackedBars(labels, series, unit = "") {
+  const totals = labels.map((_, i) => series.reduce((sum, item) => sum + (item.values[i] ?? 0), 0));
+  const max = Math.max(1, ...totals);
+  const f = frame(labels, max, unit);
+  const barWidth = Math.max(4, Math.min(36, (f.w / labels.length) * 0.6));
+  const bars = [];
+  labels.forEach((label, i) => {
+    let base = 0;
+    for (const item of series) {
+      const value = item.values[i] ?? 0;
+      if (value > 0) {
+        const top = f.y(base + value);
+        bars.push(s("rect", { class: item.cls, x: f.x(i) - barWidth / 2, y: top, width: barWidth, height: f.y(base) - top }, s("title", {}, `${label}: ${item.name} ${value}`)));
+      }
+      base += value;
+    }
+  });
+  return s("svg", { viewBox: `0 0 ${CHART.width} ${CHART.height}`, class: "chart-svg", "aria-hidden": "true" }, f.parts, bars);
+}
+
+/** Lines: one per series ({name, cls, values}); a null value leaves a gap. */
+function lineChart(labels, series, { max = null, unit = "" } = {}) {
+  const top = max ?? Math.max(1, ...series.flatMap((item) => item.values.filter((v) => v !== null)));
+  const f = frame(labels, top, unit);
+  const drawn = [];
+  for (const item of series) {
+    let path = "";
+    item.values.forEach((value, i) => {
+      if (value === null) return;
+      path += `${path && item.values[i - 1] !== null ? "L" : "M"}${f.x(i)},${f.y(value)}`;
+      drawn.push(s("circle", { class: `dot ${item.cls}`, cx: f.x(i), cy: f.y(value), r: 3 }, s("title", {}, `${labels[i]}: ${item.name} ${value}${unit}`)));
+    });
+    drawn.unshift(s("path", { class: `line ${item.cls}`, d: path }));
+  }
+  return s("svg", { viewBox: `0 0 ${CHART.width} ${CHART.height}`, class: "chart-svg", "aria-hidden": "true" }, f.parts, drawn);
+}
+
+/** A chart with title, legend (the drawn series), a summary for screen readers and its data as a table. */
+function chartFigure(title, svg, series, labels, summary, format = (v) => v, drawn = series) {
+  return h(
+    "figure",
+    { class: "chart", role: "group", "aria-label": `${title}. ${summary}` },
+    h("figcaption", {}, h("strong", {}, title), h("span", { class: "sub" }, summary)),
+    h("ul", { class: "legend" }, drawn.map((item) => h("li", {}, h("span", { class: `swatch ${item.cls}` }), item.name))),
+    svg,
+    h(
+      "details",
+      {},
+      h("summary", {}, "Show the numbers"),
+      table(
+        ["", ...series.map((item) => ({ label: item.name, num: true }))],
+        labels.map((label, i) => h("tr", {}, h("td", { class: "nowrap" }, label), series.map((item) => h("td", { class: "num" }, item.values[i] === null ? "–" : format(item.values[i]))))),
+        "No data.",
+      ),
+    ),
+  );
+}
+
+const shortDay = (iso) => iso.slice(5);
+
+async function trendsView() {
+  const d = await api(`/api/trends${apiQuery(FILTERS)}`);
+  const days = d.daily.map((p) => p.day);
+  const labels = days.map(shortDay);
+  const outcomeSeries = [
+    { name: "passed", cls: "s-passed", values: d.daily.map((p) => p.counts.passed) },
+    { name: "failed", cls: "s-failed", values: d.daily.map((p) => p.counts.failed) },
+    { name: "error", cls: "s-error", values: d.daily.map((p) => p.counts.error) },
+    { name: "skipped", cls: "s-skipped", values: d.daily.map((p) => p.counts.skipped) },
+  ];
+  const statuses = ["passing", "failing", "not run", "skipped", "not automated"];
+  const statusSeries = statuses.map((status) => ({ name: status, cls: `s-${status.replace(" ", "-")}`, values: d.daily.map((p) => p.requirement_status[status] ?? 0) }));
+  const changes = d.daily.filter((p) => p.added.length || p.carried.length);
+  const content = [
+    h("h1", {}, "Trends"),
+    h("p", { class: "lead" }, "Each day shows what a release decision would have seen at the end of it: the latest run of every framework, environment, browser and platform. Every chart has its numbers underneath."),
+    d.notes.length ? h("div", { class: "notice", role: "note" }, h("strong", {}, "Read with care: "), h("ul", {}, d.notes.map((n) => h("li", {}, n)))) : null,
+  ];
+  if (!d.daily.length) {
+    content.push(h("p", { class: "empty" }, "No dated runs in this scope, so there is no trend to draw."));
+  } else {
+    content.push(
+      h("h2", {}, "Executions per day"),
+      h(
+        "div",
+        { class: "charts" },
+        chartFigure("Test results", stackedBars(labels, outcomeSeries), outcomeSeries, days, `${days.length} days from ${days[0]} to ${days.at(-1)}`),
+        chartFigure("Execution pass rate", lineChart(labels, [{ name: "pass rate", cls: "s-rate", values: d.daily.map((p) => p.pass_rate.percent) }], { max: 100, unit: "%" }), [{ name: "pass rate", cls: "s-rate", values: d.daily.map((p) => p.pass_rate.text) }], days, "passed of passed, failed and error; skipped not counted"),
+        chartFigure("Test duration", lineChart(labels, [{ name: "seconds", cls: "s-duration", values: d.daily.map((p) => p.duration_seconds) }], { unit: "s" }), [{ name: "seconds", cls: "s-duration", values: d.daily.map((p) => p.duration_seconds) }], days, "sum of the recorded test durations in the day's snapshot", (v) => v.toFixed(1)),
+        chartFigure("Requirements by execution status", stackedBars(labels, statusSeries), statusSeries, days, "current catalog applied to each day's snapshot"),
+      ),
+      changes.length
+        ? h("div", {}, h("h2", {}, "Days that are not comparable with the day before"), table(["Day", "New suites", "Carried over from earlier days"], changes.map((p) => h("tr", {}, h("td", { class: "nowrap" }, p.day), h("td", {}, p.added.join(", ") || "–"), h("td", {}, p.carried.join(", ") || "–"))), ""))
+        : null,
+    );
+  }
+  content.push(h("h2", {}, "Runs per context"));
+  const contexts = Object.entries(d.runs);
+  content.push(
+    contexts.length
+      ? h(
+          "div",
+          { class: "charts" },
+          contexts.map(([context, runs]) => {
+            const runLabels = runs.map((r) => (r.started_at ? shortDay(r.started_at.slice(0, 10)) : "–"));
+            const series = [{ name: "failed + error", cls: "s-failed", values: runs.map((r) => r.counts.failed + r.counts.error) }, { name: "duration (s)", cls: "s-duration", values: runs.map((r) => r.duration_seconds) }];
+            return chartFigure(context, lineChart(runLabels, [series[1]], { unit: "s" }), series, runs.map((r) => `${r.started_at ? r.started_at.slice(0, 16).replace("T", " ") : "undated"} · ${r.build ?? "–"}`), `${runs.length} run(s); duration per run, failures in the table`, (v) => (Number.isInteger(v) ? v : v.toFixed(1)), [series[1]]);
+          }),
+        )
+      : h("p", { class: "empty" }, "No runs in this scope."),
+  );
+  content.push(h("h2", {}, "Coverage over time"));
+  if (d.coverage.length >= 2) {
+    const covLabels = d.coverage.map((c) => shortDay(c.taken_at.slice(0, 10)));
+    const covSeries = [
+      { name: "requirement coverage", cls: "s-rate", values: d.coverage.map((c) => c.requirement_coverage.percent) },
+      { name: "automation coverage", cls: "s-duration", values: d.coverage.map((c) => c.automation_coverage.percent) },
+      { name: "automated requirement coverage", cls: "s-passed", values: d.coverage.map((c) => c.automated_requirement_coverage.percent) },
+    ];
+    content.push(chartFigure("Coverage snapshots", lineChart(covLabels, covSeries, { max: 100, unit: "%" }), covSeries, d.coverage.map((c) => c.taken_at.slice(0, 16).replace("T", " ")), "recorded when the catalog changed"));
+  } else {
+    content.push(
+      table(
+        ["Recorded", "Catalog", { label: "Requirements", num: true }, "Requirement coverage", "Automation coverage", "Automated requirement coverage"],
+        d.coverage.map((c) => h("tr", {}, h("td", { class: "nowrap" }, formatDate(c.taken_at)), h("td", {}, c.catalog), h("td", { class: "num" }, c.requirements), h("td", {}, c.requirement_coverage.text), h("td", {}, c.automation_coverage.text), h("td", {}, c.automated_requirement_coverage.text))),
+        "No coverage snapshot recorded yet.",
+      ),
+    );
+  }
+  return content;
+}
+
 // ---- main loop -------------------------------------------------------------------------
 
 const VIEWS = {
@@ -419,6 +583,7 @@ const VIEWS = {
   runs: runsView,
   run: (parts) => runDetail(parts[1]),
   stability: stabilityView,
+  trends: trendsView,
 };
 
 async function render() {

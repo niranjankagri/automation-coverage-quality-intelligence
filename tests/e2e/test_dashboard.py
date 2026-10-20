@@ -126,7 +126,7 @@ def test_unknown_page_and_unknown_requirement_show_errors(page: Page) -> None:
 def test_layout_fits_small_screens(page: Page, width: int) -> None:
     """Phone and tablet width: no sideways scrolling of the page; wide tables scroll inside."""
     page.set_viewport_size({"width": width, "height": 800})
-    for path in ("/", "/#/requirements", "/#/tests", "/#/runs", "/#/stability"):
+    for path in ("/", "/#/requirements", "/#/tests", "/#/runs", "/#/stability", "/#/trends"):
         page.goto(path)
         expect(page.locator("#view h1")).to_be_visible()
         overflow = page.evaluate(
@@ -160,3 +160,48 @@ def test_stability_page_shows_flaky_candidates_with_evidence(page: Page) -> None
 
     expect(page).to_have_url(re.compile(r"window=5"))
     expect(page.locator("tbody tr").filter(has_text="adminEditsACustomer")).to_have_count(0)
+
+
+def test_trends_page_draws_what_the_api_says(page: Page) -> None:
+    """Every number in the 'Test results' table equals the API's daily counts; the jump in suites is explained."""
+    page.goto("/#/trends")
+    expect(page.get_by_role("heading", name="Trends", exact=True)).to_be_visible()
+    daily = page.request.get("/api/trends").json()["daily"]
+
+    results = page.locator("figure.chart").filter(has_text="Test results")
+    results.get_by_text("Show the numbers").click()
+    rows = results.locator("tbody tr")
+    expect(rows).to_have_count(len(daily))
+    for i, point in enumerate(daily):
+        cells = rows.nth(i).locator("td")
+        expect(cells.nth(0)).to_have_text(point["day"])
+        expect(cells.nth(1)).to_have_text(str(point["counts"]["passed"]))
+        expect(cells.nth(2)).to_have_text(str(point["counts"]["failed"]))
+    expect(page.get_by_role("note")).to_contain_text(
+        "the set of run contexts grows on 2026-10-09, 2026-10-13, 2026-10-17"
+    )
+    expect(page.locator("figure.chart")).to_have_count(4 + 5)  # four daily charts, one per run context
+
+
+def test_date_filter_narrows_the_trend_and_stays_in_the_url(page: Page) -> None:
+    """From 13 Oct to 15 Oct: three days, filter kept in the address."""
+    page.goto("/#/trends")
+    expect(page.get_by_role("heading", name="Trends", exact=True)).to_be_visible()
+
+    page.get_by_label("From", exact=True).fill("2026-10-13")
+    page.get_by_label("To", exact=True).fill("2026-10-15")
+
+    expect(page).to_have_url(
+        re.compile(r"since=2026-10-13.*until=2026-10-15|until=2026-10-15.*since=2026-10-13")
+    )
+    expect(page.locator("figure.chart").filter(has_text="Test results")).to_contain_text(
+        "3 days from 2026-10-13 to 2026-10-15"
+    )
+
+
+def test_trends_without_runs_in_scope_say_so(page: Page) -> None:
+    """A date range with no runs: no chart, an explanation."""
+    page.goto("/#/trends?since=2030-01-01")
+
+    expect(page.get_by_text("No dated runs in this scope")).to_be_visible()
+    expect(page.locator("figure.chart")).to_have_count(0)
