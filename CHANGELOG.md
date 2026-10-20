@@ -17,6 +17,9 @@
 - **Release status on the overview** ([docs/readiness.md](docs/readiness.md)): Ready / At risk /
   Blocked / Unknown from the release gate given with `qi dashboard --gate` plus flaky candidates,
   incomplete pipelines and stale data; unknown evidence is never ready; `/api/readiness`.
+- **Requirement ownership (M6)**: `owner` on requirements (catalog TOML, CSV column), an Owner
+  filter and facet, an owner column and matrix grouping; the sample requirements have synthetic
+  team owners.
 - **The whole portfolio is collected (M6)**: 23 repositories, 24 workflows, 59 jobs (was 4
   repositories); 16 repositories now publish JUnit XML as `junit-<job>` artifacts, 3 got CI;
   per-producer `since` keeps runs from before the contract out; every first run checked

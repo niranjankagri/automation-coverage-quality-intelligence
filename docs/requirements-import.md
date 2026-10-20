@@ -24,6 +24,7 @@ double quotes, first row = column names (case-insensitive). Blank lines are igno
 | `title` | yes | 1-500 characters | title |
 | `description` | no | up to 4,000 characters | description (shown on the dashboard's requirement page) |
 | `component` (or `feature`) | no | free text | feature, used for grouping and filters |
+| `owner` | no | free text | team or person who answers for the requirement: a filter, a matrix grouping, shown on the requirement |
 | `priority` | no | `p1`-`p4` (`P1` accepted) | priority |
 | `criticality` | no | `critical`, `high`, `medium`, `low` (any case) | criticality; `critical` drives the gate rules |
 | `risk` | no | `high`, `medium`, `low` | risk |

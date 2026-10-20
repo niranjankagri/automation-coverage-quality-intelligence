@@ -45,7 +45,7 @@ every page and API call needs HTTP basic authentication. Put TLS in front when o
 | Trends | daily snapshots (results, pass rate, test duration, requirements by status), days that are not comparable (new suites, carried-over runs), duration per run for each context, coverage snapshots; every chart with its numbers in a table | run context charts list each run with its build |
 | Stability | class counts; tests needing attention with evidence; recurring failures; duration regressions; runs per context | test -> history; run strip -> run ([history.md](history.md)) |
 
-Filters (repository, feature, criticality, test type, framework, environment, browser, build, pipeline job, from/to date) apply to every view
+Filters (repository, feature, owner, criticality, test type, framework, environment, browser, build, pipeline job, from/to date) apply to every view
 and are kept in the address, so a filtered view can be bookmarked or shared. The drop-down values
 come from the data (`/api/facets`), never from a fixed list.
 
@@ -69,7 +69,7 @@ with 6 or more rows get a row filter, *Download CSV* (the filtered and sorted ro
 columns; cells a spreadsheet would run as formulas are made inert) and a column chooser; long
 tables show 50 rows per page. Sorting and filtering only reorder what the API returned.
 
-**Requirements:** a matrix by criticality and by feature (coverage status, execution status,
+**Requirements:** a matrix by criticality, by feature and by owner (coverage status, execution status,
 stale evidence; from `/api/requirements/matrix`), each coverage count a link to those
 requirements; *Uncovered critical requirements* as a one-click filter; per requirement its latest
 execution and a *stale* badge when that is older than 14 days.

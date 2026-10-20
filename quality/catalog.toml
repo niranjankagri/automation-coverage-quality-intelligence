@@ -181,6 +181,12 @@ title = "Hosted operation: login guessing is locked out, public mode only on pur
 feature = "Security"
 criticality = "critical"
 
+[[requirement]]
+id = "REQ-OWNER-01"
+title = "Requirements name an owner (catalog and CSV); the dashboard filters and groups by owner"
+feature = "Traceability"
+criticality = "medium"
+
 # ---- Test cases ----------------------------------------------------------------------------
 
 [[test_case]]
@@ -602,4 +608,16 @@ automated_by = [
   "tests.unit.test_cli_history::test_restore_refuses_a_file_that_is_not_a_history_database",
   "tests.unit.test_cli_history::test_prune_refuses_a_retention_inside_the_collection_look_back",
   "tests.unit.history.test_store::test_prune_deletes_old_runs_results_and_records_but_keeps_the_latest_snapshot",
+]
+
+[[test_case]]
+id = "TC-REQUIREMENT-OWNER"
+title = "Owner in the CSV import and generated TOML, facet, filter, matrix and requirement page"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["REQ-OWNER-01"]
+automated_by = [
+  "tests.unit.ingest.test_requirements_csv::test_owner_column_is_imported_and_written_after_the_feature",
+  "tests.unit.dashboard.test_api::test_requirements_have_owners_to_filter_and_group_by",
+  "tests.e2e.test_dashboard::test_the_owner_filter_narrows_requirements_and_the_matrix_groups_by_owner",
 ]
