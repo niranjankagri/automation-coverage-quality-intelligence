@@ -206,3 +206,28 @@ def test_trends_without_runs_in_scope_say_so(page: Page) -> None:
 
     expect(page.get_by_text("No dated runs in this scope")).to_be_visible()
     expect(page.locator("figure.chart")).to_have_count(0)
+
+
+def test_a_late_response_for_an_older_address_is_not_shown(page: Page) -> None:
+    """Two filter changes in a row; the first answer arrives last and must be ignored."""
+    delayed: list[Route] = []
+
+    def hold_first(route: Route) -> None:
+        if "until=" in route.request.url or delayed:
+            route.continue_()
+        else:
+            delayed.append(route)  # answered only after the newer request finished
+
+    page.goto("/#/trends")
+    expect(page.get_by_role("heading", name="Trends", exact=True)).to_be_visible()
+    page.route("**/api/trends?*", hold_first)
+
+    page.get_by_label("From", exact=True).fill("2026-10-13")
+    page.get_by_label("To", exact=True).fill("2026-10-15")
+    chart = page.locator("figure.chart").filter(has_text="Test results")
+    expect(chart).to_contain_text("3 days from 2026-10-13 to 2026-10-15")
+    assert delayed, "the first request was not held back"
+    delayed[0].continue_()
+    page.wait_for_load_state("networkidle")
+
+    expect(chart).to_contain_text("3 days from 2026-10-13 to 2026-10-15")

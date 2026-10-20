@@ -334,6 +334,7 @@ automated_by = [
   "tests.e2e.test_dashboard::test_trends_page_draws_what_the_api_says",
   "tests.e2e.test_dashboard::test_date_filter_narrows_the_trend_and_stays_in_the_url",
   "tests.e2e.test_dashboard::test_trends_without_runs_in_scope_say_so",
+  "tests.e2e.test_dashboard::test_a_late_response_for_an_older_address_is_not_shown",
 ]
 
 [[test_case]]

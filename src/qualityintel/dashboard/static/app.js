@@ -589,7 +589,13 @@ const VIEWS = {
   trends: trendsView,
 };
 
+// Each render gets a number; only the latest may write to the page. Without this, a slow
+// response for an older address (e.g. the first of two quickly changed filters) arrives last
+// and shows data that no longer matches the address (seen in CI).
+let renderCount = 0;
+
 async function render() {
+  const current = ++renderCount;
   const { parts } = route();
   const name = parts[0] ?? "";
   const section = { requirement: "requirements", test: "tests", run: "runs", "": "overview" }[name] ?? name;
@@ -605,10 +611,12 @@ async function render() {
   try {
     if (!handler) throw new Error("This page does not exist.");
     const content = await handler(parts);
+    if (current !== renderCount) return; // a newer address is being rendered
     view.replaceChildren(...[content].flat(3));
     statusLine.textContent = "";
     document.title = `${document.querySelector("#view h1")?.textContent ?? "Overview"} · Quality Intelligence`;
   } catch (error) {
+    if (current !== renderCount) return;
     view.replaceChildren(h("div", { class: "error", role: "alert" }, h("strong", {}, "Could not load this view. "), error.message, " ", h("button", { type: "button", id: "retry" }, "Retry")));
     document.getElementById("retry").addEventListener("click", render);
     statusLine.textContent = "";
