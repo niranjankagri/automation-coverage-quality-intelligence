@@ -23,6 +23,7 @@ from playwright.sync_api import Browser, sync_playwright
 
 from qualityintel.cli import main as cli_main
 from qualityintel.dashboard.app import create_app
+from qualityintel.gates.config import load_gate_config
 from qualityintel.history.store import HistoryStore
 from qualityintel.ingest.catalog_file import load_catalog
 from qualityintel.workspace import Workspace
@@ -44,6 +45,7 @@ SHOTS = [
     ("dashboard-run.png", "#/runs?framework=playwright", 1280, "dark", False),
     ("dashboard-stability.png", "#/stability", 1280, "light", True),
     ("dashboard-trends.png", "#/trends", 1280, "light", False),
+    ("dashboard-compare.png", "#/compare?framework=testng&base=f5a40d5&head=1d03232", 1280, "light", False),
     ("dashboard-phone.png", "#/", 390, "light", False),
 ]
 # Taken on the two real TaskBoard pipeline executions (samples/pipelines)
@@ -74,8 +76,12 @@ def main(argv: list[str]) -> int:
         print("samples did not import cleanly", file=sys.stderr)
         return 3
     with HistoryStore(history) as store:
+        # With the nightly gate, so the overview shows a release decision as a deployment does
         workspace = Workspace(
-            load_catalog(ROOT / "samples" / "catalog.toml"), store.runs(), store.snapshots()
+            load_catalog(ROOT / "samples" / "catalog.toml"),
+            store.runs(),
+            store.snapshots(),
+            gate=load_gate_config(ROOT / "samples" / "gates" / "nightly.toml"),
         )
     pipelines = pipeline_workspace(Path(tempfile.mkdtemp()) / "pipelines.db")
     if pipelines is None:
