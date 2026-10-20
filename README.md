@@ -24,20 +24,29 @@ It runs no tests and replaces no framework; it complements the automation projec
 
 ## Try it (about two minutes)
 
-Python 3.12 or newer.
+Python 3.12 or newer and Git. Nothing else: no database server, no configuration file, no
+network access after the install.
 
-```bash
+Windows (cmd.exe):
+
+```bat
 git clone https://github.com/niranjankagri/automation-coverage-quality-intelligence.git
 cd automation-coverage-quality-intelligence
 python -m venv .venv
-.venv/Scripts/activate            # Windows cmd: .venv\Scripts\activate · Linux/macOS: source .venv/bin/activate
+.venv\Scripts\activate
 pip install -e .
-python tools/demo.py              # ten documented steps; each checks its exit code
-qi dashboard --catalog samples/catalog.toml --database demo-output/quality.db   # http://127.0.0.1:8000
+python tools\demo.py
+qi dashboard --catalog samples/catalog.toml --database demo-output/quality.db
 ```
 
-`tools/demo.py` ends with `10 of 10 steps behaved as documented`; CI runs it from a clean
-checkout on every push (job *Demonstration from a clean checkout*).
+PowerShell: activate with `.venv\Scripts\Activate.ps1` (if scripts are blocked:
+`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`). Git Bash: `source .venv/Scripts/activate`.
+Linux / macOS: `python3 -m venv .venv` and `source .venv/bin/activate`; the other lines are the same.
+
+`tools/demo.py` runs ten documented steps and checks each exit code; it ends with
+`10 of 10 steps behaved as documented`. The dashboard then runs on http://127.0.0.1:8000 (stop it
+with Ctrl+C). These exact steps were run from a fresh clone on Windows (cmd, Git Bash) and run in
+CI on Linux and Windows on every push: [docs/validation.md](docs/validation.md).
 
 ## What it does
 
@@ -143,6 +152,10 @@ the tests below, and CI job *Self gate* runs `qi gate` on this repository's own 
 | Sample gates: passed, failed, failed on a real attempt, incomplete | `qi gate` | Quality gates (sample data) |
 | The plan's acceptance criteria | `qi gate` on this repo's own results | Self gate |
 | Reproducible demonstration | `tools/demo.py` | Demonstration from a clean checkout |
+
+On Windows, the `e2e` extra (Playwright) installs files with very long paths: clone into a short
+folder (for example `D:\src`) or enable Windows long paths, otherwise `pip` stops with
+"No such file or directory". The basic install above is not affected.
 
 Development setup: `pip install -e ".[dev,e2e]"`, `playwright install chromium`, then
 `ruff check . && ruff format --check . && mypy && pytest --cov && pytest -m e2e`.
