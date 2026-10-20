@@ -17,6 +17,12 @@
   context, recorded coverage snapshots (`qi history import --catalog`, schema 2 with upgrade);
   days with new suites or carried-over runs are flagged; build and date-range filters everywhere;
   values checked against plain SQL on the stored records.
+- **Cypress and Allure results:** mochawesome JSON or HTML reports and `allure-results` folders
+  import into the same model as JUnit XML ([ADR 0005](docs/adr/0005-format-adapters.md)); Allure
+  keys equal Surefire's JUnit keys; retries from repeated Allure `historyId`s; unknown statuses
+  count as errors; unknown JSON makes a batch incomplete. Real samples in `samples/formats`:
+  8 Cypress runs and 5 Allure runs, each Allure run checked test by test against the JUnit XML
+  of the same CI job. `tools/sanitize_reports.py` cleans such reports for sharing.
 
 ## 1.0.0 (2026-10-20)
 

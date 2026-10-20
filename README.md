@@ -3,8 +3,8 @@
 [![CI](https://github.com/niranjankagri/automation-coverage-quality-intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/niranjankagri/automation-coverage-quality-intelligence/actions/workflows/ci.yml)
 
 A quality engineering platform that sits **on top of** existing test automation. It imports the
-JUnit XML results that Selenium/TestNG, Playwright, pytest and Robot Framework suites already
-produce, links them to requirements, and answers the questions a release decision needs:
+results that Selenium/TestNG, Playwright, pytest, Robot Framework and Cypress suites already
+produce (JUnit XML, mochawesome, Allure results), links them to requirements, and answers the questions a release decision needs:
 
 - Which requirements are tested at all, and which of those tests are automated?
 - Which **critical** requirements have no automated test?
@@ -52,7 +52,7 @@ CI on Linux and Windows on every push: [docs/validation.md](docs/validation.md).
 
 | Area | Commands | What you get | Docs |
 |---|---|---|---|
-| Ingestion | `qi inspect` | JUnit XML from files, folders or quoted patterns; outcomes, reruns, nested suites, explicit test ids, run context; every unreadable file reported | [ingestion](docs/ingestion.md) |
+| Ingestion | `qi inspect` | JUnit XML, Cypress mochawesome reports and Allure results folders from files, folders or quoted patterns; outcomes, reruns, nested suites, explicit test ids, run context; every unreadable file reported | [ingestion](docs/ingestion.md) |
 | Requirements | `qi requirements import` | CSV export (id, title, description, component, priority, criticality ...) into the catalog: preview, row-level errors, all-or-nothing, re-import without duplicates, test-case links preserved | [requirements import](docs/requirements-import.md) |
 | Traceability | `qi coverage` | requirement coverage, automation coverage, automated requirement coverage; gaps; breakdowns by feature, criticality, test type, platform; execution status per requirement | [traceability](docs/traceability.md), [metrics](docs/metrics.md) |
 | History | `qi history import / report / compare` | SQLite history with coverage snapshots; stability classes with evidence (flaky candidates, consistent and new failures); recurring failures; duration regressions; trends | [history](docs/history.md) |
@@ -91,7 +91,7 @@ dashboard (a test parses every import to enforce it). Details: [architecture](do
 ```
 src/qualityintel/
   models/         typed, immutable data model; Ratio keeps numerator and denominator
-  ingest/         JUnit XML and catalog readers, batch import, errors that name the file
+  ingest/         JUnit XML, mochawesome, Allure and catalog readers, batch import, errors that name the file
   traceability/   result matching, coverage metrics, gaps, execution status
   history/        SQLite store; stability, recurring failures, durations, trends
   gates/          gate file, rule evaluation, passed / failed / incomplete

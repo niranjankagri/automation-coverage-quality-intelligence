@@ -9,7 +9,9 @@ up and what to do about it.
 
 | Limitation | Effect | What to do |
 |---|---|---|
-| JUnit XML is the only input format | Cypress (mochawesome), Allure, TestNG's own `testng-results.xml` and Robot's `output.xml` cannot be read directly | use the framework's JUnit reporter (`--reporter junit`, `--xunit`, Surefire `TEST-*.xml`); write an adapter only if information would be lost |
+| Three input formats: JUnit XML, mochawesome (Cypress), Allure results folders | TestNG's own `testng-results.xml`, Robot's `output.xml` and generated `allure-report/` sites cannot be read | use the framework's JUnit reporter (`--reporter junit`, `--xunit`, Surefire `TEST-*.xml`) or its `allure-results` |
+| mochawesome records no browser, build or retries | Cypress runs show no context unless it is given; Cypress retries are invisible | pass `--browser`/`--build` (or record `qi_context`); for retries, use Cypress's JUnit reporter |
+| Data-driven rows are named differently in Allure and in TestNG's JUnit XML | switching format starts a new history for those rows | stay with one format per suite, or link the rows by explicit test ids (`AS_ID`) |
 | Supported producers are those with real sample files: pytest, Robot Framework, Maven Surefire/TestNG, Playwright Test | other producers probably work (same core format) but are not claimed | add a sample and a test before claiming support |
 | `target/surefire-reports/` holds the same results several times | importing the whole folder counts tests twice (the files differ, so duplicate detection cannot help) | point at `TEST-TestSuite.xml` (or `TEST-*.xml` of one reporter) only |
 | Logs, screenshots, traces are not imported | the dashboard shows failure messages and stack traces, nothing else | link to the framework's own report |
@@ -59,12 +61,10 @@ up and what to do about it.
 
 Not built, in the order they would add most value. None is claimed anywhere else in this repository.
 
-1. **Requirement import** from a test-management tool (Jira/Xray, Azure DevOps, TargetProcess) into
-   the catalog format, so the catalog stays in sync with the source of truth.
-2. **Adapters** for Cypress mochawesome JSON and Allure results, each with real sample files.
-3. **Run grouping by pipeline**, so a CI run with many jobs is one unit in history and gates.
-4. **Live reload** in the dashboard when the history database changes.
-5. **PostgreSQL** store, only if several writers or a shared server become a real need
+1. **Direct requirement sync** with a test-management tool (Jira/Xray, Azure DevOps, TargetProcess);
+   today their CSV export is imported ([requirements-import.md](requirements-import.md)).
+2. **Run grouping by pipeline**, so a CI run with many jobs is one unit in history and gates.
+3. **Live reload** in the dashboard when the history database changes.
+4. **PostgreSQL** store, only if several writers or a shared server become a real need
    ([ADR 0003](adr/0003-sqlite-first.md)).
-6. **Trend charts** (pass rate and duration over time) in the dashboard, next to the run strips.
-7. **Ownership** (team or component per requirement) to route gaps and failures.
+5. **Ownership** (team or component per requirement) to route gaps and failures.

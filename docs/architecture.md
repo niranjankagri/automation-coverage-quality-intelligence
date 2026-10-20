@@ -29,7 +29,7 @@ command line and the dashboard only present what the core computed.
 | Package | Job | Milestone |
 |---|---|---|
 | `qualityintel.models` | Typed data model: requirements, test cases, mappings, results | 2 |
-| `qualityintel.ingest` | Reads result files into the model; JUnit XML first | 3 |
+| `qualityintel.ingest` | Reads result files into the model: JUnit XML, mochawesome, Allure | 3 |
 | `qualityintel.traceability` | Result matching, coverage metrics, gaps, execution status | 4 |
 | `qualityintel.reporting` | Text/JSON/HTML renderers; formatting only, no calculations | 4, 7 |
 | `qualityintel.dashboard` | Web view over the other packages | 5 |
@@ -55,7 +55,8 @@ The full reasoning is in [docs/adr](adr/). Short form:
 1. **One Python package, not services** ([ADR 0001](adr/0001-modular-monolith.md)). The workload
    is a few thousand results per run; separate services would add deployment work and no benefit.
 2. **JUnit XML is the common input** ([ADR 0002](adr/0002-junit-xml-first.md)). Every framework in
-   scope can write it. Adapters are added only for frameworks whose native output needs conversion.
+   scope can write it. Adapters are added only for frameworks whose native output needs conversion:
+   mochawesome (Cypress) and Allure results ([ADR 0005](adr/0005-format-adapters.md)).
 3. **SQLite for history** ([ADR 0003](adr/0003-sqlite-first.md)). One file, no server, enough for
    the demonstration. PostgreSQL only when a measured need appears.
 4. **Coverage metrics are separate numbers** ([ADR 0004](adr/0004-separate-metrics.md)). Requirement

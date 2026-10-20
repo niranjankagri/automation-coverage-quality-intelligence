@@ -1,8 +1,18 @@
 # Result ingestion
 
 `qualityintel.ingest` turns result files into `TestRun` / `TestResult` objects
-([models](../src/qualityintel/models/results.py)). JUnit XML is the only input format
-([ADR 0002](adr/0002-junit-xml-first.md)).
+([models](../src/qualityintel/models/results.py)). JUnit XML is the main input format
+([ADR 0002](adr/0002-junit-xml-first.md)); Cypress (mochawesome) and Allure results are read by
+two adapters that produce the same model ([ADR 0005](adr/0005-format-adapters.md), and
+[Other formats](#other-formats-cypress-and-allure) below).
+
+| Input | Read as | Importer |
+|---|---|---|
+| `*.xml` file | JUnit XML | `ingest/junit.py` |
+| `*.json` file | mochawesome JSON | `ingest/mochawesome.py` |
+| `*.html` / `*.htm` file, named explicitly | mochawesome HTML report | `ingest/mochawesome.py` |
+| folder that directly holds `*-result.json` files | one Allure run | `ingest/allure.py` |
+| other folder | everything above found below it (HTML excepted) | `ingest/batch.py` |
 
 ## Tested producers
 
@@ -17,8 +27,7 @@ by the integration tests.
 | Playwright Test | `--reporter=junit`, or `npx playwright merge-reports --reporter junit <blob dir>` | 5 CI run attempts | `merge-reports` stamps the merge time, not the run time |
 
 **No adapter was needed** for these four: their JUnit XML carries everything the model uses.
-Cypress is not listed: the repository's CI writes mochawesome JSON. With
-`cypress run --reporter junit` it would produce JUnit XML, but that has not been tested here.
+Cypress is read from its mochawesome report instead (next section).
 
 Also covered by unit tests (inline XML): TestNG's `JUnitReportReporter` timestamp form
 (`2026-10-19T07:36:12 UTC`), Surefire rerun elements (`flakyFailure`, `rerunFailure`),
@@ -71,10 +80,85 @@ input as success.
 whole directory would count each test twice; the per-class files differ in content, so duplicate
 detection cannot catch it. Point the importer at `TEST-TestSuite.xml` only.
 
+## Other formats: Cypress and Allure
+
+Real samples: `samples/formats` ([what they are](../samples/README.md#formats-other-result-formats-real-ci-output)),
+checked by `tests/integration/test_format_samples.py`.
+
+### Cypress / mochawesome
+
+Supported: the JSON that `mochawesome` or `mochawesome-merge` writes, and the HTML report of
+`cypress-mochawesome-reporter`, which embeds the same JSON in its `data-raw` attribute.
+Tested with Cypress 16.2 and cypress-mochawesome-reporter 5 (8 CI runs). One file = one run.
+
+| mochawesome | Model |
+|---|---|
+| `results[].fullFile` (the spec file) | `classname` |
+| suite titles + test `title` | `name` (so the key is `spec::Suite sub-suite test title`) |
+| innermost suite title | `suite` |
+| `state` passed / failed / pending / skipped | passed / failed / skipped / skipped |
+| `state` null (never ran, e.g. after a failed hook) | skipped if marked `skipped`/`pending`, otherwise **error** |
+| `duration` (ms) | `duration_seconds` |
+| `err.message`, `err.estack` | `FailureDetails` |
+| `stats.start` | `TestRun.started_at` |
+| spec names with `.cy.` | `framework = cypress` (else `mocha`) |
+| top-level `qi_context` object (this project's convention) | `RunContext`; values given on the command line win |
+
+**Not available or not read:** mochawesome records no browser, environment or build (give them
+with `--browser`/`--build`/... or record them as `qi_context`), and no retries (`retries` stays
+0; Cypress retries are invisible here). Test source (`code`), `context` (screenshots, values)
+and hooks are not read.
+
+### Allure
+
+Supported: an **`allure-results` folder** written by an Allure 2 adapter (TestNG, JUnit 5,
+pytest, ...). Tested with the Allure TestNG adapter (5 CI runs). Not supported: a generated
+`allure-report/` site, whose data files change between Allure versions.
+
+| Allure result | Model |
+|---|---|
+| labels `testClass` + `testMethod` (else `fullName` split at the last dot) | `classname`, `name`: the **same key as the JUnit XML** of the same TestNG/JUnit test, so history continues when a team switches format |
+| `parameters` values | appended to the name: `method[a, b]` |
+| `status` passed / failed / skipped | the same |
+| `status` broken | error |
+| `status` unknown | error, with a warning |
+| several results with the same `historyId` | one test; the latest is the outcome, the others are `retries` |
+| `statusDetails.message`, `.trace` | `FailureDetails` |
+| `stop - start` (ms) | `duration_seconds` |
+| `AS_ID` labels, `tms` links | `test_ids` |
+| `suite` label | `suite` |
+| `framework` label | `RunContext.framework` |
+| `environment.properties`: `browser`, `environment`; build = `build`, else `git.commit`, else `build.number` | `RunContext` |
+| all result files | run id = SHA-256 over the file names and contents |
+
+**Not read:** steps, attachments, `*-container.json` (fixtures), `categories.json`,
+`executor.json`, `host`/`thread` labels (machine names), descriptions, other labels (`epic`,
+`feature`, `tag`, ...) and `statusDetails.flaky` (flakiness is derived from history here).
+
+**Data-driven tests differ between formats.** TestNG's JUnit XML names a data-provider row
+`method[values in argument order](row number)`; Allure gives `method[values in its own
+order]`. The same row therefore has different keys in the two formats, and its history does not
+continue across a format switch. Plain test methods are not affected.
+
+### Problems specific to these formats
+
+| Situation | Result |
+|---|---|
+| JSON that is not a mochawesome report (`package.json`, `.last-run.json` ...) found in a directory | `UnsupportedFormatError`, batch incomplete: point the importer at the report, not the whole project folder |
+| HTML without `data-raw` | `UnsupportedFormatError` (HTML is only read when named; a directory search skips it) |
+| A test without a title; an Allure result without `name` or `status`; invalid JSON | `MalformedResultError` naming the file |
+| Allure folder larger than 50 MB in total | `MalformedResultError` |
+| Same report or same Allure folder content twice | imported once, listed in `duplicates` |
+
+**Gotcha:** a folder holding both `allure-results/` and `surefire-reports/` of the same run is
+read as two runs, and every test counts twice in that context. Import one of them.
+
 ## Commands
 
 ```bash
 qi inspect samples/results                          # every file below the folder
 qi inspect "target/surefire-reports/TEST-*.xml"     # quoted: the importer expands the pattern
 qi inspect junit.xml --framework pytest --build 1.4.2 --environment staging
+qi inspect cypress/reports/index.html --browser chrome --build 1.4.2   # mochawesome HTML
+qi inspect target/allure-results                    # one Allure run
 ```
