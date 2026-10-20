@@ -127,6 +127,12 @@ title = "Jobs of one pipeline execution are grouped; an incomplete or inconsiste
 feature = "Pipelines"
 criticality = "critical"
 
+[[requirement]]
+id = "SEC-01"
+title = "Hostile input never crashes or executes; no unauthenticated dashboard off this machine; secrets are not stored or reported"
+feature = "Security"
+criticality = "critical"
+
 # ---- Test cases ----------------------------------------------------------------------------
 
 [[test_case]]
@@ -405,4 +411,22 @@ requirements = ["PIPE-01"]
 automated_by = [
   "tests.e2e.test_dashboard::test_pipelines_page_shows_the_cancelled_run_as_incomplete",
   "tests.e2e.test_dashboard::test_runs_page_names_the_pipeline_job",
+]
+
+[[test_case]]
+id = "TC-SECURITY"
+title = "Hostile files, size limits, no code execution, no writes, login, redaction, report escaping"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["SEC-01"]
+automated_by = [
+  "tests.unit.ingest.test_hostile_input::*",
+  "tests.architecture.test_no_code_execution::*",
+  "tests.unit.models.test_redaction::*",
+  "tests.unit.dashboard.test_api::test_the_api_accepts_no_writes",
+  "tests.unit.dashboard.test_api::test_login_is_required_for_every_path_when_a_password_is_set",
+  "tests.unit.test_cli_dashboard::test_no_unauthenticated_dashboard_off_this_machine",
+  "tests.unit.test_config::test_password_is_optional_checked_and_never_shown",
+  "tests.unit.gates.test_reports::test_markdown_summary_shows_untrusted_text_literally",
+  "tests.e2e.test_dashboard::test_with_a_login_the_whole_dashboard_works_after_signing_in",
 ]

@@ -56,7 +56,8 @@ up and what to do about it.
 | Limitation | Effect | What to do |
 |---|---|---|
 | SQLite, one writer at a time | concurrent CI jobs writing one file can block or fail | one import step after the test jobs, or one database per job |
-| The dashboard loads data at start-up and is read-only, without authentication | new results need a restart; anyone who reaches the port can read everything | run it locally or behind the organisation's access control; do not expose it to the internet |
+| The dashboard loads data at start-up; its login is one shared basic-authentication account | new results need a restart; no per-user access, no brute-force protection | for a team: TLS proxy in front, or the organisation's authenticating proxy ([security.md](security.md)) |
+| Secret redaction recognises shapes, not meaning | a secret in an unusual shape in a failure message passes through | keep secrets out of assertion messages; the redaction is a safety net |
 | Requirements live in a TOML file | no link to Jira, TargetProcess, Azure DevOps or Xray | export from the tool into the TOML format (a small script), or add an importer |
 
 ## Future enhancements

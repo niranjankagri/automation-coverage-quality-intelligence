@@ -14,7 +14,7 @@ min_pass_rate = 100
 max_failing_requirements = 0
 max_automated_cases_without_results = 0
 # Ratchet: raise it when tests are added, so a suite that silently ran fewer tests fails
-min_results = 650
+min_results = 750
 
 # The CI run is one pipeline execution: both test jobs must report, or there is no decision
 # (a cancelled browser job must not leave a release decided on the unit tests alone)

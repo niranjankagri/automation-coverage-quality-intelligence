@@ -13,6 +13,11 @@ qi dashboard --catalog samples/catalog.toml --database .qi/quality.db   # runs f
 `--host` / `--port` (or `QI_DASHBOARD_HOST` / `QI_DASHBOARD_PORT`) change the address. The data is
 read once at start-up; restart to load new result files.
 
+**Login:** on 127.0.0.1 (the default) no login is needed. Any other address is refused unless
+`QI_DASHBOARD_PASSWORD` (12+ characters; user `QI_DASHBOARD_USER`, default `qi`) is set; then
+every page and API call needs HTTP basic authentication. Put TLS in front when others connect
+([security.md](security.md#running-the-dashboard-for-a-team)).
+
 ## Views
 
 | View | Shows | Drill-down |

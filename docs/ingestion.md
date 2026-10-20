@@ -50,6 +50,8 @@ namespaced elements.
 
 **Deliberately not read:** `<system-out>` and `<system-err>` (logs may contain secrets and are
 large), all other properties (Surefire writes class paths and home directories), `hostname`.
+Failure messages and texts pass through a redaction of secret-shaped values (tokens, passwords,
+keys, credentials in URLs) in every format ([security.md](security.md)).
 The framework's own report stays the place for logs, screenshots and traces.
 
 ## Identity of a test
@@ -65,7 +67,8 @@ Renaming a test or moving it to another class therefore starts a new history.
 | File not found, pattern or directory matches nothing | `NoResultFilesError` |
 | Empty file, not well-formed XML, testcase without a name, file > 50 MB | `MalformedResultError` (names the file; line and column for XML errors) |
 | Well-formed XML that is not JUnit (`<testng-results>`, JSON ...) | `UnsupportedFormatError` |
-| DTD or entity declaration in the file | `UnsupportedFormatError` (JUnit XML never needs one; this rules out entity-expansion attacks) |
+| DTD or entity declaration in the file, in any encoding | `UnsupportedFormatError` (JUnit XML never needs one; this rules out entity-expansion attacks) |
+| Nesting deeper than Python can follow, fields of an unexpected type, an encoding the parser cannot read | `MalformedResultError` naming the file: an input problem (exit 3), never a crash ([security.md](security.md)) |
 | Same file content imported twice in one batch | imported once, listed in `duplicates` (run id = SHA-256 of the bytes) |
 | Same test key twice in one file | both kept, warning |
 | Suite with no test cases | empty run, warning |

@@ -30,6 +30,13 @@
   of a job attempt (schema 3, upgraded on open); JSON/text/Markdown/HTML reports show the
   pipeline; Pipelines page and `/api/pipelines`. Real samples: a complete and a cancelled
   TaskBoard pipeline. The self gate now decides on its own CI run as a pipeline.
+- **Security and reliability review** ([docs/security.md](docs/security.md)): hostile files are
+  input errors (exit 3), never crashes: DTDs refused in any encoding (a UTF-16 file used to get
+  its entities expanded), deep nesting and wrongly typed fields handled; size limits for catalog
+  and gate files; the dashboard refuses non-local addresses without `QI_DASHBOARD_PASSWORD`, which
+  turns on basic authentication; failure messages are redacted of secret-shaped values; Markdown
+  summaries escape all Markdown punctuation; tests prove no imported content can be executed and
+  the API takes no writes; CI audits dependencies with pip-audit; `SECURITY.md`.
 - **Fixes found on the way:** two pipeline jobs in the same context (component and UI tests in
   Chrome) no longer replace each other in the snapshot; a late API response for an older address
   is no longer shown by the dashboard (a CI race); empty view slots no longer print "null".
