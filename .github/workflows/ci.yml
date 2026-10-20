@@ -1,0 +1,62 @@
+# CI: static checks first (lint, format, types), then the tests on both supported Python versions.
+# The test job keeps its JUnit XML as an artifact; from Milestone 3 on this project can ingest
+# its own results.
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to a branch cancels the older run, except on main: there every commit keeps
+# a finished run, so the badge never shows a cancelled run as "failing"
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Lint, format, types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - name: ruff check
+        run: ruff check .
+      - name: ruff format --check
+        run: ruff format --check .
+      - name: mypy (strict)
+        run: mypy
+
+  tests:
+    name: Tests (Python ${{ matrix.python }})
+    needs: checks
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: pip install -e ".[dev]"
+      # Coverage below 90 % fails the job (fail_under in pyproject.toml)
+      - name: pytest
+        run: pytest --cov --cov-report=term --junitxml=reports/junit-${{ matrix.python }}.xml
+      - name: Keep the results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: junit-python-${{ matrix.python }}
+          path: reports/
+          if-no-files-found: error
