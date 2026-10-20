@@ -189,6 +189,7 @@ def test_date_filter_narrows_the_trend_and_stays_in_the_url(page: Page) -> None:
     expect(page.get_by_role("heading", name="Trends", exact=True)).to_be_visible()
 
     page.get_by_label("From", exact=True).fill("2026-10-13")
+    expect(page).to_have_url(re.compile(r"since=2026-10-13"))
     page.get_by_label("To", exact=True).fill("2026-10-15")
 
     expect(page).to_have_url(

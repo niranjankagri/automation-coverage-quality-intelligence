@@ -108,7 +108,10 @@ async function loadFacets() {
 
 function syncFilterForm() {
   const params = route().params;
-  for (const field of document.querySelectorAll("#filters select, #filters input")) field.value = params.get(field.name) ?? "";
+  for (const field of document.querySelectorAll("#filters select, #filters input")) {
+    // Never overwrite the field someone is editing (a re-render can land while they type)
+    if (field !== document.activeElement) field.value = params.get(field.name) ?? "";
+  }
 }
 
 document.getElementById("filters").addEventListener("change", (event) => {
