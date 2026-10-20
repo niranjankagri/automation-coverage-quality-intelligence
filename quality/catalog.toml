@@ -109,6 +109,12 @@ title = "Valid requirements import reliably from CSV; invalid records are report
 feature = "Requirements import"
 criticality = "high"
 
+[[requirement]]
+id = "TREND-01"
+title = "Trend charts match the stored execution records; empty and partial data are handled; incomparable days are flagged"
+feature = "Dashboard"
+criticality = "high"
+
 # ---- Test cases ----------------------------------------------------------------------------
 
 [[test_case]]
@@ -308,4 +314,18 @@ automated_by = [
   "tests.unit.ingest.test_requirements_csv::*",
   "tests.unit.test_cli_requirements::*",
   "tests.integration.test_sample_requirements_import::*",
+]
+
+[[test_case]]
+id = "TC-TRENDS"
+title = "Daily snapshots, coverage snapshots, SQL cross-check of the API, Trends page in the browser"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["TREND-01"]
+automated_by = [
+  "tests.unit.history.test_trends::*",
+  "tests.integration.test_trends_against_database::*",
+  "tests.e2e.test_dashboard::test_trends_page_draws_what_the_api_says",
+  "tests.e2e.test_dashboard::test_date_filter_narrows_the_trend_and_stays_in_the_url",
+  "tests.e2e.test_dashboard::test_trends_without_runs_in_scope_say_so",
 ]

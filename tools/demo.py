@@ -49,7 +49,11 @@ def steps(out: Path) -> list[Step]:
             ],
             0,
         ),
-        Step("4. Store the runs in the history", ["history", "import", results, "--database", database], 0),
+        Step(
+            "4. Store the runs in the history, with a coverage snapshot of the catalog",
+            ["history", "import", results, "--database", database, "--catalog", catalog],
+            0,
+        ),
         Step(
             "5. Importing the same files again adds nothing",
             ["history", "import", results, "--database", database],

@@ -23,6 +23,8 @@ from playwright.sync_api import sync_playwright
 
 from qualityintel.cli import main as cli_main
 from qualityintel.dashboard.app import create_app
+from qualityintel.history.store import HistoryStore
+from qualityintel.ingest.catalog_file import load_catalog
 from qualityintel.workspace import Workspace
 
 ROOT = Path(__file__).parents[1]
@@ -39,6 +41,7 @@ SHOTS = [
     ),
     ("dashboard-run.png", "#/runs?framework=playwright", 1280, "dark", False),
     ("dashboard-stability.png", "#/stability", 1280, "light", True),
+    ("dashboard-trends.png", "#/trends", 1280, "light", False),
     ("dashboard-phone.png", "#/", 390, "light", False),
 ]
 
@@ -47,10 +50,27 @@ def main(argv: list[str]) -> int:
     """Serve the samples, capture every entry of ``SHOTS``, stop the server."""
     out = Path(argv[0]) if argv else ROOT / "docs" / "images"
     out.mkdir(parents=True, exist_ok=True)
-    workspace, batch = Workspace.load(ROOT / "samples" / "catalog.toml", [ROOT / "samples" / "results"])
-    if not batch.complete:
+    # Like real use: the runs and a coverage snapshot come from a history database
+    history = Path(tempfile.mkdtemp()) / "quality.db"
+    with contextlib.redirect_stdout(io.StringIO()):
+        code = cli_main(
+            [
+                "history",
+                "import",
+                str(ROOT / "samples" / "results"),
+                "--database",
+                str(history),
+                "--catalog",
+                str(ROOT / "samples" / "catalog.toml"),
+            ]
+        )
+    if code != 0:
         print("samples did not import cleanly", file=sys.stderr)
         return 3
+    with HistoryStore(history) as store:
+        workspace = Workspace(
+            load_catalog(ROOT / "samples" / "catalog.toml"), store.runs(), store.snapshots()
+        )
     with socket.socket() as probe:
         probe.bind(("127.0.0.1", 0))
         port = int(probe.getsockname()[1])
