@@ -1,0 +1,122 @@
+# TaskBoard requirements for the pipeline samples (samples/README.md, "pipelines/").
+#
+# The requirements are synthetic (TaskBoard has no written requirements); the test results they
+# link to are real CI reports. Patterns match the spec file and the full test title.
+
+[[requirement]]
+id = "TB-AUTH"
+title = "Users sign in with valid credentials; invalid credentials and tokens are refused"
+feature = "Authentication"
+criticality = "critical"
+
+[[requirement]]
+id = "TB-TASKS"
+title = "Users see only their own tasks and can create, edit, complete and delete them"
+feature = "Tasks"
+criticality = "critical"
+
+[[requirement]]
+id = "TB-VALIDATION"
+title = "Invalid task input is refused with a message naming the field"
+feature = "Tasks"
+criticality = "high"
+
+[[requirement]]
+id = "TB-FILTERS"
+title = "The task list can be filtered and searched"
+feature = "Task list"
+criticality = "medium"
+
+[[requirement]]
+id = "TB-RESILIENCE"
+title = "The board shows loading and error states when the API is slow or fails"
+feature = "Task list"
+criticality = "high"
+
+[[requirement]]
+id = "TB-DUE-DATES"
+title = "Overdue tasks are marked from the day after their due date"
+feature = "Tasks"
+criticality = "medium"
+
+# ---- Test cases ----------------------------------------------------------------------------
+
+[[test_case]]
+id = "TC-TB-AUTH-API"
+title = "API authentication"
+automation_status = "automated"
+test_type = "api"
+framework = "cypress"
+requirements = ["TB-AUTH"]
+automated_by = ["cypress/e2e/api/auth.cy.ts::*"]
+
+[[test_case]]
+id = "TC-TB-LOGIN-UI"
+title = "Login through the form"
+automation_status = "automated"
+test_type = "ui"
+framework = "cypress"
+requirements = ["TB-AUTH"]
+automated_by = ["cypress/e2e/ui/login.cy.ts::*"]
+
+[[test_case]]
+id = "TC-TB-TASKS-API"
+title = "Task API: ownership, contract, changes"
+automation_status = "automated"
+test_type = "api"
+framework = "cypress"
+requirements = ["TB-TASKS"]
+automated_by = ["cypress/e2e/api/tasks.cy.ts::*"]
+
+[[test_case]]
+id = "TC-TB-TASKS-UI"
+title = "Task board: list, create, edit, complete, delete"
+automation_status = "automated"
+test_type = "ui"
+framework = "cypress"
+requirements = ["TB-TASKS"]
+automated_by = ["cypress/e2e/ui/tasks.cy.ts::*"]
+
+[[test_case]]
+id = "TC-TB-TASK-COMPONENTS"
+title = "TaskForm and TaskItem components"
+automation_status = "automated"
+framework = "cypress"
+requirements = ["TB-TASKS", "TB-DUE-DATES"]
+automated_by = ["cypress/component/TaskForm.cy.tsx::*", "cypress/component/TaskItem.cy.tsx::*"]
+
+[[test_case]]
+id = "TC-TB-VALIDATION-API"
+title = "Task validation"
+automation_status = "automated"
+test_type = "api"
+framework = "cypress"
+requirements = ["TB-VALIDATION"]
+automated_by = ["cypress/e2e/api/validation.cy.ts::*"]
+
+[[test_case]]
+id = "TC-TB-FILTERS"
+title = "Filters and search, FilterBar component"
+automation_status = "automated"
+test_type = "ui"
+framework = "cypress"
+requirements = ["TB-FILTERS"]
+automated_by = ["cypress/e2e/ui/filters.cy.ts::*", "cypress/component/FilterBar.cy.tsx::*"]
+
+[[test_case]]
+id = "TC-TB-NETWORK"
+title = "Slow and failing API (cy.intercept), Toast component"
+automation_status = "automated"
+test_type = "ui"
+framework = "cypress"
+requirements = ["TB-RESILIENCE"]
+automated_by = ["cypress/e2e/ui/network.cy.ts::*", "cypress/component/Toast.cy.tsx::*"]
+
+[[test_case]]
+id = "TC-TB-TIME"
+title = "Overdue marking (cy.clock)"
+automation_status = "automated"
+test_type = "ui"
+framework = "cypress"
+requirements = ["TB-DUE-DATES"]
+automated_by = ["cypress/e2e/ui/time.cy.ts::*"]

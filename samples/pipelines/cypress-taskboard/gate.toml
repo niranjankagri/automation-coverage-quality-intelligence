@@ -1,0 +1,18 @@
+# Release gate for the TaskBoard CI pipeline (docs/pipelines.md).
+#
+# Every job of the pipeline must report; a pipeline whose Firefox job was cancelled is
+# incomplete (exit 3) even though everything that did report passed.
+name = "TaskBoard release"
+
+[coverage]
+min_automated_requirement_coverage = 100
+max_uncovered_critical = 0
+
+[execution]
+min_pass_rate = 100
+max_failing_critical = 0
+max_automated_cases_without_results = 0
+min_results = 140
+
+[pipeline]
+jobs = ["api", "ui-chrome", "ui-firefox", "ui-edge", "component"]

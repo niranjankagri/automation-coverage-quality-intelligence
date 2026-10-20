@@ -104,7 +104,9 @@ FORMATS = ROOT / "samples" / "formats"
 
 
 @pytest.mark.parametrize(
-    "path", sorted(FORMATS.glob("cypress-*/*.json")), ids=lambda p: f"{p.parent.name}/{p.name}"
+    "path",
+    sorted([*FORMATS.glob("cypress-*/*.json"), *(ROOT / "samples" / "pipelines").glob("cypress-*/*/*.json")]),
+    ids=lambda p: f"{p.parent.name}/{p.name}",
 )
 def test_cypress_samples_carry_no_test_code_or_screenshots(path: Path) -> None:
     """Mochawesome copies keep results only: no test 'code', no 'context' (embedded screenshots)."""
