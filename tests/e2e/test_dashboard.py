@@ -1,5 +1,6 @@
 """The dashboard in a real browser, against the sample data."""
 
+import os
 import re
 from pathlib import Path
 
@@ -9,6 +10,8 @@ from playwright.sync_api import Browser, Locator, Page, Route, expect
 from qualityintel.history.store import HistoryStore
 from qualityintel.ingest.batch import import_pipeline
 from qualityintel.live import Sources
+
+ENGINE = os.environ.get("QI_E2E_BROWSER", "chromium")
 
 SAMPLES = Path(__file__).parents[2] / "samples"
 
@@ -145,6 +148,8 @@ def test_layout_fits_small_screens(page: Page, width: int) -> None:
 
 def test_keyboard_users_can_skip_to_the_content(page: Page) -> None:
     """First Tab reaches the skip link; it moves focus to the main region."""
+    if ENGINE == "webkit":
+        pytest.skip("WebKit, like Safari by default, moves Tab between form controls only")
     page.goto("/")
     expect(page.get_by_role("heading", name="Overview", exact=True)).to_be_visible()
 
@@ -399,6 +404,7 @@ def test_explorer_links_to_github_and_the_collection_page_shows_health(collected
     expect(page.locator("#view")).to_contain_text("artifact report-ui-firefox not found")
 
 
+@pytest.mark.usefixtures("chromium_only")
 def test_test_investigation_shows_context_pattern_requirements_and_copies(page: Page) -> None:
     """Latest result, a pattern of 13 executions with one failure, duration chart and copy actions."""
     page.context.grant_permissions(["clipboard-read", "clipboard-write"])
@@ -471,3 +477,40 @@ def test_a_trend_bar_opens_the_runs_of_its_day_with_the_keyboard(page: Page) -> 
 
     expect(page).to_have_url(re.compile(r"#/runs\?.*since=2026-10-13.*until=2026-10-13"))
     expect(page.get_by_role("heading", name="Runs", exact=True)).to_be_visible()
+
+
+@pytest.mark.parametrize("width", [390, 768, 1280])
+@pytest.mark.parametrize(
+    "route",
+    ["#/", "#/requirements", "#/tests", "#/runs", "#/stability", "#/trends", "#/compare", "#/pipelines"],
+)
+def test_no_horizontal_overflow_at_phone_tablet_and_desktop_widths(
+    page: Page, route: str, width: int
+) -> None:
+    """The page itself never scrolls sideways; wide tables scroll inside their own box."""
+    page.set_viewport_size({"width": width, "height": 900})
+    page.goto(f"/{route}")
+    expect(page.locator("#view h1")).to_be_visible()
+
+    assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+
+
+def test_theme_and_density_are_remembered(page: Page) -> None:
+    """Dark chosen in the page wins over the system setting after a reload; Compact too."""
+    page.goto("/")
+    page.get_by_label("Theme").select_option("dark")
+    page.get_by_label("Compact").check()
+    page.reload()
+
+    expect(page.locator("html")).to_have_attribute("data-theme", "dark")
+    expect(page.locator("body")).to_have_class(re.compile("compact"))
+    assert page.evaluate("getComputedStyle(document.body).backgroundColor") == "rgb(18, 22, 28)"
+
+
+def test_moving_to_another_page_puts_the_focus_on_its_heading(page: Page) -> None:
+    """Keyboard and screen-reader users land on the new page, not on the old link."""
+    page.goto("/")
+    expect(page.get_by_role("heading", name="Overview", exact=True)).to_be_visible()
+    page.get_by_role("link", name="Runs", exact=True).click()
+
+    expect(page.get_by_role("heading", name="Runs", exact=True)).to_be_focused()

@@ -220,12 +220,62 @@ function syncFilterForm() {
   }
 }
 
-document.getElementById("filters").addEventListener("change", (event) => {
+function applyFilter(field) {
   const { parts, params } = route();
-  if (event.target.value) params.set(event.target.name, event.target.value);
-  else params.delete(event.target.name);
+  if (field.value) params.set(field.name, field.value);
+  else params.delete(field.name);
   const query = params.toString();
   location.hash = `#/${parts.map(encodeURIComponent).join("/")}${query ? `?${query}` : ""}`;
+}
+
+const filterForm = document.getElementById("filters");
+filterForm.addEventListener("change", (event) => applyFilter(event.target));
+// WebKit reports a picked or typed date with "input" only: a complete or cleared date applies
+// too. The fields are recognised by name: engines without a date picker show them as text.
+filterForm.addEventListener("input", (event) => {
+  const field = event.target;
+  const isDate = field.name === "since" || field.name === "until";
+  if (isDate && (field.value === "" || /^\d{4}-\d{2}-\d{2}$/.test(field.value))) applyFilter(field);
+});
+
+// ---- preferences remembered in this browser (theme, density) ----------------------------------
+
+function remembered(name) {
+  try {
+    return localStorage.getItem(name);
+  } catch (_) {
+    return null; // storage blocked: defaults apply
+  }
+}
+
+function remember(name, value) {
+  try {
+    if (value) localStorage.setItem(name, value);
+    else localStorage.removeItem(name);
+  } catch (_) {
+    /* applied, not remembered */
+  }
+}
+
+const themeChoice = document.getElementById("theme-choice");
+const compactChoice = document.getElementById("compact-choice");
+
+function applyTheme(value) {
+  if (value) document.documentElement.dataset.theme = value;
+  else delete document.documentElement.dataset.theme;
+}
+
+themeChoice.value = remembered("qi-theme") ?? "";
+applyTheme(themeChoice.value);
+themeChoice.addEventListener("change", () => {
+  applyTheme(themeChoice.value);
+  remember("qi-theme", themeChoice.value);
+});
+compactChoice.checked = remembered("qi-compact") === "on";
+document.body.classList.toggle("compact", compactChoice.checked);
+compactChoice.addEventListener("change", () => {
+  document.body.classList.toggle("compact", compactChoice.checked);
+  remember("qi-compact", compactChoice.checked ? "on" : "");
 });
 
 /** Set (or remove, with an empty value) filters in the address; the view follows the address. */
@@ -1091,6 +1141,7 @@ const VIEWS = {
 // response for an older address (e.g. the first of two quickly changed filters) arrives last
 // and shows data that no longer matches the address (seen in CI).
 let renderCount = 0;
+let shownPath = null; // the page last shown, to move focus only when the page changes
 
 async function render() {
   const current = ++renderCount;
@@ -1115,6 +1166,14 @@ async function render() {
     view.replaceChildren(...[content].flat(3).filter((node) => node != null));
     statusLine.textContent = "";
     document.title = `${document.querySelector("#view h1")?.textContent ?? "Overview"} · Quality Intelligence`;
+    const path = parts.join("/");
+    if (shownPath !== null && path !== shownPath) {
+      // Another page: put the focus on its heading (filters on the same page keep their focus)
+      const heading = view.querySelector("h1");
+      heading?.setAttribute("tabindex", "-1");
+      heading?.focus();
+    }
+    shownPath = path;
   } catch (error) {
     if (current !== renderCount) return;
     view.replaceChildren(h("div", { class: "error", role: "alert" }, h("strong", {}, "Could not load this view. "), error.message, " ", h("button", { type: "button", id: "retry" }, "Retry")));

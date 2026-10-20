@@ -4,6 +4,7 @@ Run with ``pytest -m e2e`` after ``playwright install chromium``. The server ser
 sample data, so the browser sees exactly what a user of the demonstration sees.
 """
 
+import os
 import socket
 import threading
 import time
@@ -164,13 +165,24 @@ def _serve(workspace: Workspace | LiveData, credentials: tuple[str, str] | None 
     thread.join(timeout=10)
 
 
+# The engine is chosen with QI_E2E_BROWSER (chromium, firefox, webkit); CI runs all three
+ENGINE = os.environ.get("QI_E2E_BROWSER", "chromium")
+
+
 @pytest.fixture(scope="session")
 def browser() -> Iterator[Browser]:
-    """One headless Chromium for the whole session."""
+    """One headless browser of the chosen engine for the whole session."""
     with sync_playwright() as playwright:
-        chromium = playwright.chromium.launch()
-        yield chromium
-        chromium.close()
+        launched = getattr(playwright, ENGINE).launch()
+        yield launched
+        launched.close()
+
+
+@pytest.fixture
+def chromium_only() -> None:
+    """Skip tests that use Chromium-only features (clipboard permissions) in other engines."""
+    if ENGINE != "chromium":
+        pytest.skip(f"clipboard permissions are a Chromium feature; engine is {ENGINE}")
 
 
 @pytest.fixture

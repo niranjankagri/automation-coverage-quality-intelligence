@@ -33,9 +33,11 @@ dev = [
     # HTTP client behind FastAPI's TestClient (starlette deprecated plain httpx for it)
     "httpx2==2.13.1",
 ]
-# Browser tests of the dashboard (tests/e2e); needs `playwright install chromium` once
+# Browser tests of the dashboard (tests/e2e); needs `playwright install chromium` once.
+# axe-playwright-python runs axe-core (MPL 2.0, used at test time only) for the WCAG checks.
 e2e = [
     "playwright==1.63.0",
+    "axe-playwright-python==0.1.8",
 ]
 
 [project.scripts]
@@ -81,6 +83,11 @@ python_version = "3.12"
 strict = true
 files = ["src", "tests", "tools"]
 plugins = ["pydantic.mypy"]
+
+# The accessibility checker used by the browser tests ships without type information
+[[tool.mypy.overrides]]
+module = ["axe_playwright_python.*"]
+ignore_missing_imports = true
 
 [tool.pydantic-mypy]
 # Constructor calls are type-checked against the field types

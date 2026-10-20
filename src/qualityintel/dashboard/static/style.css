@@ -19,8 +19,9 @@
   color-scheme: light;
 }
 
+/* Dark: by the system setting unless Light was chosen in the page, or chosen in the page */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #12161c;
     --surface: #1a2029;
     --text: #e6eaf0;
@@ -38,6 +39,26 @@
     color-scheme: dark;
   }
 }
+:root[data-theme="dark"] {
+  --bg: #12161c;
+  --surface: #1a2029;
+  --text: #e6eaf0;
+  --muted: #a0abba;
+  --border: #2d3644;
+  --accent: #8fb0ff;
+  --good: #6fd39b;
+  --good-bg: #173326;
+  --bad: #ff8f84;
+  --bad-bg: #3a1d1b;
+  --warn: #f2c35b;
+  --warn-bg: #3a2f14;
+  --neutral-bg: #252d39;
+  --focus: #8fb0ff;
+  color-scheme: dark;
+}
+
+/* Compact tables (chosen in the page) */
+body.compact td, body.compact th { padding-top: 3px; padding-bottom: 3px; }
 
 * { box-sizing: border-box; }
 
@@ -148,7 +169,7 @@ ul.reasons { margin: 0; padding-left: 18px; }
 .badge.consistently-failing { background: var(--bad-bg); color: var(--bad); }
 .badge.stable { background: var(--good-bg); color: var(--good); }
 ol.strip { display: flex; flex-wrap: wrap; gap: 4px; list-style: none; margin: 10px 0 6px; padding: 0; }
-ol.strip a { display: block; width: 14px; height: 22px; border-radius: 3px; }
+ol.strip a { display: block; width: 24px; height: 24px; border-radius: 3px; } /* WCAG 2.2 target size: 24 px */
 ol.strip a.good { background: var(--good); }
 ol.strip a.bad { background: var(--bad); }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -242,4 +263,7 @@ details.matrix > summary { cursor: pointer; font-weight: 600; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 a.bar-link:focus-visible rect, a.bar-link:hover rect { stroke: var(--text); stroke-width: 2; }
 a.bar-link:focus { outline: none; }
+.prefs { display: flex; gap: 12px; align-items: center; font-size: 13px; color: var(--muted); }
+.prefs select { min-width: 0; padding: 2px 6px; }
+@media (max-width: 640px) { .prefs { order: 3; width: 100%; } }
 
