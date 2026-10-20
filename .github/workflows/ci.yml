@@ -89,3 +89,55 @@ jobs:
           name: dashboard-e2e
           path: reports/
           if-no-files-found: error
+
+  # The platform used as a release gate on the sample data. Each step asserts the exit code it
+  # must produce, so the job proves the three outcomes on every push: passed (0), failed (1)
+  # and incomplete input (3). Reports are kept as artifacts and summarised on the run page.
+  quality-gate:
+    name: Quality gates (sample data)
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev,e2e]"
+      - name: Nightly gate on the latest runs (must pass)
+        run: >-
+          qi gate --catalog samples/catalog.toml --config samples/gates/nightly.toml samples/results
+          --json reports/gates/nightly.json --html reports/gates/nightly.html --summary "$GITHUB_STEP_SUMMARY"
+      - name: Release gate (must fail on the two uncovered critical requirements)
+        run: |
+          set +e
+          qi gate --catalog samples/catalog.toml --config samples/gates/release.toml samples/results \
+            --json reports/gates/release.json --html reports/gates/release.html --summary "$GITHUB_STEP_SUMMARY"
+          code=$?
+          set -e
+          echo "exit code $code"
+          test "$code" -eq 1
+      - name: Nightly gate on the real failed attempt of 19 Oct (must fail)
+        run: |
+          set +e
+          qi gate --catalog samples/catalog.toml --config samples/gates/nightly.toml \
+            samples/results/playwright-toolshop-firefox/2026-10-19_07f8c24_39229363499-attempt1.xml \
+            --json reports/gates/nightly-attempt1.json --summary "$GITHUB_STEP_SUMMARY"
+          code=$?
+          set -e
+          test "$code" -eq 1
+      - name: Gate without result files (must be incomplete, never passed)
+        run: |
+          set +e
+          qi gate --catalog samples/catalog.toml --config samples/gates/nightly.toml results-that-do-not-exist/ \
+            --json reports/gates/incomplete.json --summary "$GITHUB_STEP_SUMMARY"
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Keep the gate reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: quality-gate-reports
+          path: reports/gates/
+          if-no-files-found: error
