@@ -2,23 +2,28 @@
 
 Exit codes are part of the contract with CI pipelines, so they are named here once:
 
-- 0 = success
-- 2 = wrong usage or invalid configuration
-- 3 = input missing or invalid (result files, catalog); nothing was evaluated
+- 0 = success (for ``qi gate``: every configured rule passed)
+- 1 = ``qi gate`` only: at least one configured rule failed
+- 2 = wrong usage or invalid configuration (including an invalid gate file)
+- 3 = input missing or invalid (result files, catalog); no decision was possible
+- 4 = internal error (a bug in qi); never confused with a gate decision
 
-Milestone 7 adds 1 = quality gate failed. Each command is one ``_cmd_*`` function that only
-parses arguments, calls the core packages and prints; no business logic lives here.
+Each command is one ``_cmd_*`` function that only parses arguments, calls the core packages
+and prints; no business logic lives here.
 """
 
 from __future__ import annotations
 
 import argparse
 import sys
+import traceback
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
 from qualityintel import __version__
 from qualityintel.config import ConfigError, Settings
+from qualityintel.gates.config import GateConfigError, load_gate_config
+from qualityintel.gates.evaluate import evaluate
 from qualityintel.history.analysis import (
     HistorySettings,
     compare_runs,
@@ -37,13 +42,23 @@ from qualityintel.models.catalog import Catalog
 from qualityintel.models.enums import Outcome
 from qualityintel.models.metrics import execution_pass_rate
 from qualityintel.models.results import RunContext, TestRun
+from qualityintel.reporting.gate_report import (
+    gate_document,
+    incomplete_document,
+    to_html,
+    to_json,
+    to_markdown,
+    to_text,
+)
 from qualityintel.reporting.text import render_comparison, render_history, render_traceability
 from qualityintel.traceability.coverage import Filters
 from qualityintel.traceability.report import RunFilters, build_report
 
 EXIT_OK = 0
+EXIT_GATE_FAILED = 1
 EXIT_USAGE = 2
 EXIT_INPUT = 3
+EXIT_INTERNAL = 4
 
 INSPECT_COUNTS = "passed failed error skipped  pass rate"
 CONTEXT_NAMES = tuple(RunContext.model_fields)
@@ -80,6 +95,16 @@ def build_parser() -> argparse.ArgumentParser:
     dashboard.add_argument("--port", type=int, help="port (default: QI_DASHBOARD_PORT or 8000)")
     dashboard.add_argument(
         "--database", type=Path, help="also load every run stored in this history database"
+    )
+
+    gate = commands.add_parser("gate", help="decide a release quality gate (exit code 0 / 1 / 3)")
+    gate.add_argument("--catalog", required=True, type=Path, help="requirement catalog (TOML)")
+    gate.add_argument("--config", required=True, type=Path, help="gate definition (TOML)")
+    add_result_arguments(gate, required=False)
+    gate.add_argument("--json", type=Path, metavar="FILE", help="write the machine-readable report")
+    gate.add_argument("--html", type=Path, metavar="FILE", help="write the HTML report")
+    gate.add_argument(
+        "--summary", type=Path, metavar="FILE", help="append a Markdown summary (e.g. $GITHUB_STEP_SUMMARY)"
     )
 
     history = commands.add_parser(
@@ -347,6 +372,67 @@ def _cmd_history(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _cmd_gate(args: argparse.Namespace) -> int:
+    """Evaluate a gate and write its reports; the exit code is the verdict."""
+    try:
+        config = load_gate_config(args.config)
+    except GateConfigError as error:
+        print(f"qi: configuration error: {error}", file=sys.stderr)
+        return EXIT_USAGE
+    try:
+        catalog = load_catalog(args.catalog)
+    except CatalogFileError as error:
+        # Even without a catalog the reports are written, so CI shows why no decision was made
+        document = incomplete_document(config.name, [str(error)], args.catalog.name)
+        _write_gate_reports(document, args)
+        print(to_text(document), end="")
+        return EXIT_INPUT
+    for warning in catalog.warnings:
+        print(f"qi: note: {args.catalog.name}: {warning}", file=sys.stderr)
+
+    problems: list[str] = []
+    runs: list[TestRun] = []
+    if args.results:
+        batch = import_results(args.results, context=context_from(args))
+        report_batch_problems(batch)
+        problems = [str(error) for error in batch.errors]
+        runs = batch.runs
+    scope = config.scope
+    frameworks = frozenset(scope.framework)
+    report = build_report(
+        catalog,
+        runs,
+        Filters(
+            features=frozenset(scope.feature),
+            criticalities=frozenset(scope.criticality),
+            platforms=frozenset(scope.platform),
+            test_types=frozenset(scope.test_type),
+            frameworks=frameworks,
+        ),
+        RunFilters(
+            frameworks=frameworks,
+            environments=frozenset(scope.environment),
+            browsers=frozenset(scope.browser),
+        ),
+    )
+    result = evaluate(report, config, problems)
+    document = gate_document(result, report, args.catalog.name)
+    _write_gate_reports(document, args)
+    print(to_text(document), end="")
+    return result.exit_code
+
+
+def _write_gate_reports(document: dict[str, object], args: argparse.Namespace) -> None:
+    """Write the requested report files (folders are created; the summary is appended)."""
+    for path, text in ((args.json, to_json(document)), (args.html, to_html(document))):
+        if path is not None:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text, encoding="utf-8")
+    if args.summary is not None:
+        with args.summary.open("a", encoding="utf-8") as summary:
+            summary.write(to_markdown(document))
+
+
 def _cmd_dashboard(args: argparse.Namespace) -> int:
     """Load the data once, then serve it until interrupted (Ctrl+C)."""
     try:
@@ -393,6 +479,7 @@ COMMANDS: dict[str, Callable[[argparse.Namespace], int]] = {
     "coverage": _cmd_coverage,
     "dashboard": _cmd_dashboard,
     "history": _cmd_history,
+    "gate": _cmd_gate,
 }
 
 
@@ -417,3 +504,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     except UsageError as error:
         print(f"qi: {error}", file=sys.stderr)
         return EXIT_USAGE
+    except Exception:
+        # A crash must not look like "gate failed" (1) to a pipeline: it gets its own code
+        traceback.print_exc()
+        print("qi: internal error (exit code 4); please report it with the traceback above", file=sys.stderr)
+        return EXIT_INTERNAL
