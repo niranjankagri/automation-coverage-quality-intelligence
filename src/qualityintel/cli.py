@@ -36,6 +36,7 @@ from qualityintel.history.analysis import (
     trend,
 )
 from qualityintel.history.store import HistoryError, HistoryStore
+from qualityintel.history.trends import CoverageSnapshot, coverage_snapshot
 from qualityintel.ingest.batch import Batch, import_results
 from qualityintel.ingest.catalog_file import (
     CatalogFileError,
@@ -144,6 +145,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     store = history_commands.add_parser("import", help="store result files in the history database")
     add_result_arguments(store, required=True)
+    store.add_argument(
+        "--catalog",
+        type=Path,
+        help="also record the catalog's coverage (only when it changed since the last record)",
+    )
     store.add_argument("--database", type=Path, help="SQLite file (default: QI_DATABASE or .qi/quality.db)")
 
     report = history_commands.add_parser("report", help="stability, recurring failures, durations, trends")
@@ -338,12 +344,24 @@ def _cmd_history(args: argparse.Namespace) -> int:
         report_batch_problems(batch)
         if not batch.complete:
             return EXIT_INPUT
+        catalog = None
+        if args.catalog is not None:
+            catalog = load_catalog_or_report(args.catalog)
+            if catalog is None:
+                return EXIT_INPUT
         store = open_store(path)
         if store is None:
             return EXIT_INPUT
         with store:
             added, known = store.add_all(batch.runs)
             run_count, result_count = store.count()
+            if catalog is not None:
+                recorded = store.add_snapshot(coverage_snapshot(catalog, args.catalog.name))
+                print(
+                    "recorded a coverage snapshot"
+                    if recorded
+                    else "coverage unchanged since the last snapshot"
+                )
         print(
             f"added {added} run(s), {known} already stored; "
             f"{path} now holds {run_count} runs, {result_count} results"
@@ -553,12 +571,14 @@ def _cmd_dashboard(args: argparse.Namespace) -> int:
     if catalog is None:
         return EXIT_INPUT
     runs: list[TestRun] = []
+    snapshots: list[CoverageSnapshot] = []
     if args.database is not None:
         store = open_store(args.database)
         if store is None:
             return EXIT_INPUT
         with store:
             runs = store.runs()
+            snapshots = store.snapshots()
     if args.results:
         batch = import_results(args.results, context=context_from(args))
         report_batch_problems(batch)
@@ -577,7 +597,7 @@ def _cmd_dashboard(args: argparse.Namespace) -> int:
     print(
         f"qi: dashboard on http://{host}:{port}  ({len(catalog.requirements)} requirements, {len(runs)} runs)"
     )
-    uvicorn.run(create_app(Workspace(catalog, runs)), host=host, port=port, log_level="warning")
+    uvicorn.run(create_app(Workspace(catalog, runs, snapshots)), host=host, port=port, log_level="warning")
     return EXIT_OK
 
 

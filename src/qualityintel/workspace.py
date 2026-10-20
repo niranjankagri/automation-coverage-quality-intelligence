@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
@@ -23,6 +23,7 @@ from qualityintel.history.analysis import (
     stability_report,
     trend,
 )
+from qualityintel.history.trends import CoverageSnapshot, coverage_changes, daily_trend
 from qualityintel.ingest.batch import Batch, import_results
 from qualityintel.ingest.catalog_file import load_catalog
 from qualityintel.models.catalog import Catalog, Requirement
@@ -243,6 +244,51 @@ class StabilityView(View):
     window: int
 
 
+class DailyView(View):
+    """One day in the execution trend (the snapshot at the end of that day)."""
+
+    day: date
+    counts: dict[Outcome, int]
+    pass_rate: RatioView
+    duration_seconds: float
+    requirement_status: dict[str, int]
+    contexts: int
+    carried: tuple[str, ...]
+    added: tuple[str, ...]
+
+
+class RunTrendView(View):
+    """One run in its context's series."""
+
+    run_id: str
+    source: str
+    started_at: datetime | None
+    build: str | None
+    counts: dict[Outcome, int]
+    pass_rate: RatioView
+    duration_seconds: float
+
+
+class CoverageView(View):
+    """A recorded coverage snapshot of the catalog."""
+
+    taken_at: datetime
+    catalog: str
+    requirements: int
+    requirement_coverage: RatioView
+    automation_coverage: RatioView
+    automated_requirement_coverage: RatioView
+
+
+class TrendsView(View):
+    """Everything the trends page draws, with notes about what it cannot show."""
+
+    daily: tuple[DailyView, ...]
+    runs: dict[str, tuple[RunTrendView, ...]]
+    coverage: tuple[CoverageView, ...]
+    notes: tuple[str, ...]
+
+
 class Facets(View):
     """Filter values that exist in the data, for the dashboard's drop-downs."""
 
@@ -253,6 +299,7 @@ class Facets(View):
     frameworks: tuple[str, ...]
     environments: tuple[str, ...]
     browsers: tuple[str, ...]
+    builds: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -270,8 +317,11 @@ EVERYTHING = Scope()
 class Workspace:
     """A catalog and the runs imported for it."""
 
-    def __init__(self, catalog: Catalog, runs: Iterable[TestRun]) -> None:
+    def __init__(
+        self, catalog: Catalog, runs: Iterable[TestRun], snapshots: Sequence[CoverageSnapshot] = ()
+    ) -> None:
         self.catalog = catalog
+        self.snapshots = tuple(snapshots)
         self.runs = tuple(sorted(runs, key=lambda r: (r.started_at is None, r.started_at, r.source)))
         self._runs_by_id = {run.run_id: run for run in self.runs}
 
@@ -299,6 +349,7 @@ class Workspace:
             ),
             environments=_sorted(r.context.environment for r in self.runs if r.context.environment),
             browsers=_sorted(r.context.browser for r in self.runs if r.context.browser),
+            builds=_sorted(r.context.build for r in self.runs if r.context.build),
         )
 
     def summary(self, scope: Scope = EVERYTHING) -> Summary:
@@ -480,6 +531,71 @@ class Workspace:
                 for context, points in trend(runs).items()
             },
             window=settings.window,
+        )
+
+    def trends(self, scope: Scope = EVERYTHING) -> TrendsView:
+        """Daily snapshots, per-context run series and recorded coverage (docs/metrics.md, trends)."""
+        runs = self._runs(scope)
+        daily = daily_trend(runs, self.catalog, scope.filters)
+        notes = list(coverage_changes(self.snapshots))
+        undated = sum(1 for r in runs if r.started_at is None)
+        if undated:
+            notes.append(f"{undated} run(s) without a start time are not on the time axis")
+        carried_days = [p.day.isoformat() for p in daily if p.carried]
+        if carried_days:
+            notes.append(
+                f"{len(carried_days)} day(s) combine a run of that day with older latest runs of other "
+                "contexts (listed per day): those points are not one test run"
+            )
+        changes = [p.day.isoformat() for p in daily if p.added]
+        if changes:
+            notes.append(
+                f"the set of run contexts grows on {', '.join(changes)}: totals before and after "
+                "those days count different suites; compare pass rates, or filter to one framework"
+            )
+        if not runs:
+            notes.append("no runs in this scope")
+        return TrendsView(
+            daily=tuple(
+                DailyView(
+                    day=p.day,
+                    counts=p.counts,
+                    pass_rate=RatioView.of(p.pass_rate),
+                    duration_seconds=round(p.duration_seconds, 3),
+                    requirement_status=p.requirement_status,
+                    contexts=p.contexts,
+                    carried=p.carried,
+                    added=p.added,
+                )
+                for p in daily
+            ),
+            runs={
+                _context_label(context): tuple(
+                    RunTrendView(
+                        run_id=p.run.run_id,
+                        source=p.run.source,
+                        started_at=p.run.started_at,
+                        build=p.run.context.build,
+                        counts=p.run.outcome_counts(),
+                        pass_rate=RatioView.of(p.pass_rate),
+                        duration_seconds=round(p.total_seconds, 3),
+                    )
+                    for p in points
+                )
+                for context, points in trend(runs).items()
+            },
+            coverage=tuple(
+                CoverageView(
+                    taken_at=s.taken_at,
+                    catalog=s.catalog,
+                    requirements=s.requirements,
+                    requirement_coverage=RatioView.of(s.requirement_coverage),
+                    automation_coverage=RatioView.of(s.automation_coverage),
+                    automated_requirement_coverage=RatioView.of(s.automated_requirement_coverage),
+                )
+                for s in self.snapshots
+            ),
+            notes=tuple(notes),
         )
 
     # ---- helpers -------------------------------------------------------------------------

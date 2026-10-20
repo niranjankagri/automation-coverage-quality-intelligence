@@ -7,6 +7,7 @@ OpenAPI documentation of the API is served at ``/docs``.
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 from typing import Annotated
 
@@ -31,6 +32,7 @@ from qualityintel.workspace import (
     Summary,
     TestHistory,
     TestRow,
+    TrendsView,
     Workspace,
 )
 
@@ -47,13 +49,25 @@ CONTENT_SECURITY_POLICY = (
 ListQuery = Annotated[list[str] | None, Query()]
 
 
-def run_scope(framework: ListQuery = None, environment: ListQuery = None, browser: ListQuery = None) -> Scope:
-    """Run filters from repeatable query parameters (``?browser=firefox&browser=chrome``)."""
+def run_scope(
+    framework: ListQuery = None,
+    environment: ListQuery = None,
+    browser: ListQuery = None,
+    build: ListQuery = None,
+    since: date | None = None,
+    until: date | None = None,
+) -> Scope:
+    """Run filters from query parameters (``?browser=firefox&browser=chrome&since=2026-10-13``)."""
+    if since is not None and until is not None and since > until:
+        raise HTTPException(status_code=422, detail=f"since ({since}) is after until ({until})")
     return Scope(
         run_filters=RunFilters(
             frameworks=frozenset(framework or ()),
             environments=frozenset(environment or ()),
             browsers=frozenset(browser or ()),
+            builds=frozenset(build or ()),
+            since=since,
+            until=until,
         )
     )
 
@@ -66,11 +80,14 @@ def full_scope(
     framework: ListQuery = None,
     environment: ListQuery = None,
     browser: ListQuery = None,
+    build: ListQuery = None,
+    since: date | None = None,
+    until: date | None = None,
 ) -> Scope:
     """Catalog and run filters; values that can never match an enum are a client error."""
     _check("criticality", criticality or [], {c.value for c in Criticality})
     _check("test_type", test_type or [], {t.value for t in TestType})
-    runs = run_scope(framework, environment, browser).run_filters
+    runs = run_scope(framework, environment, browser, build, since, until).run_filters
     return Scope(
         filters=Filters(
             features=frozenset(feature or ()),
@@ -172,6 +189,11 @@ def create_app(workspace: Workspace) -> FastAPI:
     ) -> StabilityView:
         """Flaky candidates, consistent and new failures, recurring failures, slow-downs, trends."""
         return workspace.stability(chosen, HistorySettings(window=window), include_stable=include_stable)
+
+    @app.get("/api/trends", tags=["history"])
+    def trends(chosen: FullScope) -> TrendsView:
+        """Daily execution snapshots, per-context run series and recorded coverage snapshots."""
+        return workspace.trends(chosen)
 
     @app.get("/api/runs", tags=["executions"])
     def runs(chosen: RunScope) -> tuple[RunView, ...]:
