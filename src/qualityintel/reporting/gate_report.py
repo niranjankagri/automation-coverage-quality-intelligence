@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import html
 import json
-import re
 from datetime import UTC, datetime
 from importlib.resources import files
 from string import Template
@@ -18,6 +17,8 @@ from typing import Any
 from qualityintel import __version__
 from qualityintel.gates.evaluate import GateResult, GateStatus
 from qualityintel.models.enums import Outcome
+from qualityintel.reporting.markdown import md as _md
+from qualityintel.reporting.markdown import md_code as _md_code
 from qualityintel.traceability.pipelines import PipelineExecution
 from qualityintel.traceability.report import TraceabilityReport
 
@@ -305,24 +306,6 @@ def _items(items: list[str] | tuple[str, ...]) -> str:
 def _h(value: object) -> str:
     """HTML-escape any value (quotes included)."""
     return html.escape(str(value), quote=True)
-
-
-# Markdown punctuation that can start a link, image, emphasis, code, heading, HTML tag or table cell
-_MD_SPECIAL = re.compile(r"([\\`*_{}\[\]()#+!<>|~])")
-
-
-def _md(value: object) -> str:
-    """Untrusted text as literal Markdown: every special character escaped, one line.
-
-    Test names and failure messages end up in a CI job summary; a name like
-    ``[click](https://...)`` or ``<img src=...>`` must show as text, not as a link or an image.
-    """
-    return _MD_SPECIAL.sub(r"\\\1", " ".join(str(value).splitlines()))
-
-
-def _md_code(value: object) -> str:
-    """Text for inside a code span, where escapes do not work: backticks and line breaks removed."""
-    return " ".join(str(value).replace("`", "'").splitlines())
 
 
 def to_text(document: dict[str, Any]) -> str:
