@@ -42,7 +42,7 @@ from qualityintel.history.analysis import (
     summary_by,
     trend,
 )
-from qualityintel.history.store import HistoryError, HistoryStore
+from qualityintel.history.store import SCHEMA_VERSION, HistoryError, HistoryStore
 from qualityintel.history.trends import coverage_snapshot
 from qualityintel.ingest.batch import Batch, import_pipeline, import_results
 from qualityintel.ingest.catalog_file import (
@@ -81,6 +81,8 @@ EXIT_GATE_FAILED = 1
 EXIT_USAGE = 2
 EXIT_INPUT = 3
 EXIT_INTERNAL = 4
+# Retention shorter than this would let `qi collect` (look-back up to 90 days) import pruned data again
+MIN_KEEP_DAYS = 91
 
 INSPECT_COUNTS = "passed failed error skipped  pass rate"
 CONTEXT_NAMES = tuple(RunContext.model_fields)
@@ -208,6 +210,31 @@ def build_parser() -> argparse.ArgumentParser:
         report.add_argument(
             f"--{name}", action="append", default=[], metavar="VALUE", help=f"only runs with this {name}"
         )
+
+    prune = history_commands.add_parser(
+        "prune", help="delete runs, results and records older than the retention (docs/operations.md)"
+    )
+    prune.add_argument(
+        "--keep-days",
+        type=int,
+        required=True,
+        help=f"keep what started in the last N days (at least {MIN_KEEP_DAYS})",
+    )
+    prune.add_argument("--database", type=Path, help="SQLite file (default: QI_DATABASE or .qi/quality.db)")
+
+    backup = history_commands.add_parser(
+        "backup", help="copy the database consistently, then verify the copy"
+    )
+    backup.add_argument("target", type=Path, help="new file to write (never overwritten)")
+    backup.add_argument("--database", type=Path, help="SQLite file (default: QI_DATABASE or .qi/quality.db)")
+
+    check = history_commands.add_parser("check", help="verify a database: integrity, schema, contents")
+    check.add_argument("--database", type=Path, help="SQLite file (default: QI_DATABASE or .qi/quality.db)")
+
+    restore = history_commands.add_parser("restore", help="verify a backup, then make it the database")
+    restore.add_argument("source", type=Path, help="backup file written by `qi history backup`")
+    restore.add_argument("--database", type=Path, help="SQLite file (default: QI_DATABASE or .qi/quality.db)")
+    restore.add_argument("--replace", action="store_true", help="replace an existing database file")
 
     compare = history_commands.add_parser("compare", help="what changed between two stored runs")
     compare.add_argument("base", help="run id (or its first characters) or the end of its source name")
@@ -510,6 +537,9 @@ def _cmd_history(args: argparse.Namespace) -> int:
         )
         return EXIT_OK
 
+    if args.history_command in ("prune", "backup", "check", "restore"):
+        return _maintain_history(args, path)
+
     # compare
     store = open_store(path)
     if store is None:
@@ -519,6 +549,87 @@ def _cmd_history(args: argparse.Namespace) -> int:
     base, head = find_run(stored, args.base), find_run(stored, args.head)
     print(render_comparison(base, head, compare_runs(base, head)), end="")
     return EXIT_OK
+
+
+def _maintain_history(args: argparse.Namespace, path: Path) -> int:
+    """``qi history prune | backup | check | restore`` (docs/operations.md)."""
+    if args.history_command == "restore":
+        source: Path = args.source
+        if not source.is_file():
+            raise UsageError(f"{source}: no such backup file")
+        if path.exists() and not args.replace:
+            raise UsageError(f"{path} exists; add --replace to overwrite it with the backup")
+        if verify_history(source) is None:
+            return EXIT_INPUT
+        store = open_store(source)
+        if store is None:
+            return EXIT_INPUT
+        replaced = path.with_name(path.name + ".restoring")
+        replaced.unlink(missing_ok=True)
+        with store:
+            store.backup(replaced)
+        replaced.replace(path)  # one rename: the database is either the old or the restored file
+        print(f"restored {source} to {path}")
+        return EXIT_OK
+    if not path.is_file():
+        raise UsageError(f"{path}: no such database")
+    if args.history_command == "check":
+        return EXIT_OK if verify_history(path) is not None else EXIT_INPUT
+    if args.history_command == "backup":
+        store = open_store(path)
+        if store is None:
+            return EXIT_INPUT
+        with store:
+            try:
+                store.backup(args.target)
+            except HistoryError as error:
+                raise UsageError(str(error)) from None
+            original = store.count()
+        copied = verify_history(args.target)
+        if copied is None or copied != original:
+            print(f"qi: error: the backup {args.target} does not match {path}", file=sys.stderr)
+            return EXIT_INPUT
+        print(f"backed up {path} to {args.target}")
+        return EXIT_OK
+    # prune
+    if args.keep_days < MIN_KEEP_DAYS:
+        raise UsageError(
+            f"--keep-days must be at least {MIN_KEEP_DAYS}: `qi collect` looks back up to 90 days and "
+            "would import pruned pipelines again"
+        )
+    store = open_store(path)
+    if store is None:
+        return EXIT_INPUT
+    before = datetime.now(UTC) - timedelta(days=args.keep_days)
+    with store:
+        pruned = store.prune(before)
+        runs, results = store.count()
+    print(
+        f"deleted {pruned.runs} run(s) with {pruned.results} result(s), {pruned.collections} collection "
+        f"record(s), {pruned.snapshots} coverage snapshot(s) from before {before:%Y-%m-%d}; "
+        f"{path} now holds {runs} runs, {results} results"
+    )
+    return EXIT_OK
+
+
+def verify_history(path: Path) -> tuple[int, int] | None:
+    """Check a database file and print its contents; ``None`` (reason printed) when unusable."""
+    store = open_store(path)
+    if store is None:
+        return None
+    with store:
+        problems = store.check()
+        counts = store.count()
+        collections = len(store.collections())
+    for problem in problems:
+        print(f"qi: error: {path}: {problem}", file=sys.stderr)
+    if problems:
+        return None
+    print(
+        f"{path}: ok, schema {SCHEMA_VERSION}, {counts[0]} runs, {counts[1]} results, "
+        f"{collections} collection records"
+    )
+    return counts
 
 
 def _cmd_gate(args: argparse.Namespace) -> int:

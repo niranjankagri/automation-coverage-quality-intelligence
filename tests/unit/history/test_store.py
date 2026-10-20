@@ -230,3 +230,44 @@ def test_runs_collected_before_schema_5_get_the_repository_of_their_collection(t
         repositories = sorted(str(r.pipeline.repository if r.pipeline else None) for r in store.runs())
 
     assert repositories == ["None", "niranjankagri/robot-framework-automation"]
+
+
+def test_prune_deletes_old_runs_results_and_records_but_keeps_the_latest_snapshot(tmp_path: Path) -> None:
+    """Everything before the cutoff goes, with its results; the latest snapshot of each catalog stays."""
+    from datetime import UTC, datetime, timedelta
+
+    from qualityintel.history.trends import CoverageSnapshot
+    from qualityintel.models.metrics import Ratio
+
+    runs = import_results([Path(__file__).parents[3] / "samples" / "results"]).runs
+    with HistoryStore(tmp_path / "h.db") as store:
+        store.add_all(runs)
+        starts = sorted(r.started_at for r in runs if r.started_at is not None)
+        middle = starts[len(starts) // 2]
+        expected_runs = sum(1 for r in runs if (r.started_at or datetime.now(UTC)) < middle)
+        expected_results = sum(len(r.results) for r in runs if (r.started_at or datetime.now(UTC)) < middle)
+
+        for days, sha in ((30, "a"), (20, "b")):
+            store.add_snapshot(
+                CoverageSnapshot(
+                    taken_at=middle - timedelta(days=days),
+                    catalog="catalog.toml",
+                    catalog_sha256=sha,
+                    requirements=1,
+                    requirement_coverage=Ratio(numerator=1, denominator=1),
+                    automation_coverage=Ratio(numerator=1, denominator=1),
+                    automated_requirement_coverage=Ratio(numerator=1, denominator=1),
+                )
+            )
+
+        pruned = store.prune(middle)
+
+        assert (pruned.runs, pruned.results) == (expected_runs, expected_results)
+        assert store.count() == (
+            len(runs) - expected_runs,
+            sum(len(r.results) for r in runs) - expected_results,
+        )
+        assert all(r.started_at is None or r.started_at >= middle for r in store.runs())
+        assert store.check() == []
+        assert pruned.snapshots == 1
+        assert [snapshot.catalog_sha256 for snapshot in store.snapshots()] == ["b"]

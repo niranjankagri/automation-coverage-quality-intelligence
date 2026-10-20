@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from qualityintel.cli import EXIT_INPUT, EXIT_OK, EXIT_USAGE, main
+from qualityintel.history.store import HistoryStore
 
 pytestmark = pytest.mark.unit
 
@@ -125,3 +126,71 @@ def test_import_of_broken_files_stores_nothing(tmp_path: Path) -> None:
 
     assert main(["history", "import", str(tmp_path), "--database", str(tmp_path / "h.db")]) == EXIT_INPUT
     assert not (tmp_path / "h.db").exists()
+
+
+# ---- maintenance: retention, backup, check, restore (docs/operations.md) ------------------------
+
+
+def test_backup_writes_a_verified_copy_and_never_overwrites(
+    database: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The copy holds the same runs and results; a second backup to the same file is refused."""
+    target = tmp_path / "backups" / "history-1.db"
+    capsys.readouterr()
+
+    assert main(["history", "backup", str(target), "--database", str(database)]) == EXIT_OK
+    out = capsys.readouterr().out
+    assert f"{target}: ok, schema 5, 43 runs" in out
+    assert "backed up" in out
+    assert main(["history", "backup", str(target), "--database", str(database)]) == EXIT_USAGE
+
+
+def test_restore_replaces_the_database_only_when_asked(database: Path, tmp_path: Path) -> None:
+    """Restore checks the backup first and needs --replace to overwrite an existing database."""
+    backup = tmp_path / "backup.db"
+    assert main(["history", "backup", str(backup), "--database", str(database)]) == EXIT_OK
+    with HistoryStore(database) as store:
+        store.remove(store.runs()[0].run_id)
+
+    assert main(["history", "restore", str(backup), "--database", str(database)]) == EXIT_USAGE
+    assert main(["history", "restore", str(backup), "--database", str(database), "--replace"]) == EXIT_OK
+    with HistoryStore(database) as store:
+        assert store.count()[0] == 43
+    assert not database.with_name(database.name + ".restoring").exists()
+
+
+def test_restore_refuses_a_file_that_is_not_a_history_database(tmp_path: Path) -> None:
+    """A damaged or unrelated file never becomes the database."""
+    bogus = tmp_path / "bogus.db"
+    bogus.write_bytes(b"not a database at all" * 100)
+    target = tmp_path / "history.db"
+
+    assert main(["history", "restore", str(bogus), "--database", str(target)]) == EXIT_INPUT
+    assert not target.exists()
+    assert main(["history", "restore", str(tmp_path / "missing.db"), "--database", str(target)]) == EXIT_USAGE
+
+
+def test_check_reports_a_healthy_database_and_refuses_a_missing_one(
+    database: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """``check`` never creates the file it is asked to check."""
+    capsys.readouterr()
+    assert main(["history", "check", "--database", str(database)]) == EXIT_OK
+    assert "ok, schema 5, 43 runs" in capsys.readouterr().out
+
+    missing = tmp_path / "missing.db"
+    assert main(["history", "check", "--database", str(missing)]) == EXIT_USAGE
+    assert not missing.exists()
+
+
+def test_prune_refuses_a_retention_inside_the_collection_look_back(database: Path) -> None:
+    """Pruning within 90 days would let the next collection import the same pipelines again."""
+    assert main(["history", "prune", "--keep-days", "90", "--database", str(database)]) == EXIT_USAGE
+
+
+def test_prune_keeps_recent_runs(database: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """The samples are from October 2026; a 365-day retention keeps all of them."""
+    capsys.readouterr()
+
+    assert main(["history", "prune", "--keep-days", "365", "--database", str(database)]) == EXIT_OK
+    assert "deleted 0 run(s)" in capsys.readouterr().out

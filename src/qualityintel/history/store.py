@@ -21,6 +21,7 @@ import json
 import sqlite3
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from types import TracebackType
@@ -122,6 +123,16 @@ _EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
 
 class HistoryError(RuntimeError):
     """The history database cannot be used (unreadable, or written by a newer version)."""
+
+
+@dataclass(frozen=True)
+class Pruned:
+    """What :meth:`HistoryStore.prune` deleted."""
+
+    runs: int
+    results: int
+    collections: int
+    snapshots: int
 
 
 class HistoryStore:
@@ -387,6 +398,61 @@ class HistoryStore:
         with self._transaction() as db:
             deleted = db.execute("DELETE FROM runs WHERE run_id = ?", (run_id,)).rowcount
         return deleted > 0
+
+    def prune(self, before: datetime) -> Pruned:
+        """Delete what started before ``before`` (retention, docs/operations.md).
+
+        Deleted: runs with their results, collection records, and coverage snapshots except the
+        latest of each catalog.
+
+        A run without a start time counts from its import; a collection record from its
+        collection. Nothing else changes, so the next collection does not re-import pruned
+        pipelines as long as ``before`` is older than its look-back.
+        """
+        cutoff = _iso(before)
+        with self._transaction() as db:
+            results = db.execute(
+                "SELECT COUNT(*) FROM results WHERE run_id IN "
+                "(SELECT run_id FROM runs WHERE COALESCE(started_at, imported_at) < ?)",
+                (cutoff,),
+            ).fetchone()[0]
+            runs = db.execute(
+                "DELETE FROM runs WHERE COALESCE(started_at, imported_at) < ?", (cutoff,)
+            ).rowcount
+            collections = db.execute(
+                "DELETE FROM collections WHERE COALESCE(started_at, collected_at) < ?", (cutoff,)
+            ).rowcount
+            snapshots = db.execute(
+                "DELETE FROM coverage_snapshots WHERE taken_at < ? AND taken_at < "
+                "(SELECT MAX(s.taken_at) FROM coverage_snapshots s "
+                "WHERE s.catalog = coverage_snapshots.catalog)",
+                (cutoff,),
+            ).rowcount
+        self._db.execute("VACUUM")  # give the space back, so the file does not keep deleted text
+        return Pruned(runs=runs, results=int(results), collections=collections, snapshots=snapshots)
+
+    def backup(self, target: Path) -> None:
+        """Copy the database to ``target`` with SQLite's online backup (consistent while in use).
+
+        Raises:
+            HistoryError: ``target`` exists already (a backup never overwrites).
+        """
+        if target.exists():
+            raise HistoryError(f"{target}: exists already; a backup never overwrites a file")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        copy = sqlite3.connect(str(target))
+        try:
+            self._db.backup(copy)
+        finally:
+            copy.close()
+
+    def check(self) -> list[str]:
+        """Problems SQLite finds in the file (``PRAGMA integrity_check`` and foreign keys)."""
+        problems = [row[0] for row in self._db.execute("PRAGMA integrity_check") if row[0] != "ok"]
+        orphans = self._db.execute("PRAGMA foreign_key_check").fetchall()
+        if orphans:
+            problems.append(f"{len(orphans)} result row(s) without their run")
+        return problems
 
     def add_snapshot(self, snapshot: CoverageSnapshot) -> bool:
         """Store a coverage snapshot unless the catalog is unchanged since the latest one."""
