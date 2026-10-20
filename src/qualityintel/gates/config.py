@@ -30,6 +30,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+# A gate file is a few hundred bytes; anything near this limit is the wrong file
+MAX_GATE_FILE_BYTES = 1024 * 1024
 Percent = Annotated[float, Field(ge=0, le=100)]
 Count = Annotated[int, Field(ge=0)]
 
@@ -120,11 +122,17 @@ def load_gate_config(path: Path) -> GateConfig:
             file that configures no rule at all (a gate that checks nothing would always pass).
     """
     try:
+        if path.stat().st_size > MAX_GATE_FILE_BYTES:
+            raise GateConfigError(
+                f"{path.name}: file is larger than the limit of {MAX_GATE_FILE_BYTES} bytes"
+            )
         data = tomllib.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError) as error:
         raise GateConfigError(f"{path.name}: cannot be read ({error})") from None
     except tomllib.TOMLDecodeError as error:
         raise GateConfigError(f"{path.name}: not valid TOML ({error})") from None
+    except RecursionError:
+        raise GateConfigError(f"{path.name}: nested too deeply to be a gate file") from None
     try:
         config = GateConfig.model_validate(data)
     except ValidationError as error:

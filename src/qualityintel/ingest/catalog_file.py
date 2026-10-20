@@ -33,6 +33,10 @@ from pydantic import ValidationError
 from qualityintel.ingest.errors import IngestError
 from qualityintel.models.catalog import Catalog, CatalogError, Requirement, TestCase
 
+# A catalog of thousands of requirements is well under 1 MB; the limit keeps a wrong path (a log
+# file, a database) from being read into memory whole
+MAX_TOML_BYTES = 10 * 1024 * 1024
+
 TOP_LEVEL_KEYS = frozenset({"requirement", "test_case"})
 
 
@@ -81,6 +85,8 @@ def load_catalog(path: Path) -> Catalog:
 def read_toml(path: Path) -> dict[str, Any]:
     """Parse a TOML file; problems become :class:`CatalogFileError` naming the file."""
     try:
+        if path.stat().st_size > MAX_TOML_BYTES:
+            raise CatalogFileError(path.name, f"file is larger than the limit of {MAX_TOML_BYTES} bytes")
         text = path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as error:
         raise CatalogFileError(path.name, f"cannot be read ({error})") from None
@@ -88,6 +94,8 @@ def read_toml(path: Path) -> dict[str, Any]:
         return tomllib.loads(text)
     except tomllib.TOMLDecodeError as error:
         raise CatalogFileError(path.name, f"not valid TOML ({error})") from None
+    except RecursionError:
+        raise CatalogFileError(path.name, "nested too deeply to be a catalog") from None
 
 
 def catalog_from_dict(data: dict[str, Any], source: str = "catalog") -> Catalog:

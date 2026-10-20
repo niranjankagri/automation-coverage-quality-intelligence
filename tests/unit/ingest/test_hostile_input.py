@@ -12,7 +12,9 @@ from pathlib import Path
 import pytest
 
 from qualityintel.cli import EXIT_INPUT, main
+from qualityintel.gates.config import GateConfigError, load_gate_config
 from qualityintel.ingest.allure import read_allure_folder
+from qualityintel.ingest.catalog_file import CatalogFileError, load_catalog
 from qualityintel.ingest.errors import IngestError
 from qualityintel.ingest.junit import parse_junit
 from qualityintel.ingest.mochawesome import parse_mochawesome
@@ -109,3 +111,20 @@ def test_a_hostile_file_is_exit_code_3_through_the_command_line(tmp_path: Path) 
     hostile.write_bytes(DEEP_JSON)
 
     assert main(["inspect", str(hostile)]) == EXIT_INPUT
+
+
+@pytest.mark.parametrize("kind", ["catalog", "gate"])
+def test_deeply_nested_or_oversized_toml_is_refused(tmp_path: Path, kind: str) -> None:
+    """Tomllib recursed until RecursionError on deep arrays; a huge file is refused unread."""
+    load = load_catalog if kind == "catalog" else load_gate_config
+    error = CatalogFileError if kind == "catalog" else GateConfigError
+    deep = tmp_path / "deep.toml"
+    deep.write_text("x = " + "[" * 50_000 + "]" * 50_000, encoding="utf-8")
+    huge = tmp_path / "huge.toml"
+    with huge.open("wb") as file:
+        file.truncate(11 * 1024 * 1024)  # sparse: no need to write 11 MB
+
+    with pytest.raises(error, match="nested too deeply"):
+        load(deep)
+    with pytest.raises(error, match="larger than the limit"):
+        load(huge)
