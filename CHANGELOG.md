@@ -17,6 +17,9 @@
 - **Release status on the overview** ([docs/readiness.md](docs/readiness.md)): Ready / At risk /
   Blocked / Unknown from the release gate given with `qi dashboard --gate` plus flaky candidates,
   incomplete pipelines and stale data; unknown evidence is never ready; `/api/readiness`.
+- **Build comparison and test investigation**: Compare page (comparable suites only; newly
+  failing, recovered, slower, newly flaky, coverage snapshots); test page with context, CI
+  links, requirements, pass/fail pattern, duration chart, copy identifier and link.
 - **Pipeline explorer and Collection page**: collected pipelines with status (incomplete before
   the CI conclusion), GitHub run and commit links, attempts, jobs with start times, status chips
   and workflow filter; collection health per repository with freshness and problems.

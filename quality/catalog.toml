@@ -157,6 +157,12 @@ title = "Pipeline explorer and collection health: every collected pipeline is vi
 feature = "Dashboard"
 criticality = "high"
 
+[[requirement]]
+id = "UI-05"
+title = "Builds are compared only where they ran the same suite; a test can be investigated with its context, pattern, durations, requirements and CI link"
+feature = "Dashboard"
+criticality = "high"
+
 # ---- Test cases ----------------------------------------------------------------------------
 
 [[test_case]]
@@ -513,4 +519,21 @@ automated_by = [
   "tests.unit.dashboard.test_pipelines_api::test_collection_health_per_repository",
   "tests.e2e.test_dashboard::test_status_chips_filter_the_pipelines_and_stay_in_the_address",
   "tests.e2e.test_dashboard::test_explorer_links_to_github_and_the_collection_page_shows_health",
+]
+
+[[test_case]]
+id = "TC-COMPARE-AND-INVESTIGATE"
+title = "Build comparison core and API on the real samples, input errors, compare page; test investigation API and page"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["UI-05"]
+automated_by = [
+  "tests.unit.history.test_builds::*",
+  "tests.unit.dashboard.test_api::test_builds_are_listed_in_the_order_they_first_ran",
+  "tests.unit.dashboard.test_api::test_comparing_two_real_testng_builds",
+  "tests.unit.dashboard.test_api::test_builds_of_different_suites_are_not_compared",
+  "tests.unit.dashboard.test_api::test_comparison_input_errors",
+  "tests.unit.dashboard.test_api::test_test_history_lists_requirements_and_counts",
+  "tests.e2e.test_dashboard::test_compare_page_shows_two_builds_and_their_changes",
+  "tests.e2e.test_dashboard::test_test_investigation_shows_context_pattern_requirements_and_copies",
 ]

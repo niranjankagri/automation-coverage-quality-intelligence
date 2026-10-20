@@ -78,3 +78,26 @@ address like the other filters.
 `qi history compare BASE HEAD` takes a run id (at least 6 characters) or the end of a source
 name. It prints newly failing, fixed, still failing, added, removed and clearly slower tests, and
 warns when the two runs have different contexts.
+
+## Comparing builds
+
+`qualityintel/history/builds.py`, the dashboard's **Compare** page and `GET /api/compare?base=&head=`.
+
+- A **build** is every run whose context names it (the commit or version tested); within a build
+  the latest run per context and pipeline job counts, as in the snapshot.
+- Two builds are compared **only where both ran the same suite** (same context and job). Those
+  pairs go through the same comparison as `qi history compare`: newly failing, recovered, still
+  failing, new and removed tests, and tests slower by the history thresholds (at least 50 % and
+  0.5 s, [metrics.md](metrics.md)). Suites that ran in one build only are listed as such, never
+  counted as new or removed tests.
+- **Newly flaky:** flaky candidates in the history up to the comparison build's last run that
+  were not flaky candidates up to the baseline's last run.
+- **Coverage:** the latest coverage snapshot recorded before each build's last run; "no coverage
+  snapshot before this build" when there is none.
+- The build selectors list builds in the order they first ran; the page's build filter is
+  ignored for the comparison (it chooses its builds itself).
+
+On the sample data, TestNG on Firefox, builds `f5a40d5` → `1d03232`: one comparable suite and
+10 tests slower; the 13 Oct timeout is not a change between builds because a later nightly on
+the same commit passed (the latest run of a build counts), and the test's own history shows it.
+
