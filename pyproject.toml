@@ -57,8 +57,9 @@ ignore = ["D105", "D107"]
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
-# Test modules and packages need no module docstring; each test function still has one
-"tests/**" = ["D100", "D104"]
+# Test modules and packages need no module docstring; each test function still has one.
+# E501: inline XML samples read better on one line than wrapped.
+"tests/**" = ["D100", "D104", "E501"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["qualityintel"]
