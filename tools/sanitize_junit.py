@@ -1,4 +1,4 @@
-"""Make a shareable copy of a JUnit XML file.
+r"""Make a shareable copy of a JUnit XML file.
 
 Used to turn real CI result files into the samples in ``samples/results``. It removes what a
 public repository should not contain and what the importer ignores anyway:
@@ -6,7 +6,11 @@ public repository should not contain and what the importer ignores anyway:
 - ``<system-out>`` / ``<system-err>`` (test logs),
 - ``<properties>`` entries outside an allow-list (Surefire writes every JVM property: class
   paths, home directories, user names),
-- ``hostname`` attributes and XML comments.
+- ``hostname`` attributes and XML comments,
+- local file paths inside failure messages and texts (``C:\Users\<name>\...``,
+  ``/home/<name>/...``, ``/Users/<name>/...``): Playwright's ``merge-reports`` writes the
+  attachment paths of the machine that merged the reports into the failure text. They become
+  ``<local path>``; paths of the CI runner (``/home/runner/...``) are kept, they are public.
 
 Optionally it records run context (``--set build=1d03232``) as properties on the top-level
 suites, and a start time (``--timestamp 2026-10-13T09:00:00Z``) on top-level suites that have
@@ -15,8 +19,8 @@ the CI run page. ``--overwrite-timestamp`` replaces existing timestamps too; nee
 made by ``playwright merge-reports``, which stamps suites with the time of the merge, not of
 the run.
 
-Test names, outcomes, durations, timestamps and failure messages are kept unchanged, so the
-copy imports to exactly the same results as the original (checked by
+Test names, outcomes, durations and timestamps are kept unchanged, and failure messages only
+lose local paths, so the copy imports to the same results as the original (checked by
 tests/unit/tools/test_sanitize_junit.py).
 
 Usage::
@@ -28,6 +32,7 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 import xml.etree.ElementTree as ET
 from collections.abc import Mapping
@@ -37,6 +42,14 @@ DROP_ELEMENTS = frozenset({"system-out", "system-err"})
 CONTEXT_NAMES = frozenset({"framework", "browser", "environment", "env", "platform", "build"})
 KEEP_PROPERTIES = CONTEXT_NAMES | {"test_id", "test_case_id"}
 DROP_ATTRIBUTES = frozenset({"hostname"})
+FAILURE_TAGS = frozenset(
+    {"failure", "error", "skipped", "flakyFailure", "flakyError", "rerunFailure", "rerunError"}
+)
+LOCAL_PATH = re.compile(
+    r"\b[A-Za-z]:\\[^\s\"'<>|]+"  # Windows absolute path
+    r"|/(?:home/(?!runner/)|Users/)[^/\s\"'<>]+/[^\s\"'<>]*"  # someone's home on Linux or macOS
+)
+LOCAL_PATH_MARK = "<local path>"
 
 
 def sanitize(
@@ -81,6 +94,11 @@ def _clean(element: ET.Element) -> None:
     """Remove logs, unknown properties and host names below ``element`` (in place)."""
     for name in DROP_ATTRIBUTES:
         element.attrib.pop(name, None)
+    if _local(element.tag) in FAILURE_TAGS:
+        if element.text:
+            element.text = LOCAL_PATH.sub(LOCAL_PATH_MARK, element.text)
+        if element.get("message"):
+            element.set("message", LOCAL_PATH.sub(LOCAL_PATH_MARK, element.get("message", "")))
     for child in list(element):
         tag = _local(child.tag)
         if tag in DROP_ELEMENTS:
