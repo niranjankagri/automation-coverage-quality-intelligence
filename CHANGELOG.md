@@ -14,6 +14,10 @@
   sources are fingerprinted and rebuilt into a complete snapshot when they change (`--refresh`,
   `QI_REFRESH_SECONDS`, default 30 s); a failed rebuild keeps the last good data and is shown as
   stale; `/api/status`; freshness bar with auto-refresh and Refresh; filters and address kept.
+- **Release status on the overview** ([docs/readiness.md](docs/readiness.md)): Ready / At risk /
+  Blocked / Unknown from the release gate given with `qi dashboard --gate` plus flaky candidates,
+  incomplete pipelines and stale data; unknown evidence is never ready; `/api/readiness`.
+- **Repository selector**: repository identity on pipeline runs (schema 5), filter on every page.
 - **Allure:** repeated TestNG invocations (`invocationCount`) are executions, not retries.
 
 ## 1.1.0 (2026-10-20)

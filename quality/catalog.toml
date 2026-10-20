@@ -145,6 +145,12 @@ title = "New data appears in the dashboard without a restart; filters stay; a fa
 feature = "Dashboard"
 criticality = "high"
 
+[[requirement]]
+id = "UI-01"
+title = "The overview shows a release status derived from the documented gate policy; unknown evidence is never ready; repository selection applies everywhere"
+feature = "Dashboard"
+criticality = "high"
+
 # ---- Test cases ----------------------------------------------------------------------------
 
 [[test_case]]
@@ -470,4 +476,20 @@ automated_by = [
   "tests.unit.test_cli_dashboard::test_the_dashboard_serves_live_data_with_the_refresh_interval",
   "tests.e2e.test_dashboard::test_new_history_appears_without_a_restart_and_the_filters_stay",
   "tests.e2e.test_dashboard::test_a_failed_refresh_keeps_the_data_and_warns",
+]
+
+[[test_case]]
+id = "TC-READINESS-AND-REPOSITORY"
+title = "Readiness policy, readiness API on the samples, overview panel; repository filter, facet, migration and selector"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["UI-01"]
+automated_by = [
+  "tests.unit.test_readiness::*",
+  "tests.unit.dashboard.test_api::test_readiness_on_the_real_samples",
+  "tests.unit.dashboard.test_api::test_readiness_follows_the_chosen_scope",
+  "tests.unit.dashboard.test_pipelines_api::test_repository_is_a_facet_and_a_filter",
+  "tests.unit.traceability.test_report::test_runs_can_be_chosen_by_repository",
+  "tests.e2e.test_dashboard::test_overview_shows_the_release_status_with_its_reasons",
+  "tests.e2e.test_dashboard::test_the_repository_selection_is_kept_across_pages_and_reloads",
 ]

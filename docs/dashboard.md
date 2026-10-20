@@ -35,7 +35,7 @@ every page and API call needs HTTP basic authentication. Put TLS in front when o
 
 | View | Shows | Drill-down |
 |---|---|---|
-| Overview | requirements in scope; requirement coverage, automation coverage, automated requirement coverage; execution pass rate and pass / fail / error / skip counts of the snapshot; snapshot runs; critical requirements without automation; failing requirements; other gaps | every card opens the list behind it (e.g. requirement coverage -> requirements without tests) |
+| Overview | **release status** (ready / at risk / blocked / unknown, with every reason and the gate's rules, [readiness.md](readiness.md)), test executions, critical requirements without automation, flaky candidates, incomplete pipelines, latest collection; requirements in scope; requirement coverage, automation coverage, automated requirement coverage; execution pass rate and pass / fail / error / skip counts of the snapshot; snapshot runs; critical requirements without automation; failing requirements; other gaps | every card opens the list behind it (e.g. requirement coverage -> requirements without tests) |
 | Requirements | id, title, feature, criticality, automated / linked test cases, coverage status, execution status; status filter | requirement -> its test cases and their latest executions |
 | Tests | every executed test with run, pass, fail, error, skip counts and last failure; search; latest-outcome filter | test -> full execution history, failure message and stack trace |
 | Runs | every imported run with pipeline / job, context, counts and pass rate | run -> all results, failures first |
@@ -70,6 +70,7 @@ Interactive documentation: `/docs` (generated from the routes, so it cannot drif
 | `GET /api/health` | status, version, number of requirements and runs |
 | `GET /api/status?check=` | data version, when it was loaded, latest run, refresh interval, last check and error, stale flag, collection freshness; `check=true` looks for new data first |
 | `GET /api/facets` | filter values present in the data |
+| `GET /api/readiness` | release status of the scope with reasons, gate rules and headline numbers |
 | `GET /api/summary` | coverage metrics, gaps, snapshot runs, outcome counts, pass rate |
 | `GET /api/requirements?status=` | requirement rows; `status` = a coverage or execution status |
 | `GET /api/requirements/{id}` | one requirement, its test cases and their latest executions |
