@@ -9,11 +9,12 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
 
+from qualityintel.gates.config import GateConfig
 from qualityintel.history.analysis import (
     DEFAULTS,
     HistorySettings,
@@ -27,9 +28,11 @@ from qualityintel.history.trends import CoverageSnapshot, coverage_changes, dail
 from qualityintel.ingest.batch import Batch, import_results
 from qualityintel.ingest.catalog_file import load_catalog
 from qualityintel.models.catalog import Catalog, Requirement
+from qualityintel.models.collection import PipelineCollection
 from qualityintel.models.enums import AutomationStatus, Outcome
 from qualityintel.models.metrics import Ratio, execution_pass_rate
 from qualityintel.models.results import PipelineJob, RunContext, TestResult, TestRun
+from qualityintel.readiness import readiness
 from qualityintel.traceability.coverage import UNSPECIFIED, Filters
 from qualityintel.traceability.matching import match_results
 from qualityintel.traceability.pipelines import PipelineExecution, pipeline_execution, pipeline_ids
@@ -270,6 +273,34 @@ class TrendPoint(View):
     failed: int
 
 
+class GateRuleView(View):
+    """One rule of the release gate as it applies to the chosen scope."""
+
+    name: str
+    status: str
+    fails_gate: bool
+    actual: str
+    expected: str
+    explanation: str
+
+
+class ReadinessView(View):
+    """The overview's release status and its headline numbers (docs/readiness.md)."""
+
+    state: str
+    reasons: tuple[str, ...]
+    gate_name: str | None
+    rules: tuple[GateRuleView, ...]
+    executions: int
+    pass_rate: RatioView
+    requirement_coverage: RatioView
+    automated_requirement_coverage: RatioView
+    critical_without_automation: int
+    flaky_candidates: int
+    incomplete_pipelines: int
+    latest_collection_at: datetime | None
+
+
 class StabilityView(View):
     """Everything the history analysis says about the chosen runs."""
 
@@ -356,10 +387,17 @@ class Workspace:
     """A catalog and the runs imported for it."""
 
     def __init__(
-        self, catalog: Catalog, runs: Iterable[TestRun], snapshots: Sequence[CoverageSnapshot] = ()
+        self,
+        catalog: Catalog,
+        runs: Iterable[TestRun],
+        snapshots: Sequence[CoverageSnapshot] = (),
+        collections: Sequence[PipelineCollection] = (),
+        gate: GateConfig | None = None,
     ) -> None:
         self.catalog = catalog
         self.snapshots = tuple(snapshots)
+        self.collections = tuple(collections)
+        self.gate = gate
         self.runs = tuple(sorted(runs, key=lambda r: (r.started_at is None, r.started_at, r.source)))
         self._runs_by_id = {run.run_id: run for run in self.runs}
 
@@ -391,6 +429,48 @@ class Workspace:
             repositories=_sorted(
                 r.pipeline.repository for r in self.runs if r.pipeline and r.pipeline.repository
             ),
+        )
+
+    def readiness(
+        self, scope: Scope = EVERYTHING, stale: bool = False, now: datetime | None = None
+    ) -> ReadinessView:
+        """Release status of the scope by the documented policy, with the numbers behind it."""
+        report = self._report(scope)
+        flaky = self.stability(scope).status_counts.get("flaky candidate", 0)
+        week_ago = (now or datetime.now(UTC)) - timedelta(days=7)
+        chosen = scope.run_filters.repositories
+        recent = [
+            c
+            for c in self.collections
+            if c.collected_at >= week_ago and (not chosen or c.repository in chosen)
+        ]
+        incomplete = sum(c.state == "incomplete" for c in recent)
+        decision = readiness(report, self.gate, flaky, incomplete, stale)
+        totals = report.coverage.totals
+        rules = decision.gate.rules if decision.gate else []
+        return ReadinessView(
+            state=decision.state.value,
+            reasons=decision.reasons,
+            gate_name=self.gate.name if self.gate else None,
+            rules=tuple(
+                GateRuleView(
+                    name=rule.name,
+                    status=rule.status.value,
+                    fails_gate=rule.counts_as_failure,
+                    actual=rule.actual,
+                    expected=rule.expected,
+                    explanation=rule.explanation,
+                )
+                for rule in rules
+            ),
+            executions=sum(report.outcome_counts.values()),
+            pass_rate=RatioView.of(report.pass_rate),
+            requirement_coverage=RatioView.of(totals.requirement_coverage),
+            automated_requirement_coverage=RatioView.of(totals.automated_requirement_coverage),
+            critical_without_automation=len(report.coverage.uncovered_critical),
+            flaky_candidates=flaky,
+            incomplete_pipelines=incomplete,
+            latest_collection_at=max((c.collected_at for c in self.collections), default=None),
         )
 
     def summary(self, scope: Scope = EVERYTHING) -> Summary:

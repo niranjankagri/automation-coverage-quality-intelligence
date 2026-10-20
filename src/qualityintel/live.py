@@ -25,6 +25,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
+from qualityintel.gates.config import GateConfigError, load_gate_config
 from qualityintel.history.store import HistoryError, HistoryStore
 from qualityintel.ingest.batch import expand_inputs, import_results
 from qualityintel.ingest.catalog_file import CatalogFileError, load_catalog, read_toml
@@ -78,6 +79,7 @@ class Sources:
     database: Path | None = None
     results: tuple[str | Path, ...] = ()
     context: RunContext | None = None
+    gate: Path | None = None
 
     def files(self) -> list[Path]:
         """Every file whose change must reload the data (catalog includes and result files too)."""
@@ -89,6 +91,8 @@ class Sources:
             pass  # the load reports it
         if self.database is not None:
             files.append(self.database)
+        if self.gate is not None:
+            files.append(self.gate)
         if self.results:
             found, _ = expand_inputs(self.results)
             files += [path for path, _name in found]
@@ -121,6 +125,10 @@ def load_snapshot(sources: Sources) -> Snapshot:
         catalog = load_catalog(sources.catalog)
     except CatalogFileError as error:
         raise LoadError(str(error)) from None
+    try:
+        gate = load_gate_config(sources.gate) if sources.gate is not None else None
+    except GateConfigError as error:
+        raise LoadError(str(error)) from None
     runs: list[TestRun] = []
     snapshots = []
     collections: list[PipelineCollection] = []
@@ -142,7 +150,7 @@ def load_snapshot(sources: Sources) -> Snapshot:
         known = {run.run_id for run in runs}
         runs += [run for run in batch.runs if run.run_id not in known]
     return Snapshot(
-        workspace=Workspace(catalog, runs, snapshots),
+        workspace=Workspace(catalog, runs, snapshots, collections, gate),
         version=version,
         loaded_at=datetime.now(UTC),
         sources_modified_at=modified,

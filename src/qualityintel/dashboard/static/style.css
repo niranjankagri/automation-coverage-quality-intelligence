@@ -191,3 +191,15 @@ figure.chart figcaption { display: grid; gap: 2px; margin-bottom: 6px; }
 section.pipeline { margin: 0 0 24px; }
 section.pipeline h2 .badge { vertical-align: middle; }
 tr.missing td { color: var(--bad); font-weight: 600; }
+.readiness { border: 1px solid var(--border); border-left-width: 6px; border-radius: var(--radius); padding: 12px 16px; margin: 0 0 20px; background: var(--surface); }
+.readiness.ready { border-left-color: var(--good); }
+.readiness.at-risk, .readiness.unknown { border-left-color: var(--warn); }
+.readiness.blocked { border-left-color: var(--bad); }
+.readiness h2 { margin-top: 0; }
+.readiness details { margin: 8px 0 12px; }
+.readiness summary { cursor: pointer; font-weight: 600; }
+.badge.Ready { background: var(--good-bg); color: var(--good); }
+.badge.At-risk, .badge.Unknown { background: var(--warn-bg); color: var(--warn); }
+.badge.Blocked { background: var(--bad-bg); color: var(--bad); }
+tr.failing-rule td { color: var(--bad); }
+

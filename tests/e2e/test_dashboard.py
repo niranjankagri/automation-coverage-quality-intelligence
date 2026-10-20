@@ -345,3 +345,13 @@ def test_the_repository_selection_is_kept_across_pages_and_reloads(pipelines_pag
     expect(page).to_have_url(re.compile(r"#/pipelines\?.*repository="))
     page.reload()
     expect(page.get_by_label("Repository")).to_have_value("niranjankagri/cypress-typescript-framework")
+
+
+def test_overview_shows_the_release_status_with_its_reasons(page: Page) -> None:
+    """Without a gate the status is Unknown, never Ready; the numbers are the API's."""
+    page.goto("/#/")
+    panel = page.get_by_role("region", name="Release status")
+    expect(panel).to_contain_text("Unknown")
+    expect(panel).to_contain_text("no release gate is configured")
+    expect(card(page, "Test executions")).to_contain_text("221")
+    expect(card(page, "Flaky candidates")).to_contain_text("4")

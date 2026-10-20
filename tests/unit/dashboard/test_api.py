@@ -145,6 +145,7 @@ def test_openapi_documentation_lists_every_route(client: TestClient) -> None:
         "/api/status",
         "/api/facets",
         "/api/summary",
+        "/api/readiness",
         "/api/requirements",
         "/api/requirements/{requirement_id}",
         "/api/tests",
@@ -265,3 +266,35 @@ def test_status_check_reloads_live_data_and_reports_failures(tmp_path: Path) -> 
     assert broken["stale"] is True
     assert broken["version"] == after["version"]
     assert client.get("/api/health").json()["runs"] == 2  # the last good data is still served
+
+
+@pytest.mark.parametrize(
+    ("gate", "state", "reason"),
+    [
+        (None, "unknown", "no release gate is configured"),
+        ("release.toml", "blocked", "rule failed: critical requirements without automation"),
+        ("nightly.toml", "at risk", "4 flaky candidate(s) in the scope"),
+    ],
+)
+def test_readiness_on_the_real_samples(gate: str | None, state: str, reason: str) -> None:
+    """No gate: unknown; the release gate blocks; the nightly passes but the flaky candidates put it at risk."""
+    from qualityintel.gates.config import load_gate_config
+
+    workspace, _ = Workspace.load(SAMPLES / "catalog.toml", [SAMPLES / "results"])
+    workspace.gate = load_gate_config(SAMPLES / "gates" / gate) if gate else None
+    body = TestClient(create_app(workspace)).get("/api/readiness").json()
+
+    assert body["state"] == state
+    assert any(r.startswith(reason) for r in body["reasons"]), body["reasons"]
+    assert body["executions"] == 221
+    assert body["pass_rate"]["text"] == "100.0 % (221/221)"
+    assert body["requirement_coverage"]["text"] == "90.5 % (38/42)"
+    assert body["critical_without_automation"] == 2
+    assert body["flaky_candidates"] == 4
+
+
+def test_readiness_follows_the_chosen_scope(client: TestClient) -> None:
+    """Numbers are for the scope in the query, like every other endpoint."""
+    body = client.get("/api/readiness", params={"framework": "robot-framework"}).json()
+
+    assert body["executions"] == 30

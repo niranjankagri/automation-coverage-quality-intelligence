@@ -160,11 +160,46 @@ function idChips(ids, tone) {
   return h("ul", { class: "chips" }, ids.map((id) => h("li", {}, h("a", { href: link(`/requirement/${encodeURIComponent(id)}`) }, h("span", { class: `badge ${tone}` }, id)))));
 }
 
+const STATE_TEXT = { ready: "Ready", "at risk": "At risk", blocked: "Blocked", unknown: "Unknown" };
+
+function readinessPanel(r) {
+  return h(
+    "section",
+    { class: `readiness ${r.state.replaceAll(" ", "-")}`, "aria-labelledby": "readiness-title" },
+    h("h2", { id: "readiness-title" }, "Release status: ", badge(STATE_TEXT[r.state] ?? r.state)),
+    h("p", { class: "sub" }, r.gate_name ? `Decided by the gate "${r.gate_name}" on the scope chosen above, plus the warnings it does not measure (docs/readiness.md).` : "No release gate is configured for this dashboard."),
+    h("ul", { class: "reasons" }, r.reasons.map((reason) => h("li", {}, reason))),
+    r.rules.length
+      ? h(
+          "details",
+          {},
+          h("summary", {}, `Gate rules (${r.rules.filter((x) => x.fails_gate).length} failing of ${r.rules.length})`),
+          table(
+            ["Rule", "Actual", "Expected", "Result"],
+            r.rules.map((x) => h("tr", { class: x.fails_gate ? "failing-rule" : null }, h("td", {}, x.name, h("span", { class: "sub" }, x.explanation)), h("td", {}, x.actual), h("td", {}, x.expected), h("td", {}, x.fails_gate ? "fail" : x.status))),
+            "",
+          ),
+        )
+      : null,
+    h(
+      "div",
+      { class: "cards" },
+      // Coverage and pass rate have their own cards below; these are the figures only shown here
+      countCard("Test executions", r.executions, link("/tests"), "latest run per context, in scope"),
+      countCard("Critical without automation", r.critical_without_automation, link("/requirements", { criticality: "critical" })),
+      countCard("Flaky candidates", r.flaky_candidates, link("/stability")),
+      countCard("Incomplete pipelines (7 days)", r.incomplete_pipelines, link("/pipelines")),
+      countCard("Latest collection", r.latest_collection_at ? formatDate(r.latest_collection_at) : "–", null, r.latest_collection_at ? "results collected from CI" : "no collection recorded"),
+    ),
+  );
+}
+
 async function overview() {
-  const s = await api(`/api/summary${apiQuery(FILTERS)}`);
+  const [s, r] = await Promise.all([api(`/api/summary${apiQuery(FILTERS)}`), api(`/api/readiness${apiQuery(FILTERS)}`)]);
   const c = s.outcome_counts;
   return [
     h("h1", {}, "Overview"),
+    readinessPanel(r),
     h("p", { class: "lead" }, "Coverage comes from the requirement catalog; the pass rate comes from the latest run of each framework, environment and browser. They are separate numbers on purpose."),
     h("h2", {}, "Coverage"),
     h(

@@ -30,6 +30,7 @@ from qualityintel.traceability.report import RunFilters
 from qualityintel.workspace import (
     Facets,
     PipelinesView,
+    ReadinessView,
     RequirementDetail,
     RequirementRow,
     RunDetail,
@@ -272,6 +273,11 @@ def create_app(data: Workspace | LiveData, credentials: tuple[str, str] | None =
     def summary(chosen: FullScope) -> Summary:
         """Coverage metrics, gaps and the execution snapshot."""
         return current().summary(chosen)
+
+    @app.get("/api/readiness", tags=["coverage"])
+    def readiness(chosen: FullScope) -> ReadinessView:
+        """Release status of the scope (ready / at risk / blocked / unknown) by the documented policy."""
+        return current().readiness(chosen, stale=live.status().stale)
 
     @app.get("/api/requirements", tags=["coverage"])
     def requirements(chosen: FullScope, status: str | None = None) -> tuple[RequirementRow, ...]:

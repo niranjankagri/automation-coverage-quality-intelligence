@@ -119,6 +119,9 @@ def build_parser() -> argparse.ArgumentParser:
         "--database", type=Path, help="also load every run stored in this history database"
     )
     dashboard.add_argument(
+        "--gate", type=Path, metavar="FILE", help="release gate whose decision the overview shows (TOML)"
+    )
+    dashboard.add_argument(
         "--refresh",
         type=float,
         metavar="SECONDS",
@@ -713,7 +716,7 @@ def _cmd_dashboard(args: argparse.Namespace) -> int:
     refresh = settings.refresh_seconds if args.refresh is None else args.refresh
     if refresh < 0:
         raise UsageError("--refresh must be 0 (off) or a number of seconds")
-    sources = Sources(args.catalog, args.database, tuple(args.results), context_from(args))
+    sources = Sources(args.catalog, args.database, tuple(args.results), context_from(args), args.gate)
     try:
         first = load_snapshot(sources)
     except LoadError as error:
