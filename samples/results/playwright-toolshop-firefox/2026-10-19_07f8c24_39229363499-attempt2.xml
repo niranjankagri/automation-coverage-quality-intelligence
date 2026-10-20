@@ -1,0 +1,336 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites id="" name="" tests="24" failures="0" skipped="0" errors="2" time="110.2554208984375">
+  <testsuite name="ui/catalog.spec.ts" timestamp="2026-10-19T10:08:05Z" tests="8" failures="0" skipped="0" time="23.944" errors="2">
+    <properties>
+      <property name="build" value="07f8c24" />
+      <property name="framework" value="playwright" />
+      <property name="environment" value="ci" />
+      <property name="platform" value="linux" />
+      <property name="browser" value="firefox" />
+    </properties>
+    <testcase name="Product catalogue › home page shows a full first page of products" classname="ui/catalog.spec.ts" time="2.319">
+      <error message="apiRequestContext.post: Timeout 15000ms exceeded." type="TimeoutError">
+  [firefox] › ui\catalog.spec.ts:10:7 › Product catalogue › home page shows a full first page of products @catalog @smoke 
+
+    TimeoutError: apiRequestContext.post: Timeout 15000ms exceeded.
+    Call log:
+      - → POST https://api.practicesoftwaretesting.com/users/register
+        - user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:157.0) Gecko/20100101 Firefox/157.0
+        - accept: application/json
+        - accept-encoding: gzip,deflate,br
+        - content-type: application/json
+        - content-length: 271
+
+
+       at ../src/api/AuthApi.ts:16
+
+      14 |   /** POST /users/register: creates a customer account. Returns the raw response (201 on success). */
+      15 |   async register(user: TestUser): Promise&lt;APIResponse&gt; {
+    &gt; 16 |     return this.request.post('/users/register', {
+         |                         ^
+      17 |       data: {
+      18 |         first_name: user.firstName,
+      19 |         last_name: user.lastName,
+        at AuthApi.register (/home/runner/work/playwright-typescript-framework/playwright-typescript-framework/src/api/AuthApi.ts:16:25)
+        at Object.exports.test._test.test.extend.testUser.scope (/home/runner/work/playwright-typescript-framework/playwright-typescript-framework/src/fixtures/test.ts:71:51)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\ccf0bb029ca5d904f1f664022c5787fe1c2c7c93.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\c6faa4f23820933ab5c37f474af48710210c9f29.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\6ad2c1025f835ae4e5e1b3df37e1ad42837f19e6.zip
+    Usage:
+
+        npx playwright show-trace C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\6ad2c1025f835ae4e5e1b3df37e1ad42837f19e6.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    TimeoutError: apiRequestContext.post: Timeout 15000ms exceeded.
+    Call log:
+      - → POST https://api.practicesoftwaretesting.com/users/register
+        - user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:157.0) Gecko/20100101 Firefox/157.0
+        - accept: application/json
+        - accept-encoding: gzip,deflate,br
+        - content-type: application/json
+        - content-length: 271
+
+
+       at ../src/api/AuthApi.ts:16
+
+      14 |   /** POST /users/register: creates a customer account. Returns the raw response (201 on success). */
+      15 |   async register(user: TestUser): Promise&lt;APIResponse&gt; {
+    &gt; 16 |     return this.request.post('/users/register', {
+         |                         ^
+      17 |       data: {
+      18 |         first_name: user.firstName,
+      19 |         last_name: user.lastName,
+        at AuthApi.register (/home/runner/work/playwright-typescript-framework/playwright-typescript-framework/src/api/AuthApi.ts:16:25)
+        at Object.exports.test._test.test.extend.testUser.scope (/home/runner/work/playwright-typescript-framework/playwright-typescript-framework/src/fixtures/test.ts:71:51)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\e167463d106583c3d8c95641d9a8c9ee27a16f5b.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\b0912f01e2fd9214518db1b377fa3a83fe6c1db5.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\382fb41b60468ef07b35f77d0ac9e1433dc7af57.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\b5d0485a6162a70df3537dba9c4db8e85f005735.zip
+    Usage:
+
+        npx playwright show-trace C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\b5d0485a6162a70df3537dba9c4db8e85f005735.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Retry #2 ───────────────────────────────────────────────────────────────────────────────────────
+
+    TimeoutError: apiRequestContext.post: Timeout 15000ms exceeded.
+    Call log:
+      - → POST https://api.practicesoftwaretesting.com/users/register
+        - user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:157.0) Gecko/20100101 Firefox/157.0
+        - accept: application/json
+        - accept-encoding: gzip,deflate,br
+        - content-type: application/json
+        - content-length: 271
+
+
+       at ../src/api/AuthApi.ts:16
+
+      14 |   /** POST /users/register: creates a customer account. Returns the raw response (201 on success). */
+      15 |   async register(user: TestUser): Promise&lt;APIResponse&gt; {
+    &gt; 16 |     return this.request.post('/users/register', {
+         |                         ^
+      17 |       data: {
+      18 |         first_name: user.firstName,
+      19 |         last_name: user.lastName,
+        at AuthApi.register (/home/runner/work/playwright-typescript-framework/playwright-typescript-framework/src/api/AuthApi.ts:16:25)
+        at Object.exports.test._test.test.extend.testUser.scope (/home/runner/work/playwright-typescript-framework/playwright-typescript-framework/src/fixtures/test.ts:71:51)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\1673a993ce655ce9f696eec701383c1c38229f9f.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\4c845bca556a1d1e5b0d13592b7bad125ee16205.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\bbef05253990ac700b32bb107c446e7504e428c9.zip
+    Usage:
+
+        npx playwright show-trace C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\bbef05253990ac700b32bb107c446e7504e428c9.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+</error>
+    </testcase>
+    <testcase name="Product catalogue › search shows only matching products" classname="ui/catalog.spec.ts" time="2.284">
+      <error message="apiRequestContext.post: Timeout 15000ms exceeded." type="TimeoutError">
+  [firefox] › ui\catalog.spec.ts:18:7 › Product catalogue › search shows only matching products @catalog @smoke 
+
+    TimeoutError: apiRequestContext.post: Timeout 15000ms exceeded.
+    Call log:
+      - → POST https://api.practicesoftwaretesting.com/users/register
+        - user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:157.0) Gecko/20100101 Firefox/157.0
+        - accept: application/json
+        - accept-encoding: gzip,deflate,br
+        - content-type: application/json
+        - content-length: 271
+
+
+       at ../src/api/AuthApi.ts:16
+
+      14 |   /** POST /users/register: creates a customer account. Returns the raw response (201 on success). */
+      15 |   async register(user: TestUser): Promise&lt;APIResponse&gt; {
+    &gt; 16 |     return this.request.post('/users/register', {
+         |                         ^
+      17 |       data: {
+      18 |         first_name: user.firstName,
+      19 |         last_name: user.lastName,
+        at AuthApi.register (/home/runner/work/playwright-typescript-framework/playwright-typescript-framework/src/api/AuthApi.ts:16:25)
+        at Object.exports.test._test.test.extend.testUser.scope (/home/runner/work/playwright-typescript-framework/playwright-typescript-framework/src/fixtures/test.ts:71:51)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\fccee4413ff9b7666c7d1ff37040f3f6c8cdd142.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\e72db8fdc60f6473c3b1db3dfbf2e13d49c1534b.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\97ebd31fd17775a0faffa1f2b2e4f7ca8ef1134d.zip
+    Usage:
+
+        npx playwright show-trace C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\97ebd31fd17775a0faffa1f2b2e4f7ca8ef1134d.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    TimeoutError: apiRequestContext.post: Timeout 15000ms exceeded.
+    Call log:
+      - → POST https://api.practicesoftwaretesting.com/users/register
+        - user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:157.0) Gecko/20100101 Firefox/157.0
+        - accept: application/json
+        - accept-encoding: gzip,deflate,br
+        - content-type: application/json
+        - content-length: 271
+
+
+       at ../src/api/AuthApi.ts:16
+
+      14 |   /** POST /users/register: creates a customer account. Returns the raw response (201 on success). */
+      15 |   async register(user: TestUser): Promise&lt;APIResponse&gt; {
+    &gt; 16 |     return this.request.post('/users/register', {
+         |                         ^
+      17 |       data: {
+      18 |         first_name: user.firstName,
+      19 |         last_name: user.lastName,
+        at AuthApi.register (/home/runner/work/playwright-typescript-framework/playwright-typescript-framework/src/api/AuthApi.ts:16:25)
+        at Object.exports.test._test.test.extend.testUser.scope (/home/runner/work/playwright-typescript-framework/playwright-typescript-framework/src/fixtures/test.ts:71:51)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\7beed0fcbad61303278aa65f3d727e82e3fd23e6.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\7095bc76e96f10a74cdc4b6f6a306eeff0f8c20d.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\9f00e407a79136cbacd1977de7481bbd8a551cc4.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\6f6a914588259726a2241daa0376c178e3985d4f.zip
+    Usage:
+
+        npx playwright show-trace C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\6f6a914588259726a2241daa0376c178e3985d4f.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Retry #2 ───────────────────────────────────────────────────────────────────────────────────────
+
+    TimeoutError: apiRequestContext.post: Timeout 15000ms exceeded.
+    Call log:
+      - → POST https://api.practicesoftwaretesting.com/users/register
+        - user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:157.0) Gecko/20100101 Firefox/157.0
+        - accept: application/json
+        - accept-encoding: gzip,deflate,br
+        - content-type: application/json
+        - content-length: 271
+
+
+       at ../src/api/AuthApi.ts:16
+
+      14 |   /** POST /users/register: creates a customer account. Returns the raw response (201 on success). */
+      15 |   async register(user: TestUser): Promise&lt;APIResponse&gt; {
+    &gt; 16 |     return this.request.post('/users/register', {
+         |                         ^
+      17 |       data: {
+      18 |         first_name: user.firstName,
+      19 |         last_name: user.lastName,
+        at AuthApi.register (/home/runner/work/playwright-typescript-framework/playwright-typescript-framework/src/api/AuthApi.ts:16:25)
+        at Object.exports.test._test.test.extend.testUser.scope (/home/runner/work/playwright-typescript-framework/playwright-typescript-framework/src/fixtures/test.ts:71:51)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\22508ada0528020c1bf24957a8e5c6e35402a4fa.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\067af74388ff4a6f9883f116b94cf11ccc40a7ca.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\30dd277973a3412646ea4e3bc3f4ef03855736fe.zip
+    Usage:
+
+        npx playwright show-trace C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\30dd277973a3412646ea4e3bc3f4ef03855736fe.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+</error>
+    </testcase>
+    <testcase name="Product catalogue › search without a match says so" classname="ui/catalog.spec.ts" time="5.245">
+</testcase>
+    <testcase name="Product catalogue › category filter shows the same products as the API" classname="ui/catalog.spec.ts" time="5.485">
+</testcase>
+    <testcase name="Product catalogue › sort &quot;Name (A - Z)&quot; orders the products by name" classname="ui/catalog.spec.ts" time="1.923">
+</testcase>
+    <testcase name="Product catalogue › sort &quot;Name (Z - A)&quot; orders the products by name" classname="ui/catalog.spec.ts" time="2.253">
+</testcase>
+    <testcase name="Product catalogue › sort &quot;Price (Low - High)&quot; orders the products by price" classname="ui/catalog.spec.ts" time="2.382">
+</testcase>
+    <testcase name="Product catalogue › sort &quot;Price (High - Low)&quot; orders the products by price" classname="ui/catalog.spec.ts" time="2.053">
+</testcase>
+  </testsuite>
+  <testsuite name="ui/checkout.spec.ts" timestamp="2026-10-19T10:08:05Z" tests="4" failures="0" skipped="0" time="42.189" errors="0">
+    <properties>
+      <property name="build" value="07f8c24" />
+      <property name="framework" value="playwright" />
+      <property name="environment" value="ci" />
+      <property name="platform" value="linux" />
+      <property name="browser" value="firefox" />
+    </properties>
+    <testcase name="Checkout as a logged-in customer › customer can order two products" classname="ui/checkout.spec.ts" time="28.808">
+</testcase>
+    <testcase name="Checkout as a logged-in customer › cart line prices and total add up" classname="ui/checkout.spec.ts" time="6.971">
+</testcase>
+    <testcase name="Checkout as a guest › guest is asked to sign in at checkout" classname="ui/checkout.spec.ts" time="3.672">
+</testcase>
+    <testcase name="Checkout as a guest › a cart filled through the API shows up in the browser" classname="ui/checkout.spec.ts" time="2.738">
+</testcase>
+  </testsuite>
+  <testsuite name="ui/login.spec.ts" timestamp="2026-10-19T10:08:05Z" tests="4" failures="0" skipped="0" time="11.439" errors="0">
+    <properties>
+      <property name="build" value="07f8c24" />
+      <property name="framework" value="playwright" />
+      <property name="environment" value="ci" />
+      <property name="platform" value="linux" />
+      <property name="browser" value="firefox" />
+    </properties>
+    <testcase name="Login › customer can log in and lands on the account page" classname="ui/login.spec.ts" time="3.326">
+</testcase>
+    <testcase name="Login › wrong password is rejected with a message" classname="ui/login.spec.ts" time="1.946">
+</testcase>
+    <testcase name="Login › empty form shows a message for each required field" classname="ui/login.spec.ts" time="1.238">
+</testcase>
+    <testcase name="Login › customer can sign out again" classname="ui/login.spec.ts" time="4.929">
+</testcase>
+  </testsuite>
+  <testsuite name="ui/network.spec.ts" timestamp="2026-10-19T10:08:05Z" tests="5" failures="0" skipped="0" time="7.357" errors="0">
+    <properties>
+      <property name="build" value="07f8c24" />
+      <property name="framework" value="playwright" />
+      <property name="environment" value="ci" />
+      <property name="platform" value="linux" />
+      <property name="browser" value="firefox" />
+    </properties>
+    <testcase name="Catalogue with a mocked API › renders exactly the products the API sends" classname="ui/network.spec.ts" time="1.324">
+</testcase>
+    <testcase name="Catalogue with a mocked API › shows a message when the API returns no products" classname="ui/network.spec.ts" time="1.028">
+</testcase>
+    <testcase name="Catalogue with a mocked API › a failing product API leaves the rest of the page working" classname="ui/network.spec.ts" time="0.853">
+</testcase>
+    <testcase name="Requests the front end sends › sorting asks the API for sorted data" classname="ui/network.spec.ts" time="2.016">
+</testcase>
+    <testcase name="Requests the front end sends › search sends the search term to the search endpoint" classname="ui/network.spec.ts" time="2.136">
+</testcase>
+  </testsuite>
+  <testsuite name="ui/product.spec.ts" timestamp="2026-10-19T10:08:05Z" tests="3" failures="0" skipped="0" time="8.055" errors="0">
+    <properties>
+      <property name="build" value="07f8c24" />
+      <property name="framework" value="playwright" />
+      <property name="environment" value="ci" />
+      <property name="platform" value="linux" />
+      <property name="browser" value="firefox" />
+    </properties>
+    <testcase name="Product details › card and detail page show the same name and price" classname="ui/product.spec.ts" time="2.461">
+</testcase>
+    <testcase name="Product details › adding a product with a quantity updates the cart badge" classname="ui/product.spec.ts" time="3.61">
+</testcase>
+    <testcase name="Product details › the + button raises the quantity by one" classname="ui/product.spec.ts" time="1.984">
+</testcase>
+  </testsuite>
+</testsuites>

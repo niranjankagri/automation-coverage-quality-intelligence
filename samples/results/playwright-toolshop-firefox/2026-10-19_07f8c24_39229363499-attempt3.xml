@@ -1,0 +1,96 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites id="" name="" tests="24" failures="0" skipped="0" errors="0" time="51.16623095703125">
+  <testsuite name="ui/catalog.spec.ts" timestamp="2026-10-19T10:11:36Z" tests="8" failures="0" skipped="0" time="27.685" errors="0">
+    <properties>
+      <property name="build" value="07f8c24" />
+      <property name="framework" value="playwright" />
+      <property name="environment" value="ci" />
+      <property name="platform" value="linux" />
+      <property name="browser" value="firefox" />
+    </properties>
+    <testcase name="Product catalogue › home page shows a full first page of products" classname="ui/catalog.spec.ts" time="4.644">
+</testcase>
+    <testcase name="Product catalogue › search shows only matching products" classname="ui/catalog.spec.ts" time="6.631">
+</testcase>
+    <testcase name="Product catalogue › search without a match says so" classname="ui/catalog.spec.ts" time="2.661">
+</testcase>
+    <testcase name="Product catalogue › category filter shows the same products as the API" classname="ui/catalog.spec.ts" time="3.407">
+</testcase>
+    <testcase name="Product catalogue › sort &quot;Name (A - Z)&quot; orders the products by name" classname="ui/catalog.spec.ts" time="2.662">
+</testcase>
+    <testcase name="Product catalogue › sort &quot;Name (Z - A)&quot; orders the products by name" classname="ui/catalog.spec.ts" time="2.36">
+</testcase>
+    <testcase name="Product catalogue › sort &quot;Price (Low - High)&quot; orders the products by price" classname="ui/catalog.spec.ts" time="2.404">
+</testcase>
+    <testcase name="Product catalogue › sort &quot;Price (High - Low)&quot; orders the products by price" classname="ui/catalog.spec.ts" time="2.916">
+</testcase>
+  </testsuite>
+  <testsuite name="ui/checkout.spec.ts" timestamp="2026-10-19T10:11:36Z" tests="4" failures="0" skipped="0" time="28.071" errors="0">
+    <properties>
+      <property name="build" value="07f8c24" />
+      <property name="framework" value="playwright" />
+      <property name="environment" value="ci" />
+      <property name="platform" value="linux" />
+      <property name="browser" value="firefox" />
+    </properties>
+    <testcase name="Checkout as a logged-in customer › customer can order two products" classname="ui/checkout.spec.ts" time="11.56">
+</testcase>
+    <testcase name="Checkout as a logged-in customer › cart line prices and total add up" classname="ui/checkout.spec.ts" time="8.389">
+</testcase>
+    <testcase name="Checkout as a guest › guest is asked to sign in at checkout" classname="ui/checkout.spec.ts" time="4.692">
+</testcase>
+    <testcase name="Checkout as a guest › a cart filled through the API shows up in the browser" classname="ui/checkout.spec.ts" time="3.43">
+</testcase>
+  </testsuite>
+  <testsuite name="ui/login.spec.ts" timestamp="2026-10-19T10:11:36Z" tests="4" failures="0" skipped="0" time="14.695" errors="0">
+    <properties>
+      <property name="build" value="07f8c24" />
+      <property name="framework" value="playwright" />
+      <property name="environment" value="ci" />
+      <property name="platform" value="linux" />
+      <property name="browser" value="firefox" />
+    </properties>
+    <testcase name="Login › customer can log in and lands on the account page" classname="ui/login.spec.ts" time="4.511">
+</testcase>
+    <testcase name="Login › wrong password is rejected with a message" classname="ui/login.spec.ts" time="2.626">
+</testcase>
+    <testcase name="Login › empty form shows a message for each required field" classname="ui/login.spec.ts" time="1.705">
+</testcase>
+    <testcase name="Login › customer can sign out again" classname="ui/login.spec.ts" time="5.853">
+</testcase>
+  </testsuite>
+  <testsuite name="ui/network.spec.ts" timestamp="2026-10-19T10:11:36Z" tests="5" failures="0" skipped="0" time="10.233" errors="0">
+    <properties>
+      <property name="build" value="07f8c24" />
+      <property name="framework" value="playwright" />
+      <property name="environment" value="ci" />
+      <property name="platform" value="linux" />
+      <property name="browser" value="firefox" />
+    </properties>
+    <testcase name="Catalogue with a mocked API › renders exactly the products the API sends" classname="ui/network.spec.ts" time="1.686">
+</testcase>
+    <testcase name="Catalogue with a mocked API › shows a message when the API returns no products" classname="ui/network.spec.ts" time="2.441">
+</testcase>
+    <testcase name="Catalogue with a mocked API › a failing product API leaves the rest of the page working" classname="ui/network.spec.ts" time="1.566">
+</testcase>
+    <testcase name="Requests the front end sends › sorting asks the API for sorted data" classname="ui/network.spec.ts" time="2.001">
+</testcase>
+    <testcase name="Requests the front end sends › search sends the search term to the search endpoint" classname="ui/network.spec.ts" time="2.539">
+</testcase>
+  </testsuite>
+  <testsuite name="ui/product.spec.ts" timestamp="2026-10-19T10:11:36Z" tests="3" failures="0" skipped="0" time="11.041" errors="0">
+    <properties>
+      <property name="build" value="07f8c24" />
+      <property name="framework" value="playwright" />
+      <property name="environment" value="ci" />
+      <property name="platform" value="linux" />
+      <property name="browser" value="firefox" />
+    </properties>
+    <testcase name="Product details › card and detail page show the same name and price" classname="ui/product.spec.ts" time="3.665">
+</testcase>
+    <testcase name="Product details › adding a product with a quantity updates the cart badge" classname="ui/product.spec.ts" time="4.63">
+</testcase>
+    <testcase name="Product details › the + button raises the quantity by one" classname="ui/product.spec.ts" time="2.746">
+</testcase>
+  </testsuite>
+</testsuites>
