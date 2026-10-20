@@ -75,7 +75,7 @@ nav a[aria-current="page"] { background: var(--neutral-bg); font-weight: 600; }
   padding: 12px 24px; border-bottom: 1px solid var(--border);
 }
 .filters label { display: grid; gap: 2px; font-size: 13px; color: var(--muted); }
-select, input[type="search"] {
+select, input[type="search"], input[type="text"] {
   min-width: 140px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px;
   background: var(--surface); color: var(--text); font: inherit;
 }
@@ -181,3 +181,8 @@ figure.chart figcaption { display: grid; gap: 2px; margin-bottom: 6px; }
   .filters label { flex: 1 1 140px; }
   .card .value { font-size: 22px; }
 }
+.badge.complete { background: var(--good-bg); color: var(--good); }
+.badge.incomplete { background: var(--bad-bg); color: var(--bad); }
+section.pipeline { margin: 0 0 24px; }
+section.pipeline h2 .badge { vertical-align: middle; }
+tr.missing td { color: var(--bad); font-weight: 600; }

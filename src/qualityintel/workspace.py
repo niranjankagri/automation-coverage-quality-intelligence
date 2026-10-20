@@ -29,9 +29,10 @@ from qualityintel.ingest.catalog_file import load_catalog
 from qualityintel.models.catalog import Catalog, Requirement
 from qualityintel.models.enums import AutomationStatus, Outcome
 from qualityintel.models.metrics import Ratio, execution_pass_rate
-from qualityintel.models.results import RunContext, TestResult, TestRun
+from qualityintel.models.results import PipelineJob, RunContext, TestResult, TestRun
 from qualityintel.traceability.coverage import UNSPECIFIED, Filters
 from qualityintel.traceability.matching import match_results
+from qualityintel.traceability.pipelines import PipelineExecution, pipeline_execution, pipeline_ids
 from qualityintel.traceability.report import RunFilters, TraceabilityReport, build_report
 
 
@@ -66,6 +67,42 @@ class RunView(View):
     started_at: datetime | None
     counts: dict[Outcome, int]
     pass_rate: RatioView
+    pipeline: PipelineJob | None = None
+
+
+class PipelineJobView(View):
+    """One job of a pipeline execution: its highest attempt."""
+
+    name: str
+    attempt: int
+    expected: bool
+    run_ids: tuple[str, ...]
+    superseded_runs: int
+    counts: dict[Outcome, int]
+    pass_rate: RatioView
+
+
+class PipelineView(View):
+    """One pipeline execution (docs/pipelines.md)."""
+
+    pipeline_id: str
+    state: str
+    branch: str | None
+    commit: str | None
+    started_at: datetime | None
+    jobs: tuple[PipelineJobView, ...]
+    missing: tuple[str, ...]
+    problems: tuple[str, ...]
+    counts: dict[Outcome, int]
+    pass_rate: RatioView
+
+
+class PipelinesView(View):
+    """Every pipeline execution in scope, newest first, judged against the expected jobs."""
+
+    expected_jobs: tuple[str, ...]
+    pipelines: tuple[PipelineView, ...]
+    notes: tuple[str, ...]
 
 
 class FailureView(View):
@@ -474,6 +511,26 @@ class Workspace:
         results = sorted(run.results, key=lambda r: (order[r.outcome], r.key))
         return RunDetail(run=_run_view(run), executions=tuple(_execution_view(run, r) for r in results))
 
+    def pipelines(self, scope: Scope = EVERYTHING, expected_jobs: Sequence[str] = ()) -> PipelinesView:
+        """Pipeline executions with at least one run in scope, each assembled from all its runs.
+
+        A filter such as ``browser`` chooses which executions are listed, but never removes jobs
+        from an execution: a pipeline filtered to its Chrome job would look incomplete.
+        """
+        expected = tuple(dict.fromkeys(job for job in expected_jobs if job))
+        executions = [pipeline_execution(self.runs, pid, expected) for pid in pipeline_ids(self._runs(scope))]
+        views = sorted(
+            (_pipeline_view(e) for e in executions), key=lambda v: (v.started_at is None, v.started_at)
+        )
+        notes = []
+        if not expected:
+            notes.append(
+                "No expected jobs given: an execution counts as incomplete only when its jobs disagree on "
+                "branch or commit or report no results. Name the jobs the pipeline must have to find "
+                "executions with missing jobs."
+            )
+        return PipelinesView(expected_jobs=expected, pipelines=tuple(reversed(views)), notes=tuple(notes))
+
     def stability(
         self, scope: Scope = EVERYTHING, settings: HistorySettings = DEFAULTS, include_stable: bool = False
     ) -> StabilityView:
@@ -649,6 +706,41 @@ def _run_view(run: TestRun) -> RunView:
         source=run.source,
         context=run.context,
         started_at=run.started_at,
+        counts=counts,
+        pass_rate=RatioView.of(execution_pass_rate(counts)),
+        pipeline=run.pipeline,
+    )
+
+
+def _pipeline_view(execution: PipelineExecution) -> PipelineView:
+    """Pipeline execution summary with per-job counts."""
+    counts = dict.fromkeys(Outcome, 0)
+    jobs = []
+    for job in execution.jobs:
+        job_counts = job.outcome_counts
+        for outcome, n in job_counts.items():
+            counts[outcome] += n
+        jobs.append(
+            PipelineJobView(
+                name=job.name,
+                attempt=job.attempt,
+                expected=job.expected,
+                run_ids=tuple(run.run_id for run in job.runs),
+                superseded_runs=len(job.superseded),
+                counts=job_counts,
+                pass_rate=RatioView.of(execution_pass_rate(job_counts)),
+            )
+        )
+    starts = [run.started_at for run in execution.runs if run.started_at is not None]
+    return PipelineView(
+        pipeline_id=execution.pipeline_id,
+        state=execution.state.value,
+        branch=execution.branch,
+        commit=execution.commit,
+        started_at=min(starts) if starts else None,
+        jobs=tuple(jobs),
+        missing=execution.missing,
+        problems=execution.problems,
         counts=counts,
         pass_rate=RatioView.of(execution_pass_rate(counts)),
     )

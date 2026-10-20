@@ -23,6 +23,7 @@ from qualityintel.traceability.coverage import UNSPECIFIED, Filters
 from qualityintel.traceability.report import RunFilters
 from qualityintel.workspace import (
     Facets,
+    PipelinesView,
     RequirementDetail,
     RequirementRow,
     RunDetail,
@@ -199,6 +200,17 @@ def create_app(workspace: Workspace) -> FastAPI:
     def runs(chosen: RunScope) -> tuple[RunView, ...]:
         """Imported runs, newest first."""
         return workspace.run_list(chosen)
+
+    @app.get("/api/pipelines", tags=["executions"])
+    def pipelines(
+        chosen: RunScope,
+        jobs: Annotated[
+            str | None, Query(max_length=2000, description="expected jobs, comma-separated")
+        ] = None,
+    ) -> PipelinesView:
+        """Pipeline executions, newest first; with ``jobs``, the ones missing a job are incomplete."""
+        expected = [job.strip() for job in (jobs or "").split(",") if job.strip()]
+        return workspace.pipelines(chosen, expected)
 
     @app.get("/api/runs/{run_id}", tags=["executions"])
     def run(run_id: str) -> RunDetail:

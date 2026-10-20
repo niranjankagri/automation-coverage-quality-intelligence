@@ -329,8 +329,8 @@ async function runsView() {
     h("h1", {}, "Runs"),
     h("p", { class: "lead" }, `${rows.length} imported run(s), newest first.`),
     table(
-      ["Run", "Framework", "Browser", "Build", "Started", ...OUTCOMES.map((o) => ({ label: o, num: true })), { label: "Pass rate", num: true }],
-      rows.map((r) => h("tr", {}, h("td", {}, h("a", { href: link(`/run/${r.run_id}`) }, r.source)), h("td", {}, r.context.framework ?? "–"), h("td", {}, r.context.browser ?? "–"), h("td", {}, r.context.build ?? "–"), h("td", { class: "nowrap" }, formatDate(r.started_at)), OUTCOMES.map((o) => h("td", { class: "num" }, r.counts[o])), h("td", { class: "num" }, r.pass_rate.text))),
+      ["Run", "Pipeline / job", "Framework", "Browser", "Build", "Started", ...OUTCOMES.map((o) => ({ label: o, num: true })), { label: "Pass rate", num: true }],
+      rows.map((r) => h("tr", {}, h("td", {}, h("a", { href: link(`/run/${r.run_id}`) }, r.source)), h("td", {}, pipelineLabel(r.pipeline)), h("td", {}, r.context.framework ?? "–"), h("td", {}, r.context.browser ?? "–"), h("td", {}, r.context.build ?? "–"), h("td", { class: "nowrap" }, formatDate(r.started_at)), OUTCOMES.map((o) => h("td", { class: "num" }, r.counts[o])), h("td", { class: "num" }, r.pass_rate.text))),
       "No runs match these filters.",
     ),
   ];
@@ -342,8 +342,56 @@ async function runDetail(runId) {
   return [
     h("p", {}, h("a", { href: link("/runs") }, "← Runs")),
     h("h1", {}, r.source),
-    h("dl", { class: "meta" }, h("dt", {}, "Framework"), h("dd", {}, r.context.framework ?? "–"), h("dt", {}, "Environment"), h("dd", {}, r.context.environment ?? "–"), h("dt", {}, "Browser / platform"), h("dd", {}, `${r.context.browser ?? "–"} / ${r.context.platform ?? "–"}`), h("dt", {}, "Build"), h("dd", {}, r.context.build ?? "–"), h("dt", {}, "Started"), h("dd", {}, formatDate(r.started_at)), h("dt", {}, "Pass rate"), h("dd", {}, r.pass_rate.text)),
+    h("dl", { class: "meta" }, h("dt", {}, "Framework"), h("dd", {}, r.context.framework ?? "–"), h("dt", {}, "Environment"), h("dd", {}, r.context.environment ?? "–"), h("dt", {}, "Browser / platform"), h("dd", {}, `${r.context.browser ?? "–"} / ${r.context.platform ?? "–"}`), h("dt", {}, "Build"), h("dd", {}, r.context.build ?? "–"), h("dt", {}, "Pipeline / job"), h("dd", {}, pipelineLabel(r.pipeline)), h("dt", {}, "Started"), h("dd", {}, formatDate(r.started_at)), h("dt", {}, "Pass rate"), h("dd", {}, r.pass_rate.text)),
     table(EXECUTION_HEADERS, executionRows(d.executions), "This run has no results."),
+  ];
+}
+
+/** "39238241112 / ui-chrome (attempt 2)", or a dash for a run that is not part of a pipeline. */
+function pipelineLabel(p) {
+  if (!p) return "–";
+  return `${p.pipeline_id} / ${p.job}${p.attempt > 1 ? ` (attempt ${p.attempt})` : ""}`;
+}
+
+async function pipelinesView() {
+  const jobs = route().params.get("jobs") ?? "";
+  const d = await api(`/api/pipelines${apiQuery(RUN_FILTERS, { jobs })}`);
+  const jobsInput = h("input", { id: "expected-jobs", type: "text", value: jobs, placeholder: "api, ui-chrome, ui-firefox", size: "40" });
+  jobsInput.addEventListener("change", () => (location.hash = link("/pipelines", { jobs: jobsInput.value.trim() })));
+  return [
+    h("h1", {}, "Pipelines"),
+    h("p", { class: "lead" }, `${d.pipelines.length} pipeline execution(s), newest first. A job's latest attempt counts; an execution is complete when every expected job reported results and all jobs tested the same commit.`),
+    h("div", { class: "toolbar" }, h("label", { for: "expected-jobs" }, "Expected jobs", jobsInput)),
+    d.notes.length ? h("div", { class: "notice", role: "note" }, d.notes.map((n) => h("p", {}, n))) : null,
+    d.pipelines.length === 0
+      ? h("p", {}, "No runs in scope belong to a pipeline (import with --pipeline and --job).")
+      : d.pipelines.map((p) =>
+          h(
+            "section",
+            { class: "pipeline", "aria-label": `Pipeline ${p.pipeline_id}` },
+            h("h2", {}, `Pipeline ${p.pipeline_id} `, badge(p.state)),
+            h("p", { class: "sub" }, [p.branch ? `branch ${p.branch}` : null, p.commit ? `commit ${p.commit}` : null, formatDate(p.started_at), `pass rate ${p.pass_rate.text}`].filter(Boolean).join(" · ")),
+            p.problems.length ? h("ul", { class: "reasons" }, p.problems.map((problem) => h("li", {}, problem))) : null,
+            table(
+              ["Job", "Attempt", { label: "Runs", num: true }, ...OUTCOMES.map((o) => ({ label: o, num: true })), { label: "Pass rate", num: true }],
+              [
+                ...p.jobs.map((j) =>
+                  h(
+                    "tr",
+                    {},
+                    h("td", {}, j.run_ids.length === 1 ? h("a", { href: link(`/run/${j.run_ids[0]}`) }, j.name) : j.name, j.expected ? null : h("span", { class: "sub" }, "not an expected job")),
+                    h("td", {}, String(j.attempt), j.superseded_runs ? h("span", { class: "sub" }, `${j.superseded_runs} earlier run(s) replaced`) : null),
+                    h("td", { class: "num" }, String(j.run_ids.length)),
+                    OUTCOMES.map((o) => h("td", { class: "num" }, j.counts[o])),
+                    h("td", { class: "num" }, j.pass_rate.text),
+                  ),
+                ),
+                ...p.missing.map((name) => h("tr", { class: "missing" }, h("td", {}, name), h("td", { colspan: String(3 + OUTCOMES.length) }, "missing: no results reported"))),
+              ],
+              "No jobs.",
+            ),
+          ),
+        ),
   ];
 }
 
@@ -585,6 +633,7 @@ const VIEWS = {
   test: testHistory,
   runs: runsView,
   run: (parts) => runDetail(parts[1]),
+  pipelines: pipelinesView,
   stability: stabilityView,
   trends: trendsView,
 };

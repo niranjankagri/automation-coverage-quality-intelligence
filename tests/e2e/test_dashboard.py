@@ -231,3 +231,36 @@ def test_a_late_response_for_an_older_address_is_not_shown(page: Page) -> None:
     page.wait_for_load_state("networkidle")
 
     expect(chart).to_contain_text("3 days from 2026-10-13 to 2026-10-15")
+
+
+def test_pipelines_page_shows_the_cancelled_run_as_incomplete(pipelines_page: Page) -> None:
+    """Both real pipelines; naming the five jobs marks the cancelled one, and the URL keeps them."""
+    page = pipelines_page
+    page.goto("/#/pipelines")
+    expect(page.get_by_role("heading", name="Pipelines", exact=True)).to_be_visible()
+    complete = page.get_by_role("region", name="Pipeline 39238241112")
+    cancelled = page.get_by_role("region", name="Pipeline 38842296207")
+    expect(cancelled.locator(".badge")).to_have_text("complete")  # nothing says a job is missing yet
+    expect(page.get_by_role("note")).to_contain_text("No expected jobs given")
+
+    page.get_by_label("Expected jobs").fill("api, ui-chrome, ui-firefox, ui-edge, component")
+    page.get_by_label("Expected jobs").press("Enter")
+
+    expect(page).to_have_url(re.compile(r"jobs=api"))
+    expect(cancelled.locator(".badge")).to_have_text("incomplete")
+    expect(cancelled.locator("tr.missing")).to_contain_text("ui-firefox")
+    expect(cancelled).to_contain_text("job ui-firefox reported no results")
+    expect(complete.locator(".badge")).to_have_text("complete")
+    expect(complete.locator("tbody tr")).to_have_count(5)
+    expect(page.get_by_role("note")).to_have_count(0)
+
+
+def test_runs_page_names_the_pipeline_job(pipelines_page: Page) -> None:
+    """The run list has a pipeline / job column; a run's page repeats it."""
+    page = pipelines_page
+    page.goto("/#/runs")
+    row = page.get_by_role("row").filter(has_text="ui-firefox/ui-firefox.json")
+    expect(row).to_contain_text("39238241112 / ui-firefox")
+
+    row.get_by_role("link").click()
+    expect(page.locator("dl.meta")).to_contain_text("39238241112 / ui-firefox")

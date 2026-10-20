@@ -301,6 +301,238 @@
         "title": "Outcome",
         "type": "string"
       },
+      "PipelineJob": {
+        "additionalProperties": false,
+        "description": "The CI pipeline execution and job a run came from (docs/pipelines.md).\n\nOne pipeline execution (a GitHub Actions run, a GitLab pipeline, a Jenkins build) usually\nhas several jobs, and each job writes its own result files. Grouping them is what lets a\ngate refuse to decide on a pipeline whose jobs did not all report.\n\nAttributes:\n    pipeline_id: Identifier of the pipeline execution (e.g. ``github.run_id``).\n    job: Name of the job within the pipeline (``api``, ``ui-chrome``).\n    attempt: Re-run number of the job; the highest attempt of a job replaces earlier ones.\n    branch: Branch the pipeline ran on, if known.\n    commit: Commit the pipeline tested, if known.",
+        "properties": {
+          "attempt": {
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "branch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Branch"
+          },
+          "commit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commit"
+          },
+          "job": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Job",
+            "type": "string"
+          },
+          "pipeline_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Pipeline Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pipeline_id",
+          "job"
+        ],
+        "title": "PipelineJob",
+        "type": "object"
+      },
+      "PipelineJobView": {
+        "description": "One job of a pipeline execution: its highest attempt.",
+        "properties": {
+          "attempt": {
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/Outcome"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "expected": {
+            "title": "Expected",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "pass_rate": {
+            "$ref": "#/components/schemas/RatioView"
+          },
+          "run_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Run Ids",
+            "type": "array"
+          },
+          "superseded_runs": {
+            "title": "Superseded Runs",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "attempt",
+          "expected",
+          "run_ids",
+          "superseded_runs",
+          "counts",
+          "pass_rate"
+        ],
+        "title": "PipelineJobView",
+        "type": "object"
+      },
+      "PipelineView": {
+        "description": "One pipeline execution (docs/pipelines.md).",
+        "properties": {
+          "branch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Branch"
+          },
+          "commit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commit"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/Outcome"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "jobs": {
+            "items": {
+              "$ref": "#/components/schemas/PipelineJobView"
+            },
+            "title": "Jobs",
+            "type": "array"
+          },
+          "missing": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing",
+            "type": "array"
+          },
+          "pass_rate": {
+            "$ref": "#/components/schemas/RatioView"
+          },
+          "pipeline_id": {
+            "title": "Pipeline Id",
+            "type": "string"
+          },
+          "problems": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Problems",
+            "type": "array"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pipeline_id",
+          "state",
+          "branch",
+          "commit",
+          "started_at",
+          "jobs",
+          "missing",
+          "problems",
+          "counts",
+          "pass_rate"
+        ],
+        "title": "PipelineView",
+        "type": "object"
+      },
+      "PipelinesView": {
+        "description": "Every pipeline execution in scope, newest first, judged against the expected jobs.",
+        "properties": {
+          "expected_jobs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Expected Jobs",
+            "type": "array"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "pipelines": {
+            "items": {
+              "$ref": "#/components/schemas/PipelineView"
+            },
+            "title": "Pipelines",
+            "type": "array"
+          }
+        },
+        "required": [
+          "expected_jobs",
+          "pipelines",
+          "notes"
+        ],
+        "title": "PipelinesView",
+        "type": "object"
+      },
       "RatioView": {
         "description": "A metric as the dashboard shows it.",
         "properties": {
@@ -669,6 +901,16 @@
           },
           "pass_rate": {
             "$ref": "#/components/schemas/RatioView"
+          },
+          "pipeline": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PipelineJob"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "run_id": {
             "title": "Run Id",
@@ -1298,6 +1540,169 @@
         "summary": "Health",
         "tags": [
           "meta"
+        ]
+      }
+    },
+    "/api/pipelines": {
+      "get": {
+        "description": "Pipeline executions, newest first; with ``jobs``, the ones missing a job are incomplete.",
+        "operationId": "pipelines_api_pipelines_get",
+        "parameters": [
+          {
+            "description": "expected jobs, comma-separated",
+            "in": "query",
+            "name": "jobs",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "expected jobs, comma-separated",
+              "title": "Jobs"
+            }
+          },
+          {
+            "in": "query",
+            "name": "framework",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Framework"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment"
+            }
+          },
+          {
+            "in": "query",
+            "name": "browser",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Browser"
+            }
+          },
+          {
+            "in": "query",
+            "name": "build",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Build"
+            }
+          },
+          {
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "in": "query",
+            "name": "until",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Until"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PipelinesView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Pipelines",
+        "tags": [
+          "executions"
         ]
       }
     },

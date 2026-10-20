@@ -15,9 +15,22 @@ import uvicorn
 from playwright.sync_api import Browser, Page, sync_playwright
 
 from qualityintel.dashboard.app import create_app
+from qualityintel.ingest.batch import import_pipeline
+from qualityintel.ingest.catalog_file import load_catalog
+from qualityintel.models.results import TestRun
 from qualityintel.workspace import Workspace
 
 SAMPLES = Path(__file__).parents[2] / "samples"
+PIPELINES = SAMPLES / "pipelines" / "cypress-taskboard"
+
+
+def pipeline_runs() -> list[TestRun]:
+    """Both sample pipelines, imported as `qi history import --pipeline ... --job ...` would."""
+    runs: list[TestRun] = []
+    for folder in sorted(p for p in PIPELINES.iterdir() if p.is_dir()):
+        _, commit, run_id = folder.name.split("_")
+        runs += import_pipeline({r.stem: [str(r)] for r in folder.glob("*.json")}, run_id, commit=commit).runs
+    return runs
 
 
 def _free_port() -> int:
@@ -29,9 +42,20 @@ def _free_port() -> int:
 
 @pytest.fixture(scope="session")
 def base_url() -> Iterator[str]:
-    """Start uvicorn in a background thread and wait until it answers."""
+    """The dashboard on the sample JUnit results (what the demonstration shows)."""
     workspace, batch = Workspace.load(SAMPLES / "catalog.toml", [SAMPLES / "results"])
     assert batch.complete
+    yield from _serve(workspace)
+
+
+@pytest.fixture(scope="session")
+def pipelines_url() -> Iterator[str]:
+    """The dashboard on the two real TaskBoard pipeline executions (samples/pipelines)."""
+    yield from _serve(Workspace(load_catalog(PIPELINES / "catalog.toml"), pipeline_runs()))
+
+
+def _serve(workspace: Workspace) -> Iterator[str]:
+    """Start uvicorn in a background thread, wait until it answers, stop it afterwards."""
     port = _free_port()
     server = uvicorn.Server(
         uvicorn.Config(create_app(workspace), host="127.0.0.1", port=port, log_level="warning")
@@ -60,7 +84,18 @@ def browser() -> Iterator[Browser]:
 @pytest.fixture
 def page(browser: Browser, base_url: str) -> Iterator[Page]:
     """A fresh page; console errors fail the test (they mean broken front-end code)."""
-    context = browser.new_context(base_url=base_url, viewport={"width": 1280, "height": 900})
+    yield from _page(browser, base_url)
+
+
+@pytest.fixture
+def pipelines_page(browser: Browser, pipelines_url: str) -> Iterator[Page]:
+    """A fresh page on the pipeline dashboard, with the same console-error check."""
+    yield from _page(browser, pipelines_url)
+
+
+def _page(browser: Browser, url: str) -> Iterator[Page]:
+    """New context and page; fails on console errors after the test."""
+    context = browser.new_context(base_url=url, viewport={"width": 1280, "height": 900})
     new_page = context.new_page()
     errors: list[str] = []
     new_page.on("console", lambda message: errors.append(message.text) if message.type == "error" else None)
