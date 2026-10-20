@@ -1,6 +1,96 @@
 {
   "components": {
     "schemas": {
+      "AttemptView": {
+        "description": "One collected attempt of a pipeline run (a re-run is attempt 2).",
+        "properties": {
+          "attempt": {
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "collected_at": {
+            "format": "date-time",
+            "title": "Collected At",
+            "type": "string"
+          },
+          "conclusion": {
+            "title": "Conclusion",
+            "type": "string"
+          },
+          "problems": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Problems",
+            "type": "array"
+          },
+          "results": {
+            "title": "Results",
+            "type": "integer"
+          },
+          "runs": {
+            "title": "Runs",
+            "type": "integer"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "attempt",
+          "conclusion",
+          "state",
+          "collected_at",
+          "runs",
+          "results",
+          "problems"
+        ],
+        "title": "AttemptView",
+        "type": "object"
+      },
+      "CollectionHealthView": {
+        "description": "Health of CI collection per repository (docs/collection.md).",
+        "properties": {
+          "expected_hours": {
+            "title": "Expected Hours",
+            "type": "number"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "repositories": {
+            "items": {
+              "$ref": "#/components/schemas/RepositoryHealth"
+            },
+            "title": "Repositories",
+            "type": "array"
+          },
+          "workflow_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Url"
+          }
+        },
+        "required": [
+          "expected_hours",
+          "workflow_url",
+          "repositories",
+          "notes"
+        ],
+        "title": "CollectionHealthView",
+        "type": "object"
+      },
       "CoverageView": {
         "description": "A recorded coverage snapshot of the catalog.",
         "properties": {
@@ -572,6 +662,18 @@
             "title": "Run Ids",
             "type": "array"
           },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
           "superseded_runs": {
             "title": "Superseded Runs",
             "type": "integer"
@@ -590,8 +692,16 @@
         "type": "object"
       },
       "PipelineView": {
-        "description": "One pipeline execution (docs/pipelines.md).",
+        "description": "One pipeline execution (docs/pipelines.md), with what collection recorded about it.\n\nAttributes:\n    status: ``incomplete`` when jobs or reports are missing (whatever the CI concluded),\n        else the CI conclusion of the latest attempt (``success``, ``failure``,\n        ``cancelled`` ...), else ``complete`` for pipelines imported without collection.",
         "properties": {
+          "attempts": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/AttemptView"
+            },
+            "title": "Attempts",
+            "type": "array"
+          },
           "branch": {
             "anyOf": [
               {
@@ -613,6 +723,28 @@
               }
             ],
             "title": "Commit"
+          },
+          "commit_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commit Url"
+          },
+          "conclusion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conclusion"
           },
           "counts": {
             "additionalProperties": {
@@ -652,6 +784,28 @@
             "title": "Problems",
             "type": "array"
           },
+          "repository": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repository"
+          },
+          "run_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Number"
+          },
           "started_at": {
             "anyOf": [
               {
@@ -667,11 +821,44 @@
           "state": {
             "title": "State",
             "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "workflow": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow"
           }
         },
         "required": [
           "pipeline_id",
           "state",
+          "status",
+          "conclusion",
+          "repository",
+          "workflow",
+          "run_number",
+          "url",
+          "commit_url",
           "branch",
           "commit",
           "started_at",
@@ -685,7 +872,7 @@
         "type": "object"
       },
       "PipelinesView": {
-        "description": "Every pipeline execution in scope, newest first, judged against the expected jobs.",
+        "description": "Every pipeline execution in scope, newest first, judged against the expected jobs.\n\nAttributes:\n    status_counts: Pipelines per status before the status filter (for the filter chips).\n    workflows: Workflows present (for the workflow filter).",
         "properties": {
           "expected_jobs": {
             "items": {
@@ -706,6 +893,22 @@
               "$ref": "#/components/schemas/PipelineView"
             },
             "title": "Pipelines",
+            "type": "array"
+          },
+          "status_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "default": {},
+            "title": "Status Counts",
+            "type": "object"
+          },
+          "workflows": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Workflows",
             "type": "array"
           }
         },
@@ -904,6 +1107,100 @@
           "baseline_runs"
         ],
         "title": "RegressionView",
+        "type": "object"
+      },
+      "RepositoryHealth": {
+        "description": "Collection of one repository over the last 7 days.",
+        "properties": {
+          "complete": {
+            "title": "Complete",
+            "type": "integer"
+          },
+          "conclusions": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Conclusions",
+            "type": "object"
+          },
+          "fresh": {
+            "title": "Fresh",
+            "type": "boolean"
+          },
+          "freshness": {
+            "title": "Freshness",
+            "type": "string"
+          },
+          "incomplete": {
+            "title": "Incomplete",
+            "type": "integer"
+          },
+          "last_collected_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Collected At"
+          },
+          "latest_run_started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Run Started At"
+          },
+          "pipelines": {
+            "title": "Pipelines",
+            "type": "integer"
+          },
+          "problems": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Problems",
+            "type": "array"
+          },
+          "repository": {
+            "title": "Repository",
+            "type": "string"
+          },
+          "results": {
+            "title": "Results",
+            "type": "integer"
+          },
+          "workflows": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Workflows",
+            "type": "array"
+          }
+        },
+        "required": [
+          "repository",
+          "workflows",
+          "last_collected_at",
+          "latest_run_started_at",
+          "fresh",
+          "freshness",
+          "pipelines",
+          "complete",
+          "incomplete",
+          "results",
+          "conclusions",
+          "problems"
+        ],
+        "title": "RepositoryHealth",
         "type": "object"
       },
       "RequirementDetail": {
@@ -1768,6 +2065,28 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/collection": {
+      "get": {
+        "description": "Per repository: last collection, freshness against the expected schedule, problems.",
+        "operationId": "collection_api_collection_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionHealthView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Collection",
+        "tags": [
+          "executions"
+        ]
+      }
+    },
     "/api/facets": {
       "get": {
         "description": "Filter values that exist in the data.",
@@ -1836,6 +2155,42 @@
               ],
               "description": "expected jobs, comma-separated",
               "title": "Jobs"
+            }
+          },
+          {
+            "description": "incomplete, success, failure, ...",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "incomplete, success, failure, ...",
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "workflow",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workflow"
             }
           },
           {

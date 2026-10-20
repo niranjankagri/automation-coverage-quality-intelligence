@@ -28,6 +28,7 @@ from qualityintel.models.enums import Criticality, Outcome, TestType
 from qualityintel.traceability.coverage import UNSPECIFIED, Filters
 from qualityintel.traceability.report import RunFilters
 from qualityintel.workspace import (
+    CollectionHealthView,
     Facets,
     PipelinesView,
     ReadinessView,
@@ -180,7 +181,12 @@ class DataStatus(View):
     collection_problems: tuple[str, ...]
 
 
-def create_app(data: Workspace | LiveData, credentials: tuple[str, str] | None = None) -> FastAPI:
+def create_app(
+    data: Workspace | LiveData,
+    credentials: tuple[str, str] | None = None,
+    collection_hours: float = 26.0,
+    collection_url: str | None = None,
+) -> FastAPI:
     """Build the application around the dashboard data.
 
     Args:
@@ -188,6 +194,8 @@ def create_app(data: Workspace | LiveData, credentials: tuple[str, str] | None =
             sources change (each request answers from one complete snapshot).
         credentials: ``(user, password)`` to require on every request; ``None`` for none
             (the command line only allows that on this machine's loopback address).
+        collection_hours: Hours after which a repository's last collection counts as overdue.
+        collection_url: Link to the collection workflow, shown on the Collection page.
     """
     live = data if isinstance(data, LiveData) else LiveData.fixed(data)
 
@@ -332,10 +340,19 @@ def create_app(data: Workspace | LiveData, credentials: tuple[str, str] | None =
         jobs: Annotated[
             str | None, Query(max_length=2000, description="expected jobs, comma-separated")
         ] = None,
+        status: Annotated[
+            str | None, Query(max_length=40, description="incomplete, success, failure, ...")
+        ] = None,
+        workflow: Annotated[str | None, Query(max_length=200)] = None,
     ) -> PipelinesView:
         """Pipeline executions, newest first; with ``jobs``, the ones missing a job are incomplete."""
         expected = [job.strip() for job in (jobs or "").split(",") if job.strip()]
-        return current().pipelines(chosen, expected)
+        return current().pipelines(chosen, expected, status=status, workflow=workflow)
+
+    @app.get("/api/collection", tags=["executions"])
+    def collection() -> CollectionHealthView:
+        """Per repository: last collection, freshness against the expected schedule, problems."""
+        return current().collection_health(expected_hours=collection_hours, workflow_url=collection_url)
 
     @app.get("/api/runs/{run_id}", tags=["executions"])
     def run(run_id: str) -> RunDetail:

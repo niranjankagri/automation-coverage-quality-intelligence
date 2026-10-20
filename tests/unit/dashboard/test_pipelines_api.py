@@ -103,3 +103,108 @@ def test_repository_is_a_facet_and_a_filter(client: TestClient) -> None:
     assert client.get("/api/runs", params={"repository": "niranjankagri/other"}).json() == []
     summary = client.get("/api/summary", params={"repository": "niranjankagri/other"}).json()
     assert summary["pass_rate"]["text"].startswith("n/a")
+
+
+REPO = "niranjankagri/cypress-typescript-framework"
+
+
+def record(
+    pid: str, attempt: int, conclusion: str, state: str, day: int, problems: tuple[str, ...] = ()
+) -> object:
+    """A collection record of the TaskBoard workflow."""
+    from datetime import UTC, datetime
+
+    from qualityintel.models.collection import PipelineCollection
+
+    return PipelineCollection(
+        pipeline_id=pid,
+        attempt=attempt,
+        repository=REPO,
+        workflow="ci.yml",
+        run_number=10 + day,
+        branch="main",
+        commit="80e331e",
+        conclusion=conclusion,
+        url=f"https://github.com/{REPO}/actions/runs/{pid}",
+        started_at=datetime(2026, 10, day, 10, tzinfo=UTC),
+        collected_at=datetime(2026, 10, day, 12, tzinfo=UTC),
+        state=state,  # type: ignore[arg-type]
+        problems=problems,
+    )
+
+
+@pytest.fixture(scope="module")
+def collected() -> TestClient:
+    """The two pipelines plus collection records: attempts of one, and a cancelled run with nothing."""
+    records = [
+        record("39238241112", 1, "success", "complete", 19),
+        record(
+            "38842296207",
+            1,
+            "failure",
+            "incomplete",
+            16,
+            ("job ui-firefox: artifact report-ui-firefox not found",),
+        ),
+        record(
+            "38842296207",
+            2,
+            "cancelled",
+            "incomplete",
+            16,
+            ("job ui-firefox: artifact report-ui-firefox not found",),
+        ),
+        record("40000000000", 1, "cancelled", "incomplete", 18, ("job api: artifact report-api not found",)),
+    ]
+    workspace = Workspace(load_catalog(PIPELINES / "catalog.toml"), pipeline_runs(), collections=records)  # type: ignore[arg-type]
+    return TestClient(
+        create_app(workspace, collection_hours=26, collection_url="https://github.com/x/y/actions")
+    )
+
+
+def test_collected_pipelines_show_conclusion_links_and_attempts(collected: TestClient) -> None:
+    """A cancelled run without any runs is listed (incomplete); links go to the exact run and commit."""
+    body = collected.get("/api/pipelines").json()
+    by_id = {p["pipeline_id"]: p for p in body["pipelines"]}
+
+    assert body["status_counts"] == {"success": 1, "incomplete": 2}
+    assert body["workflows"] == ["ci.yml"]
+    empty = by_id["40000000000"]
+    assert (empty["status"], empty["jobs"], empty["conclusion"]) == ("incomplete", [], "cancelled")
+    assert empty["problems"] == ["job api: artifact report-api not found"]
+    ok = by_id["39238241112"]
+    assert ok["url"] == f"https://github.com/{REPO}/actions/runs/39238241112"
+    assert ok["commit_url"] == f"https://github.com/{REPO}/commit/80e331e"
+    assert [a["attempt"] for a in by_id["38842296207"]["attempts"]] == [1, 2]
+
+
+def test_pipelines_filter_by_status_and_workflow(collected: TestClient) -> None:
+    """status=incomplete keeps the two incomplete; an unknown workflow keeps none."""
+    incomplete = collected.get("/api/pipelines", params={"status": "incomplete"}).json()["pipelines"]
+    other = collected.get("/api/pipelines", params={"workflow": "nightly.yml"}).json()
+
+    assert sorted(p["pipeline_id"] for p in incomplete) == ["38842296207", "40000000000"]
+    assert other["pipelines"] == []
+    assert other["status_counts"] == {}
+
+
+def test_a_context_filter_hides_collected_pipelines_without_runs(collected: TestClient) -> None:
+    """Nothing is known about the context of a run that uploaded nothing."""
+    ids = {
+        p["pipeline_id"]
+        for p in collected.get("/api/pipelines", params={"browser": "chrome"}).json()["pipelines"]
+    }
+
+    assert "40000000000" not in ids
+
+
+def test_collection_health_per_repository(collected: TestClient) -> None:
+    """Last collection, overdue against the expected hours, 7-day counts and problems."""
+    body = collected.get("/api/collection").json()
+    (row,) = body["repositories"]
+
+    assert body["workflow_url"] == "https://github.com/x/y/actions"
+    assert row["repository"] == REPO
+    assert row["last_collected_at"].startswith("2026-10-19T12")
+    assert row["fresh"] is False  # the records are from October; now is later
+    assert "more than the expected 26 h" in row["freshness"]

@@ -16,6 +16,7 @@ DEFAULT_DASHBOARD_HOST = "127.0.0.1"
 DEFAULT_DASHBOARD_PORT = 8000
 DEFAULT_DASHBOARD_USER = "qi"
 DEFAULT_REFRESH_SECONDS = 30.0
+DEFAULT_COLLECTION_HOURS = 26.0
 MIN_PASSWORD_LENGTH = 12
 
 
@@ -42,6 +43,8 @@ class Settings:
     dashboard_user: str = DEFAULT_DASHBOARD_USER
     dashboard_password: str | None = field(default=None, repr=False)
     refresh_seconds: float = DEFAULT_REFRESH_SECONDS
+    collection_hours: float = DEFAULT_COLLECTION_HOURS
+    collection_url: str | None = None
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> Settings:
@@ -67,6 +70,8 @@ class Settings:
             dashboard_user=source.get("QI_DASHBOARD_USER") or DEFAULT_DASHBOARD_USER,
             dashboard_password=_check_password(source.get("QI_DASHBOARD_PASSWORD")),
             refresh_seconds=_parse_seconds(source.get("QI_REFRESH_SECONDS")),
+            collection_hours=_parse_hours(source.get("QI_COLLECTION_HOURS")),
+            collection_url=_check_url(source.get("QI_COLLECTION_URL")),
         )
 
 
@@ -91,6 +96,28 @@ def _parse_seconds(raw: str | None) -> float:
     if not 0 <= seconds <= 86_400:
         raise ConfigError(f"QI_REFRESH_SECONDS must be between 0 and 86400, got {raw}")
     return seconds
+
+
+def _parse_hours(raw: str | None) -> float:
+    """``QI_COLLECTION_HOURS``: after how many hours a repository's last collection is overdue."""
+    if not raw:
+        return DEFAULT_COLLECTION_HOURS
+    try:
+        hours = float(raw)
+    except ValueError:
+        raise ConfigError(f"QI_COLLECTION_HOURS must be a number of hours, got {raw!r}") from None
+    if not 1 <= hours <= 24 * 90:
+        raise ConfigError(f"QI_COLLECTION_HOURS must be between 1 and 2160, got {raw}")
+    return hours
+
+
+def _check_url(raw: str | None) -> str | None:
+    """``QI_COLLECTION_URL``: an https link (it becomes a link on the page)."""
+    if not raw:
+        return None
+    if not raw.startswith("https://"):
+        raise ConfigError("QI_COLLECTION_URL must be an https:// address")
+    return raw
 
 
 def _parse_port(raw: str | None) -> int:

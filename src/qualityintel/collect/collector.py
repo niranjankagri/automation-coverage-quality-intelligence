@@ -109,7 +109,12 @@ def _collect_run(
         execution = pipeline_execution(batch.runs, pid, [job.name for job in producer.job])
         # Missing jobs are already named by the artifact problems; keep each reason once
         named = _named(problems)
-        problems += [p for p in execution.problems if not any(f": job {j} " in p for j in named)]
+        problems += [
+            p
+            for p in execution.problems
+            if not any(f": job {j} " in p for j in named)
+            and not (problems and p.endswith("no runs of this pipeline were read"))  # says nothing new
+        ]
         record = PipelineCollection(
             pipeline_id=pid,
             attempt=run.attempt,

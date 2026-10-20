@@ -83,13 +83,39 @@ class PipelineJobView(View):
     superseded_runs: int
     counts: dict[Outcome, int]
     pass_rate: RatioView
+    started_at: datetime | None = None
+
+
+class AttemptView(View):
+    """One collected attempt of a pipeline run (a re-run is attempt 2)."""
+
+    attempt: int
+    conclusion: str
+    state: str
+    collected_at: datetime
+    runs: int
+    results: int
+    problems: tuple[str, ...]
 
 
 class PipelineView(View):
-    """One pipeline execution (docs/pipelines.md)."""
+    """One pipeline execution (docs/pipelines.md), with what collection recorded about it.
+
+    Attributes:
+        status: ``incomplete`` when jobs or reports are missing (whatever the CI concluded),
+            else the CI conclusion of the latest attempt (``success``, ``failure``,
+            ``cancelled`` ...), else ``complete`` for pipelines imported without collection.
+    """
 
     pipeline_id: str
     state: str
+    status: str
+    conclusion: str | None
+    repository: str | None
+    workflow: str | None
+    run_number: int | None
+    url: str | None
+    commit_url: str | None
     branch: str | None
     commit: str | None
     started_at: datetime | None
@@ -98,13 +124,47 @@ class PipelineView(View):
     problems: tuple[str, ...]
     counts: dict[Outcome, int]
     pass_rate: RatioView
+    attempts: tuple[AttemptView, ...] = ()
 
 
 class PipelinesView(View):
-    """Every pipeline execution in scope, newest first, judged against the expected jobs."""
+    """Every pipeline execution in scope, newest first, judged against the expected jobs.
+
+    Attributes:
+        status_counts: Pipelines per status before the status filter (for the filter chips).
+        workflows: Workflows present (for the workflow filter).
+    """
 
     expected_jobs: tuple[str, ...]
     pipelines: tuple[PipelineView, ...]
+    notes: tuple[str, ...]
+    status_counts: dict[str, int] = {}
+    workflows: tuple[str, ...] = ()
+
+
+class RepositoryHealth(View):
+    """Collection of one repository over the last 7 days."""
+
+    repository: str
+    workflows: tuple[str, ...]
+    last_collected_at: datetime | None
+    latest_run_started_at: datetime | None
+    fresh: bool
+    freshness: str
+    pipelines: int
+    complete: int
+    incomplete: int
+    results: int
+    conclusions: dict[str, int]
+    problems: tuple[str, ...]
+
+
+class CollectionHealthView(View):
+    """Health of CI collection per repository (docs/collection.md)."""
+
+    expected_hours: float
+    workflow_url: str | None
+    repositories: tuple[RepositoryHealth, ...]
     notes: tuple[str, ...]
 
 
@@ -595,17 +655,46 @@ class Workspace:
         results = sorted(run.results, key=lambda r: (order[r.outcome], r.key))
         return RunDetail(run=_run_view(run), executions=tuple(_execution_view(run, r) for r in results))
 
-    def pipelines(self, scope: Scope = EVERYTHING, expected_jobs: Sequence[str] = ()) -> PipelinesView:
-        """Pipeline executions with at least one run in scope, each assembled from all its runs.
+    def pipelines(
+        self,
+        scope: Scope = EVERYTHING,
+        expected_jobs: Sequence[str] = (),
+        status: str | None = None,
+        workflow: str | None = None,
+    ) -> PipelinesView:
+        """Pipeline executions in scope, each assembled from all its runs, with their collection records.
 
         A filter such as ``browser`` chooses which executions are listed, but never removes jobs
-        from an execution: a pipeline filtered to its Chrome job would look incomplete.
+        from an execution: a pipeline filtered to its Chrome job would look incomplete. Collected
+        pipelines without any run (cancelled before uploading) are listed too, as long as no
+        run-context filter is chosen (nothing about their context is known).
         """
         expected = tuple(dict.fromkeys(job for job in expected_jobs if job))
-        executions = [pipeline_execution(self.runs, pid, expected) for pid in pipeline_ids(self._runs(scope))]
-        views = sorted(
-            (_pipeline_view(e) for e in executions), key=lambda v: (v.started_at is None, v.started_at)
+        filters = scope.run_filters
+        ids = pipeline_ids(self._runs(scope))
+        context_chosen = any(
+            (filters.frameworks, filters.environments, filters.browsers, filters.platforms, filters.builds)
         )
+        if not context_chosen:
+            for record in self.collections:
+                if _record_in_scope(record, filters) and record.pipeline_id not in ids:
+                    ids.append(record.pipeline_id)
+        views = [
+            _pipeline_view(
+                pipeline_execution(self.runs, pid, expected),
+                [c for c in self.collections if c.pipeline_id == pid],
+            )
+            for pid in ids
+        ]
+        workflows = tuple(sorted({v.workflow for v in views if v.workflow}))
+        if workflow:
+            views = [v for v in views if v.workflow == workflow]
+        counts: dict[str, int] = {}
+        for view in views:
+            counts[view.status] = counts.get(view.status, 0) + 1
+        if status:
+            views = [v for v in views if v.status == status]
+        views.sort(key=lambda v: (v.started_at is None, v.started_at))
         notes = []
         if not expected:
             notes.append(
@@ -613,7 +702,65 @@ class Workspace:
                 "branch or commit or report no results. Name the jobs the pipeline must have to find "
                 "executions with missing jobs."
             )
-        return PipelinesView(expected_jobs=expected, pipelines=tuple(reversed(views)), notes=tuple(notes))
+        return PipelinesView(
+            expected_jobs=expected,
+            pipelines=tuple(reversed(views)),
+            notes=tuple(notes),
+            status_counts=counts,
+            workflows=workflows,
+        )
+
+    def collection_health(
+        self, now: datetime | None = None, expected_hours: float = 26.0, workflow_url: str | None = None
+    ) -> CollectionHealthView:
+        """Per repository: last collection, freshness against the expected schedule, last 7 days' records."""
+        now = now or datetime.now(UTC)
+        week_ago = now - timedelta(days=7)
+        rows = []
+        for repository in sorted({c.repository for c in self.collections}):
+            records = [c for c in self.collections if c.repository == repository]
+            recent = [c for c in records if c.collected_at >= week_ago]
+            last = max(c.collected_at for c in records)
+            age_hours = (now - last).total_seconds() / 3600
+            fresh = age_hours <= expected_hours
+            conclusions: dict[str, int] = {}
+            for record in recent:
+                conclusions[record.conclusion] = conclusions.get(record.conclusion, 0) + 1
+            starts = [c.started_at for c in records if c.started_at is not None]
+            rows.append(
+                RepositoryHealth(
+                    repository=repository,
+                    workflows=tuple(sorted({c.workflow for c in records})),
+                    last_collected_at=last,
+                    latest_run_started_at=max(starts, default=None),
+                    fresh=fresh,
+                    freshness=f"collected {age_hours:.0f} h ago"
+                    + ("" if fresh else f", more than the expected {expected_hours:.0f} h"),
+                    pipelines=len(recent),
+                    complete=sum(c.state == "complete" for c in recent),
+                    incomplete=sum(c.state == "incomplete" for c in recent),
+                    results=sum(c.results for c in recent),
+                    conclusions=dict(sorted(conclusions.items())),
+                    problems=tuple(
+                        f"{c.pipeline_id} attempt {c.attempt}: {p}" for c in recent for p in c.problems
+                    ),
+                )
+            )
+        notes = []
+        if not rows:
+            notes.append(
+                "No collection recorded: this dashboard reads files or imports, not collected CI history."
+            )
+        notes.append(
+            "Restoring the history between collection runs is reported in the collection workflow's log, "
+            "not in the database."
+        )
+        return CollectionHealthView(
+            expected_hours=expected_hours,
+            workflow_url=workflow_url,
+            repositories=tuple(rows),
+            notes=tuple(notes),
+        )
 
     def stability(
         self, scope: Scope = EVERYTHING, settings: HistorySettings = DEFAULTS, include_stable: bool = False
@@ -796,8 +943,21 @@ def _run_view(run: TestRun) -> RunView:
     )
 
 
-def _pipeline_view(execution: PipelineExecution) -> PipelineView:
-    """Pipeline execution summary with per-job counts."""
+def _record_in_scope(record: PipelineCollection, filters: RunFilters) -> bool:
+    """A collection record matches the repository and date filters (its context is unknown)."""
+    if filters.repositories and record.repository not in filters.repositories:
+        return False
+    if filters.since is not None or filters.until is not None:
+        if record.started_at is None:
+            return False
+        day = record.started_at.astimezone(UTC).date()
+        if (filters.since and day < filters.since) or (filters.until and day > filters.until):
+            return False
+    return True
+
+
+def _pipeline_view(execution: PipelineExecution, records: Sequence[PipelineCollection] = ()) -> PipelineView:
+    """Pipeline execution summary with per-job counts and its collection records."""
     counts = dict.fromkeys(Outcome, 0)
     jobs = []
     for job in execution.jobs:
@@ -813,20 +973,57 @@ def _pipeline_view(execution: PipelineExecution) -> PipelineView:
                 superseded_runs=len(job.superseded),
                 counts=job_counts,
                 pass_rate=RatioView.of(execution_pass_rate(job_counts)),
+                started_at=min((r.started_at for r in job.runs if r.started_at), default=None),
             )
         )
     starts = [run.started_at for run in execution.runs if run.started_at is not None]
+    ordered = sorted(records, key=lambda c: c.attempt)
+    latest = ordered[-1] if ordered else None
+    repository = next(
+        (r.pipeline.repository for r in execution.runs if r.pipeline and r.pipeline.repository), None
+    )
+    repository = repository or (latest.repository if latest else None)
+    commit = execution.commit or (latest.commit if latest else None)
+    incomplete = execution.problems != () if execution.runs else True
+    if latest is not None and latest.state == "incomplete":
+        incomplete = True
+    status = "incomplete" if incomplete else (latest.conclusion if latest else "complete")
+    recorded = list(latest.problems) if latest else []
+    # "no runs were read" only repeats the recorded reasons (missing artifacts) when there are any
+    derived = [
+        p for p in execution.problems if not (recorded and p.endswith("no runs of this pipeline were read"))
+    ]
+    problems = tuple(dict.fromkeys([*recorded, *derived]))
     return PipelineView(
         pipeline_id=execution.pipeline_id,
-        state=execution.state.value,
-        branch=execution.branch,
-        commit=execution.commit,
-        started_at=min(starts) if starts else None,
+        state=execution.state.value if execution.runs else "incomplete",
+        status=status,
+        conclusion=latest.conclusion if latest else None,
+        repository=repository,
+        workflow=latest.workflow if latest else None,
+        run_number=latest.run_number if latest else None,
+        url=latest.url if latest and latest.url.startswith("https://github.com/") else None,
+        commit_url=f"https://github.com/{repository}/commit/{commit}" if repository and commit else None,
+        branch=execution.branch or (latest.branch if latest else None),
+        commit=commit,
+        started_at=min(starts) if starts else (latest.started_at if latest else None),
         jobs=tuple(jobs),
         missing=execution.missing,
-        problems=execution.problems,
+        problems=problems,
         counts=counts,
         pass_rate=RatioView.of(execution_pass_rate(counts)),
+        attempts=tuple(
+            AttemptView(
+                attempt=c.attempt,
+                conclusion=c.conclusion,
+                state=c.state,
+                collected_at=c.collected_at,
+                runs=c.runs,
+                results=c.results,
+                problems=c.problems,
+            )
+            for c in ordered
+        ),
     )
 
 

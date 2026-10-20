@@ -245,22 +245,37 @@ def test_pipelines_page_shows_the_cancelled_run_as_incomplete(pipelines_page: Pa
     page = pipelines_page
     page.goto("/#/pipelines")
     expect(page.get_by_role("heading", name="Pipelines", exact=True)).to_be_visible()
-    complete = page.get_by_role("region", name="Pipeline 39238241112")
-    cancelled = page.get_by_role("region", name="Pipeline 38842296207")
-    expect(cancelled.locator(".badge")).to_have_text("complete")  # nothing says a job is missing yet
+    complete = page.locator("details.pipeline").filter(has_text="Pipeline 39238241112")
+    cancelled = page.locator("details.pipeline").filter(has_text="Pipeline 38842296207")
+    expect(cancelled.locator("summary .badge")).to_have_text("complete")  # nothing says a job is missing yet
     expect(page.get_by_role("note")).to_contain_text("No expected jobs given")
 
     page.get_by_label("Expected jobs").fill("api, ui-chrome, ui-firefox, ui-edge, component")
     page.get_by_label("Expected jobs").press("Enter")
 
     expect(page).to_have_url(re.compile(r"jobs=api"))
-    expect(cancelled.locator(".badge")).to_have_text("incomplete")
+    expect(cancelled.locator("summary .badge")).to_have_text("incomplete")
+    cancelled.locator("summary").click()  # expand: jobs and problems
     expect(cancelled.locator("tr.missing")).to_contain_text("ui-firefox")
     expect(cancelled).to_contain_text("job ui-firefox reported no results")
-    expect(complete.locator(".badge")).to_have_text("complete")
+    expect(complete.locator("summary .badge")).to_have_text("complete")
     expect(complete.locator("tbody tr")).to_have_count(5)
     expect(page.get_by_role("note")).to_have_count(0)
     expect(page.locator("#view")).not_to_contain_text("null")  # an empty slot must not print "null"
+
+
+def test_status_chips_filter_the_pipelines_and_stay_in_the_address(pipelines_page: Page) -> None:
+    """With the five jobs expected: 1 incomplete, 1 complete; a chip keeps only its pipelines."""
+    page = pipelines_page
+    page.goto("/#/pipelines?jobs=api,ui-chrome,ui-firefox,ui-edge,component")
+    chips = page.get_by_role("navigation", name="Pipeline status")
+    expect(chips).to_contain_text("All (2)")
+
+    chips.get_by_role("link").filter(has_text="incomplete").click()
+
+    expect(page).to_have_url(re.compile(r"status=incomplete"))
+    expect(page.locator("details.pipeline")).to_have_count(1)
+    expect(page.locator("details.pipeline")).to_contain_text("Pipeline 38842296207")
 
 
 def test_runs_page_names_the_pipeline_job(pipelines_page: Page) -> None:
@@ -355,3 +370,25 @@ def test_overview_shows_the_release_status_with_its_reasons(page: Page) -> None:
     expect(panel).to_contain_text("no release gate is configured")
     expect(card(page, "Test executions")).to_contain_text("221")
     expect(card(page, "Flaky candidates")).to_contain_text("4")
+
+
+def test_explorer_links_to_github_and_the_collection_page_shows_health(collected_page: Page) -> None:
+    """The cancelled run is incomplete with its missing artifact; links open the exact run; health is fresh."""
+    page = collected_page
+    page.goto("/#/pipelines")
+    cancelled = page.locator("details.pipeline").filter(has_text="#6")
+    expect(cancelled.locator("summary .badge")).to_have_text("incomplete")
+    cancelled.locator("summary").click()
+    expect(cancelled).to_contain_text("CI concluded: cancelled")
+    expect(cancelled).to_contain_text("artifact report-ui-firefox not found")
+    run_link = cancelled.get_by_role("link", name="Open the workflow run on GitHub")
+    expect(run_link).to_have_attribute(
+        "href", "https://github.com/niranjankagri/cypress-typescript-framework/actions/runs/38842296207"
+    )
+    expect(run_link).to_have_attribute("rel", "noopener noreferrer")
+
+    page.get_by_role("link", name="Collection", exact=True).click()
+    row = page.get_by_role("row").filter(has_text="niranjankagri/cypress-typescript-framework")
+    expect(row).to_contain_text("fresh")
+    expect(row).to_contain_text("1 cancelled, 1 success")
+    expect(page.locator("#view")).to_contain_text("artifact report-ui-firefox not found")

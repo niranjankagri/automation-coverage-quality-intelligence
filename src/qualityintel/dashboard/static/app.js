@@ -388,45 +388,136 @@ function pipelineLabel(p) {
   return `${p.pipeline_id} / ${p.job}${p.attempt > 1 ? ` (attempt ${p.attempt})` : ""}`;
 }
 
-async function pipelinesView() {
-  const jobs = route().params.get("jobs") ?? "";
-  const d = await api(`/api/pipelines${apiQuery(RUN_FILTERS, { jobs })}`);
-  const jobsInput = h("input", { id: "expected-jobs", type: "text", value: jobs, placeholder: "api, ui-chrome, ui-firefox", size: "40" });
-  jobsInput.addEventListener("change", () => (location.hash = link("/pipelines", { jobs: jobsInput.value.trim() })));
-  return [
-    h("h1", {}, "Pipelines"),
-    h("p", { class: "lead" }, `${d.pipelines.length} pipeline execution(s), newest first. A job's latest attempt counts; an execution is complete when every expected job reported results and all jobs tested the same commit.`),
-    h("div", { class: "toolbar" }, h("label", { for: "expected-jobs" }, "Expected jobs", jobsInput)),
-    d.notes.length ? h("div", { class: "notice", role: "note" }, d.notes.map((n) => h("p", {}, n))) : null,
-    d.pipelines.length === 0
-      ? h("p", {}, "No runs in scope belong to a pipeline (import with --pipeline and --job).")
-      : d.pipelines.map((p) =>
+const STATUS_ORDER = ["incomplete", "failure", "cancelled", "success", "complete"];
+
+/** An external link (GitHub run or commit): opens in a new tab, never passes the referrer. */
+function external(href, text) {
+  return h("a", { href, target: "_blank", rel: "noopener noreferrer" }, text);
+}
+
+function attemptsTable(p) {
+  if (p.attempts.length < 2) return null;
+  return h(
+    "div",
+    {},
+    h("h3", {}, `Attempts (${p.attempts.length})`),
+    table(
+      ["Attempt", "CI conclusion", "Collection", { label: "Runs", num: true }, { label: "Results", num: true }, "Collected", "Problems"],
+      p.attempts.map((a) => h("tr", {}, h("td", {}, String(a.attempt)), h("td", {}, badge(a.conclusion)), h("td", {}, badge(a.state)), h("td", { class: "num" }, String(a.runs)), h("td", { class: "num" }, String(a.results)), h("td", { class: "nowrap" }, formatDate(a.collected_at)), h("td", {}, a.problems.join("; ") || "–"))),
+      "",
+    ),
+  );
+}
+
+function pipelineDetails(p, open) {
+  const title = [p.repository ? p.repository.split("/")[1] : p.pipeline_id, p.workflow, p.run_number ? `#${p.run_number}` : null].filter(Boolean).join(" · ");
+  return h(
+    "details",
+    { class: "pipeline", open: open ? "" : null },
+    h(
+      "summary",
+      {},
+      h("span", { class: "pipeline-title" }, title),
+      " ",
+      badge(p.status),
+      h("span", { class: "sub" }, [p.branch ? `branch ${p.branch}` : null, p.commit ? `commit ${p.commit}` : null, formatDate(p.started_at), `pass rate ${p.pass_rate.text}`].filter(Boolean).join(" · ")),
+    ),
+    h(
+      "p",
+      { class: "links" },
+      `Pipeline ${p.pipeline_id}`,
+      p.conclusion ? ` · CI concluded: ${p.conclusion}` : "",
+      p.url ? [" · ", external(p.url, "Open the workflow run on GitHub")] : null,
+      p.commit_url ? [" · ", external(p.commit_url, "Open the commit")] : null,
+    ),
+    p.problems.length ? h("ul", { class: "reasons" }, p.problems.map((problem) => h("li", {}, problem))) : null,
+    table(
+      ["Job", "Attempt", "Started", { label: "Runs", num: true }, ...OUTCOMES.map((o) => ({ label: o, num: true })), { label: "Pass rate", num: true }],
+      [
+        ...p.jobs.map((j) =>
           h(
-            "section",
-            { class: "pipeline", "aria-label": `Pipeline ${p.pipeline_id}` },
-            h("h2", {}, `Pipeline ${p.pipeline_id} `, badge(p.state)),
-            h("p", { class: "sub" }, [p.branch ? `branch ${p.branch}` : null, p.commit ? `commit ${p.commit}` : null, formatDate(p.started_at), `pass rate ${p.pass_rate.text}`].filter(Boolean).join(" · ")),
-            p.problems.length ? h("ul", { class: "reasons" }, p.problems.map((problem) => h("li", {}, problem))) : null,
-            table(
-              ["Job", "Attempt", { label: "Runs", num: true }, ...OUTCOMES.map((o) => ({ label: o, num: true })), { label: "Pass rate", num: true }],
-              [
-                ...p.jobs.map((j) =>
-                  h(
-                    "tr",
-                    {},
-                    h("td", {}, j.run_ids.length === 1 ? h("a", { href: link(`/run/${j.run_ids[0]}`) }, j.name) : j.name, j.expected ? null : h("span", { class: "sub" }, "not an expected job")),
-                    h("td", {}, String(j.attempt), j.superseded_runs ? h("span", { class: "sub" }, `${j.superseded_runs} earlier run(s) replaced`) : null),
-                    h("td", { class: "num" }, String(j.run_ids.length)),
-                    OUTCOMES.map((o) => h("td", { class: "num" }, j.counts[o])),
-                    h("td", { class: "num" }, j.pass_rate.text),
-                  ),
-                ),
-                ...p.missing.map((name) => h("tr", { class: "missing" }, h("td", {}, name), h("td", { colspan: String(3 + OUTCOMES.length) }, "missing: no results reported"))),
-              ],
-              "No jobs.",
-            ),
+            "tr",
+            {},
+            h("td", {}, j.run_ids.length === 1 ? h("a", { href: link(`/run/${j.run_ids[0]}`) }, j.name) : j.name, j.expected ? null : h("span", { class: "sub" }, "not an expected job")),
+            h("td", {}, String(j.attempt), j.superseded_runs ? h("span", { class: "sub" }, `${j.superseded_runs} earlier run(s) replaced`) : null),
+            h("td", { class: "nowrap" }, formatDate(j.started_at)),
+            h("td", { class: "num" }, String(j.run_ids.length)),
+            OUTCOMES.map((o) => h("td", { class: "num" }, j.counts[o])),
+            h("td", { class: "num" }, j.pass_rate.text),
           ),
         ),
+        ...p.missing.map((name) => h("tr", { class: "missing" }, h("td", {}, name), h("td", { colspan: String(4 + OUTCOMES.length) }, "missing: no results reported"))),
+      ],
+      "No job reported results.",
+    ),
+    attemptsTable(p),
+  );
+}
+
+async function pipelinesView() {
+  const params = route().params;
+  const jobs = params.get("jobs") ?? "";
+  const status = params.get("status") ?? "";
+  const workflow = params.get("workflow") ?? "";
+  const d = await api(`/api/pipelines${apiQuery(RUN_FILTERS, { jobs, status, workflow })}`);
+  const jobsInput = h("input", { id: "expected-jobs", type: "text", value: jobs, placeholder: "api, ui-chrome, ui-firefox", size: "40" });
+  jobsInput.addEventListener("change", () => (location.hash = link("/pipelines", { jobs: jobsInput.value.trim(), status, workflow })));
+  const workflowSelect = h("select", { id: "workflow" }, h("option", { value: "" }, "All"), d.workflows.map((w) => h("option", { value: w }, w)));
+  workflowSelect.value = workflow;
+  workflowSelect.addEventListener("change", () => (location.hash = link("/pipelines", { jobs, status, workflow: workflowSelect.value })));
+  const statuses = [...STATUS_ORDER.filter((s) => s in d.status_counts), ...Object.keys(d.status_counts).filter((s) => !STATUS_ORDER.includes(s))];
+  const total = Object.values(d.status_counts).reduce((a, b) => a + b, 0);
+  return [
+    h("h1", {}, "Pipelines"),
+    h("p", { class: "lead" }, "Pipeline executions, newest first. Incomplete means jobs or reports are missing, whatever CI concluded; success, failure and cancelled are the CI's own conclusion of complete pipelines."),
+    h(
+      "div",
+      { class: "toolbar" },
+      h("label", { for: "workflow" }, "Workflow", workflowSelect),
+      h("label", { for: "expected-jobs" }, "Expected jobs", jobsInput),
+    ),
+    h(
+      "nav",
+      { class: "status-filter", "aria-label": "Pipeline status" },
+      h("a", { href: link("/pipelines", { jobs, workflow }), "aria-current": status ? null : "true" }, `All (${total})`),
+      statuses.map((s) => h("a", { href: link("/pipelines", { jobs, workflow, status: s }), "aria-current": status === s ? "true" : null }, badge(s), ` ${d.status_counts[s]}`)),
+    ),
+    d.notes.length ? h("div", { class: "notice", role: "note" }, d.notes.map((n) => h("p", {}, n))) : null,
+    d.pipelines.length === 0
+      ? h("p", { class: "empty" }, status || workflow ? "No pipeline matches this status or workflow; choose All to see every pipeline." : "No runs in scope belong to a pipeline (collect them with qi collect, or import with --pipeline and --job).")
+      : d.pipelines.map((p, i) => pipelineDetails(p, i === 0)),
+  ];
+}
+
+async function collectionView() {
+  const d = await api("/api/collection");
+  return [
+    h("h1", {}, "Collection"),
+    h("p", { class: "lead" }, `Results collected from CI per repository (docs/collection.md). A repository is overdue when its last collection is older than ${d.expected_hours} hours.`),
+    d.workflow_url ? h("p", {}, external(d.workflow_url, "Open the collection workflow on GitHub")) : null,
+    d.notes.length ? h("div", { class: "notice", role: "note" }, d.notes.map((n) => h("p", {}, n))) : null,
+    table(
+      ["Repository", "Workflows", "Last collection", "Freshness", { label: "Pipelines (7 d)", num: true }, { label: "Complete", num: true }, { label: "Incomplete", num: true }, { label: "Results", num: true }, "CI conclusions"],
+      d.repositories.map((r) =>
+        h(
+          "tr",
+          { class: r.fresh ? null : "missing" },
+          h("td", {}, h("a", { href: link("/pipelines", { repository: r.repository }) }, r.repository)),
+          h("td", {}, r.workflows.join(", ")),
+          h("td", { class: "nowrap" }, formatDate(r.last_collected_at)),
+          h("td", {}, badge(r.fresh ? "fresh" : "overdue"), h("span", { class: "sub" }, r.freshness)),
+          h("td", { class: "num" }, String(r.pipelines)),
+          h("td", { class: "num" }, String(r.complete)),
+          h("td", { class: "num" }, String(r.incomplete)),
+          h("td", { class: "num" }, String(r.results)),
+          h("td", {}, Object.entries(r.conclusions).map(([c, n]) => `${n} ${c}`).join(", ") || "–"),
+        ),
+      ),
+      "No collection recorded.",
+    ),
+    d.repositories.some((r) => r.problems.length)
+      ? [h("h2", {}, "Missing artifacts and ingestion problems (7 days)"), h("ul", { class: "reasons" }, d.repositories.flatMap((r) => r.problems.map((p) => h("li", {}, `${r.repository}: ${p}`))))]
+      : h("p", {}, "No ingestion problems in the last 7 days."),
   ];
 }
 
@@ -669,6 +760,7 @@ const VIEWS = {
   runs: runsView,
   run: (parts) => runDetail(parts[1]),
   pipelines: pipelinesView,
+  collection: collectionView,
   stability: stabilityView,
   trends: trendsView,
 };

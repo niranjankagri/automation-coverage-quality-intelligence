@@ -202,4 +202,15 @@ tr.missing td { color: var(--bad); font-weight: 600; }
 .badge.At-risk, .badge.Unknown { background: var(--warn-bg); color: var(--warn); }
 .badge.Blocked { background: var(--bad-bg); color: var(--bad); }
 tr.failing-rule td { color: var(--bad); }
+details.pipeline { border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; margin: 0 0 12px; background: var(--surface); }
+details.pipeline > summary { cursor: pointer; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+details.pipeline > summary .sub { flex-basis: 100%; }
+.pipeline-title { font-weight: 600; }
+p.links { font-size: 13px; color: var(--muted); }
+.status-filter { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.status-filter a { padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; text-decoration: none; color: var(--text); }
+.status-filter a[aria-current="true"] { border-color: var(--accent, var(--text)); font-weight: 600; }
+.badge.success, .badge.complete, .badge.fresh { background: var(--good-bg); color: var(--good); }
+.badge.failure, .badge.incomplete, .badge.overdue { background: var(--bad-bg); color: var(--bad); }
+.badge.cancelled { background: var(--warn-bg); color: var(--warn); }
 

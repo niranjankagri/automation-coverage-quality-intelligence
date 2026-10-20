@@ -753,7 +753,8 @@ def _cmd_dashboard(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
     live = LiveData(first, sources, interval_seconds=refresh)
-    uvicorn.run(create_app(live, credentials), host=host, port=port, log_level="warning")
+    app = create_app(live, credentials, settings.collection_hours, settings.collection_url)
+    uvicorn.run(app, host=host, port=port, log_level="warning")
     return EXIT_OK
 
 

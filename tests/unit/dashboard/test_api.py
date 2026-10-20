@@ -152,6 +152,7 @@ def test_openapi_documentation_lists_every_route(client: TestClient) -> None:
         "/api/tests/history",
         "/api/runs",
         "/api/pipelines",
+        "/api/collection",
         "/api/runs/{run_id}",
         "/api/stability",
         "/api/trends",

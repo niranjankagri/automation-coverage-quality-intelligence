@@ -8,6 +8,7 @@ import socket
 import threading
 import time
 from collections.abc import Callable, Iterator
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -19,6 +20,7 @@ from qualityintel.history.store import HistoryStore
 from qualityintel.ingest.batch import import_pipeline
 from qualityintel.ingest.catalog_file import load_catalog
 from qualityintel.live import LiveData, Sources, load_snapshot
+from qualityintel.models.collection import PipelineCollection
 from qualityintel.models.results import TestRun
 from qualityintel.workspace import Workspace
 
@@ -83,6 +85,58 @@ def live_server(tmp_path: Path) -> Iterator[tuple[str, Sources]]:
 def live_page(browser: Browser, live_server: tuple[str, Sources]) -> Iterator[Page]:
     """A page on the live-data dashboard."""
     yield from _page(browser, live_server[0])
+
+
+def taskboard_records() -> list[PipelineCollection]:
+    """What collection recorded about the two TaskBoard runs (conclusions as GitHub reports them)."""
+    collected_at = datetime.now(UTC) - timedelta(hours=1)
+    runs = "https://github.com/niranjankagri/cypress-typescript-framework/actions/runs"
+    return [
+        PipelineCollection(
+            pipeline_id="39238241112",
+            attempt=1,
+            repository=TASKBOARD_REPO,
+            workflow="ci.yml",
+            run_number=10,
+            branch="main",
+            commit="80e331e",
+            conclusion="success",
+            url=f"{runs}/39238241112",
+            collected_at=collected_at,
+            state="complete",
+        ),
+        PipelineCollection(
+            pipeline_id="38842296207",
+            attempt=1,
+            repository=TASKBOARD_REPO,
+            workflow="ci.yml",
+            run_number=6,
+            branch="main",
+            commit="a15d3c7",
+            conclusion="cancelled",
+            url=f"{runs}/38842296207",
+            collected_at=collected_at,
+            state="incomplete",
+            problems=(
+                "job ui-firefox: artifact report-ui-firefox not found (job not run, cancelled or failed early)",
+            ),
+        ),
+    ]
+
+
+@pytest.fixture(scope="session")
+def collected_url() -> Iterator[str]:
+    """The pipeline dashboard with collection records, as a collecting deployment has them."""
+    workspace = Workspace(
+        load_catalog(PIPELINES / "catalog.toml"), pipeline_runs(), collections=taskboard_records()
+    )
+    yield from _serve(workspace)
+
+
+@pytest.fixture
+def collected_page(browser: Browser, collected_url: str) -> Iterator[Page]:
+    """A page on the dashboard with collection records."""
+    yield from _page(browser, collected_url)
 
 
 @pytest.fixture(scope="session")
