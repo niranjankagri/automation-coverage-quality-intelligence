@@ -121,6 +121,12 @@ title = "Cypress (mochawesome) and Allure results normalise into the same model 
 feature = "Ingestion"
 criticality = "high"
 
+[[requirement]]
+id = "PIPE-01"
+title = "Jobs of one pipeline execution are grouped; an incomplete or inconsistent pipeline never gives a release decision; a job attempt is imported once"
+feature = "Pipelines"
+criticality = "critical"
+
 # ---- Test cases ----------------------------------------------------------------------------
 
 [[test_case]]
@@ -359,4 +365,44 @@ framework = "pytest"
 requirements = ["FMT-01"]
 automated_by = [
   "tests.integration.test_format_samples::*",
+]
+
+[[test_case]]
+id = "TC-PIPELINE-RULES"
+title = "Grouping, attempts, missing and empty jobs, mixed commits, snapshot per job, gate and reports, history refusal"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["PIPE-01"]
+automated_by = [
+  "tests.unit.traceability.test_pipelines::*",
+  "tests.unit.test_cli_pipeline::*",
+  "tests.unit.gates.test_gates::test_pipeline_jobs_are_read_and_typos_are_refused",
+  "tests.unit.gates.test_gates::test_an_incomplete_pipeline_never_passes_even_if_every_rule_does",
+  "tests.unit.gates.test_reports::test_pipeline_section_is_in_every_format_and_escaped",
+  "tests.unit.traceability.test_report::test_two_pipeline_jobs_in_the_same_context_are_both_in_the_snapshot",
+  "tests.unit.history.test_store::test_version_2_database_gains_the_pipeline_columns",
+]
+
+[[test_case]]
+id = "TC-PIPELINE-REAL"
+title = "Real complete and cancelled TaskBoard pipelines: gate, history, API"
+automation_status = "automated"
+test_type = "integration"
+framework = "pytest"
+requirements = ["PIPE-01"]
+automated_by = [
+  "tests.integration.test_pipeline_samples::*",
+  "tests.unit.dashboard.test_pipelines_api::*",
+]
+
+[[test_case]]
+id = "TC-PIPELINE-BROWSER"
+title = "Pipelines page marks the cancelled run incomplete; runs show their job"
+automation_status = "automated"
+test_type = "ui"
+framework = "pytest"
+requirements = ["PIPE-01"]
+automated_by = [
+  "tests.e2e.test_dashboard::test_pipelines_page_shows_the_cancelled_run_as_incomplete",
+  "tests.e2e.test_dashboard::test_runs_page_names_the_pipeline_job",
 ]

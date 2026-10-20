@@ -176,7 +176,9 @@ jobs:
       - name: qi gate on this repository's own results
         run: >-
           qi gate --catalog quality/catalog.toml --config quality/release.toml
-          own-results/unit/junit-3.12.xml own-results/e2e/junit-e2e.xml
+          --pipeline ${{ github.run_id }} --attempt ${{ github.run_attempt }}
+          --branch ${{ github.ref_name }} --commit ${{ github.sha }}
+          --job unit=own-results/unit/junit-3.12.xml --job e2e=own-results/e2e/junit-e2e.xml
           --context framework=pytest --context environment=ci --context build=${{ github.sha }}
           --json reports/self-gate.json --html reports/self-gate.html --summary "$GITHUB_STEP_SUMMARY"
       - name: Keep the report
