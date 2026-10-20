@@ -37,6 +37,7 @@ DEFAULT_ID_PATTERN = re.compile(r"\[([A-Za-z][A-Za-z0-9]*-\d+)\]")
 ID_PROPERTIES = frozenset({"test_id", "test_case_id", "testcase_id"})
 # Suite properties copied into the run context (everything else is ignored, see module docstring)
 CONTEXT_PROPERTIES = {
+    "framework": "framework",
     "browser": "browser",
     "environment": "environment",
     "env": "environment",
