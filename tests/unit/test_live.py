@@ -162,3 +162,26 @@ def test_fixed_data_never_reloads(sources: Sources) -> None:
     assert live.status().version == "fixed"
     live.start()  # no thread for fixed data
     live.stop()
+
+
+def test_api_counts_equal_the_database_after_a_reload(sources: Sources) -> None:
+    """What the dashboard serves after a refresh is exactly what the database holds."""
+    import sqlite3 as sql
+
+    from fastapi.testclient import TestClient
+
+    from qualityintel.dashboard.app import create_app
+
+    live = LiveData(load_snapshot(sources), sources)
+    client = TestClient(create_app(live))
+    add_run(sources, day=19)
+    add_run(sources, day=20)
+    live.check()
+
+    assert sources.database is not None
+    with closing(sql.connect(sources.database)) as db:
+        runs = db.execute("select count(*) from runs").fetchone()[0]
+        results = db.execute("select count(*) from results").fetchone()[0]
+    api_runs = client.get("/api/runs").json()
+    assert len(api_runs) == runs == 3
+    assert sum(sum(r["counts"].values()) for r in api_runs) == results

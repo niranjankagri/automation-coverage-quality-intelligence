@@ -716,7 +716,25 @@ function describe(status) {
   return parts.join(" · ");
 }
 
+let checking = false;
+
 async function checkStatus(force = false) {
+  if (checking) return; // one check at a time; a slow answer is not overtaken by another
+  checking = true;
+  const previous = freshLine.textContent;
+  if (force) freshLine.textContent = "Checking for new data…"; // the content below stays
+  try {
+    await runCheck(force);
+  } catch (error) {
+    freshLine.textContent = previous;
+    staleNote.hidden = false;
+    staleNote.textContent = `Refresh failed (${error.message}); the page shows the data it loaded last.`;
+  } finally {
+    checking = false;
+  }
+}
+
+async function runCheck(force) {
   let status;
   try {
     status = await api(`/api/status${force ? "?check=true" : ""}`);
@@ -732,9 +750,11 @@ async function checkStatus(force = false) {
   }
   if (dataVersion !== null && status.version !== dataVersion) {
     dataVersion = status.version;
+    const scroll = window.scrollY;
     await showDataSize();
     await loadFacets();
     await render(); // same address, same filters, new data
+    window.scrollTo(0, scroll); // where the reader was
   }
   dataVersion = status.version;
   scheduleChecks(status.refresh_seconds);
