@@ -20,7 +20,8 @@ read once at start-up; restart to load new result files.
 | Overview | requirements in scope; requirement coverage, automation coverage, automated requirement coverage; execution pass rate and pass / fail / error / skip counts of the snapshot; snapshot runs; critical requirements without automation; failing requirements; other gaps | every card opens the list behind it (e.g. requirement coverage -> requirements without tests) |
 | Requirements | id, title, feature, criticality, automated / linked test cases, coverage status, execution status; status filter | requirement -> its test cases and their latest executions |
 | Tests | every executed test with run, pass, fail, error, skip counts and last failure; search; latest-outcome filter | test -> full execution history, failure message and stack trace |
-| Runs | every imported run with context, counts and pass rate | run -> all results, failures first |
+| Runs | every imported run with pipeline / job, context, counts and pass rate | run -> all results, failures first |
+| Pipelines | pipeline executions newest first: jobs with attempt, runs, counts and pass rate; missing jobs; state complete / incomplete against the expected jobs entered on the page ([pipelines.md](pipelines.md)) | job -> its run |
 | Trends | daily snapshots (results, pass rate, test duration, requirements by status), days that are not comparable (new suites, carried-over runs), duration per run for each context, coverage snapshots; every chart with its numbers in a table | run context charts list each run with its build |
 | Stability | class counts; tests needing attention with evidence; recurring failures; duration regressions; runs per context | test -> history; run strip -> run ([history.md](history.md)) |
 
@@ -37,6 +38,7 @@ Coverage and pass rate are separate cards on purpose ([ADR 0004](adr/0004-separa
 | ![Overview](images/dashboard-overview.png) | ![Requirements, critical only](images/dashboard-requirements.png) |
 | ![History of the test that failed on 13 Oct](images/dashboard-test-history.png) | ![Runs, dark theme](images/dashboard-run.png) |
 | ![Trends](images/dashboard-trends.png) | ![Stability](images/dashboard-stability.png) |
+| ![Pipelines: the cancelled TaskBoard run is incomplete](images/dashboard-pipelines.png) | |
 
 Made by `python tools/screenshots.py`; CI takes the same screenshots on every run (artifact
 `dashboard-e2e`).
@@ -56,6 +58,7 @@ Interactive documentation: `/docs` (generated from the routes, so it cannot drif
 | `GET /api/tests/history?key=` | all executions of one test, newest first (key in the query: it contains `/` and `::`) |
 | `GET /api/runs` | runs, newest first |
 | `GET /api/runs/{run_id}` | one run, failures first |
+| `GET /api/pipelines?jobs=` | pipeline executions with jobs, missing jobs, problems and state; `jobs` = expected jobs, comma-separated |
 | `GET /api/trends` | daily snapshots, run series per context, coverage snapshots, notes on what is not comparable |
 | `GET /api/stability?window=&include_stable=` | stability classes with evidence, recurring failures, duration regressions, trends per context |
 

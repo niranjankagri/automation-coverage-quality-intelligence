@@ -57,6 +57,7 @@ CI on Linux and Windows on every push: [docs/validation.md](docs/validation.md).
 | Traceability | `qi coverage` | requirement coverage, automation coverage, automated requirement coverage; gaps; breakdowns by feature, criticality, test type, platform; execution status per requirement | [traceability](docs/traceability.md), [metrics](docs/metrics.md) |
 | History | `qi history import / report / compare` | SQLite history with coverage snapshots; stability classes with evidence (flaky candidates, consistent and new failures); recurring failures; duration regressions; trends | [history](docs/history.md) |
 | Quality gates | `qi gate` | configurable rules; passed / failed / incomplete as exit codes 0 / 1 / 3; JSON, HTML and Markdown reports | [quality gates](docs/quality-gates.md) |
+| Pipelines | `--pipeline ID --job NAME=PATH` | the jobs of one CI execution grouped; re-run attempts; a gate never decides on a pipeline with a missing, empty or inconsistent job; Pipelines page | [pipelines](docs/pipelines.md) |
 | Dashboard | `qi dashboard` | read-only web UI and JSON API (`/docs`) over the same numbers, incl. trend charts per day and per context checked against the stored records | [dashboard](docs/dashboard.md), [OpenAPI](docs/api/openapi.json) |
 
 ## The sample data is real
@@ -166,7 +167,7 @@ Development setup: `pip install -e ".[dev,e2e]"`, `playwright install chromium`,
 
 [Architecture](docs/architecture.md) · [Metric definitions](docs/metrics.md) ·
 [Ingestion](docs/ingestion.md) · [Requirements import](docs/requirements-import.md) · [Traceability](docs/traceability.md) · [History](docs/history.md) ·
-[Quality gates](docs/quality-gates.md) · [Dashboard and API](docs/dashboard.md) ·
+[Quality gates](docs/quality-gates.md) · [Pipelines](docs/pipelines.md) · [Dashboard and API](docs/dashboard.md) ·
 [Limitations and future work](docs/limitations.md) · [Decision records](docs/adr/) ·
 [Sample data](samples/README.md) · [Clean-checkout validation](docs/validation.md) · [Changelog](CHANGELOG.md)
 

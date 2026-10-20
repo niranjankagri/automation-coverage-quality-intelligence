@@ -19,10 +19,10 @@ SQLite through Python's standard `sqlite3` ([ADR 0003](adr/0003-sqlite-first.md)
 
 | Table | Content |
 |---|---|
-| `runs` | run id (SHA-256 of the result file, primary key), source name, framework, environment, browser, platform, build, start time, import time |
+| `runs` | run id (SHA-256 of the result file, primary key), source name, framework, environment, browser, platform, build, start time, import time; pipeline id, job, attempt, branch, commit when imported as part of a pipeline ([pipelines.md](pipelines.md)) |
 | `results` | one row per result: name, classname, suite, outcome, duration, timestamp, failure message/type/text, explicit test ids, retries |
 | `coverage_snapshots` | the catalog's three coverage metrics, recorded by `qi history import --catalog` when the catalog changed |
-| `schema_version` | version of the layout (2); older files are upgraded when opened, a database written by a newer version is refused |
+| `schema_version` | version of the layout (3); older files are upgraded when opened (new tables and columns are added, existing rows kept), a database written by a newer version is refused |
 
 Properties, each with a test in `tests/unit/history/test_store.py`:
 

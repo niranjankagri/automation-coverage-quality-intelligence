@@ -50,7 +50,14 @@ max_automated_cases_without_results = 0  # automated cases whose tests vanished 
 [scope]                                  # optional, same filters as `qi coverage`
 criticality = ["critical", "high"]
 browser = ["firefox"]
+
+[pipeline]                               # optional: jobs that must all report (docs/pipelines.md)
+jobs = ["api", "ui-chrome", "ui-firefox"]
 ```
+
+With `[pipeline]`, results are given as one pipeline execution (`--pipeline ID --job
+NAME=PATH ...`); a job that did not report, reported no tests, or tested another commit makes
+the gate **incomplete** (exit 3) however the rules come out ([pipelines.md](pipelines.md)).
 
 Metric definitions are in [metrics.md](metrics.md). Thresholds compare the **unrounded** value:
 66.66 % does not pass a 66.7 % threshold even though it is displayed as 66.7 %.
@@ -62,7 +69,7 @@ All formats are built from one document, so they cannot disagree.
 | Format | Option | For |
 |---|---|---|
 | Text | always, on stdout | CI log: verdict, one line per rule, failing items |
-| JSON | `--json FILE` | machines; `schema_version` 1; keys: `gate` (name, status, exit_code, scope), `input_problems`, `rules` (name, status, fails_gate, actual, expected, explanation, items), `metrics`, `gaps`, `failing_requirements`, `failing_critical`, `inputs` |
+| JSON | `--json FILE` | machines; `schema_version` 1; keys: `gate` (name, status, exit_code, scope), `input_problems`, `pipeline` (null, or id, state, branch, commit, missing_jobs, jobs), `rules` (name, status, fails_gate, actual, expected, explanation, items), `metrics`, `gaps`, `failing_requirements`, `failing_critical`, `inputs` |
 | HTML | `--html FILE` | people; one self-contained file (no script, no external resource), every value escaped |
 | Markdown | `--summary FILE` (appended) | the run page: `--summary "$GITHUB_STEP_SUMMARY"` |
 
@@ -99,3 +106,6 @@ GitHub Actions, after the test step (which may itself fail):
 
 `if: always()` matters: if the test step crashed and wrote nothing, the gate still runs and ends
 with exit code 3 instead of being skipped.
+
+With several test jobs, gate the whole pipeline execution in a final job, so a cancelled job
+cannot leave the decision to the others: see [pipelines.md](pipelines.md).

@@ -30,7 +30,7 @@ command line and the dashboard only present what the core computed.
 |---|---|---|
 | `qualityintel.models` | Typed data model: requirements, test cases, mappings, results | 2 |
 | `qualityintel.ingest` | Reads result files into the model: JUnit XML, mochawesome, Allure | 3 |
-| `qualityintel.traceability` | Result matching, coverage metrics, gaps, execution status | 4 |
+| `qualityintel.traceability` | Result matching, coverage metrics, gaps, execution status, pipeline executions | 4 |
 | `qualityintel.reporting` | Text/JSON/HTML renderers; formatting only, no calculations | 4, 7 |
 | `qualityintel.dashboard` | Web view over the other packages | 5 |
 | `qualityintel.history` | SQLite store (all SQL lives here); stability classes, recurring failures, durations, trends | 6 |

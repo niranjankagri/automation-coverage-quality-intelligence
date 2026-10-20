@@ -23,6 +23,16 @@
   count as errors; unknown JSON makes a batch incomplete. Real samples in `samples/formats`:
   8 Cypress runs and 5 Allure runs, each Allure run checked test by test against the JUnit XML
   of the same CI job. `tools/sanitize_reports.py` cleans such reports for sharing.
+- **Pipeline executions** ([docs/pipelines.md](docs/pipelines.md), [ADR 0006](docs/adr/0006-pipeline-executions.md)):
+  `--pipeline ID --job NAME=PATH` (plus `--attempt`, `--branch`, `--commit`) on `qi gate` and
+  `qi history import`; a gate file's `[pipeline] jobs` must all report, else the gate is
+  incomplete (exit 3); a job's latest attempt counts; history refuses a second, different import
+  of a job attempt (schema 3, upgraded on open); JSON/text/Markdown/HTML reports show the
+  pipeline; Pipelines page and `/api/pipelines`. Real samples: a complete and a cancelled
+  TaskBoard pipeline. The self gate now decides on its own CI run as a pipeline.
+- **Fixes found on the way:** two pipeline jobs in the same context (component and UI tests in
+  Chrome) no longer replace each other in the snapshot; a late API response for an older address
+  is no longer shown by the dashboard (a CI race); empty view slots no longer print "null".
 
 ## 1.0.0 (2026-10-20)
 

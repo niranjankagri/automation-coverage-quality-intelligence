@@ -29,8 +29,10 @@ up and what to do about it.
 
 | Limitation | Effect | What to do |
 |---|---|---|
-| The snapshot keeps the latest run per context (framework, environment, browser, platform) | two different suites with the same context (e.g. an API and a UI job that both record only `framework=pytest`) replace each other; only the newer one counts | record a distinguishing value: `--context browser=chromium`, a JUnit `browser`/`environment` property (this project's own e2e suite does this), or separate gate runs |
+| The snapshot keeps the latest run per context (framework, environment, browser, platform) | two different suites with the same context (e.g. an API and a UI job that both record only `framework=pytest`) replace each other; only the newer one counts | record a distinguishing value: `--context browser=chromium`, a JUnit `browser`/`environment` property (this project's own e2e suite does this), import the suites as pipeline jobs (`--pipeline` with `--job`: the job is part of the key, and a pipeline gate counts every run), or separate gate runs |
 | Context comes only from the files and `--context` | files without timestamps sort before dated files; files without browser or environment share a context | add properties at the source, or sanitise with `--set` as the samples do |
+| Pipeline completeness is judged from reports, not from the CI system's job status | a job cancelled after writing a complete report counts as reported; a half-written report is caught only if it is unreadable or empty | keep `min_results` in the gate as a second line of defence ([pipelines.md](pipelines.md)) |
+| The dashboard does not know a pipeline's expected jobs | without them, the Pipelines page checks only consistency (branch, commit, empty jobs) | enter the jobs on the page; the address keeps them for bookmarks |
 
 ### History metrics
 
@@ -63,8 +65,7 @@ Not built, in the order they would add most value. None is claimed anywhere else
 
 1. **Direct requirement sync** with a test-management tool (Jira/Xray, Azure DevOps, TargetProcess);
    today their CSV export is imported ([requirements-import.md](requirements-import.md)).
-2. **Run grouping by pipeline**, so a CI run with many jobs is one unit in history and gates.
-3. **Live reload** in the dashboard when the history database changes.
-4. **PostgreSQL** store, only if several writers or a shared server become a real need
+2. **Live reload** in the dashboard when the history database changes.
+3. **PostgreSQL** store, only if several writers or a shared server become a real need
    ([ADR 0003](adr/0003-sqlite-first.md)).
-5. **Ownership** (team or component per requirement) to route gaps and failures.
+4. **Ownership** (team or component per requirement) to route gaps and failures.
