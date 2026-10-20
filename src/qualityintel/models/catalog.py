@@ -17,6 +17,7 @@ from qualityintel.models.enums import AutomationStatus, Criticality, Priority, R
 # Ids appear in file names, URLs and SQL; keep them to a safe, readable alphabet
 Identifier = Annotated[str, Field(min_length=1, max_length=100, pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]*$")]
 Text = Annotated[str, Field(min_length=1, max_length=500)]
+LongText = Annotated[str, Field(min_length=1, max_length=4000)]
 
 
 class CatalogError(ValueError):
@@ -38,6 +39,7 @@ class Requirement(_Frozen):
 
     id: Identifier
     title: Text
+    description: LongText | None = None
     feature: Text | None = None
     criticality: Criticality | None = None
     priority: Priority | None = None
