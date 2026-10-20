@@ -34,6 +34,7 @@ SHOTS = [
         False,
     ),
     ("dashboard-run.png", "#/runs?framework=playwright", 1280, "dark", False),
+    ("dashboard-stability.png", "#/stability", 1280, "light", True),
     ("dashboard-phone.png", "#/", 390, "light", False),
 ]
 

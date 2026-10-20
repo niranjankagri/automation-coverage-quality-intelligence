@@ -7,6 +7,7 @@ as `qi coverage`: both read the core packages, and the dashboard calculates noth
 ```bash
 qi dashboard --catalog samples/catalog.toml samples/results
 # qi: dashboard on http://127.0.0.1:8000  (42 requirements, 43 runs)
+qi dashboard --catalog samples/catalog.toml --database .qi/quality.db   # runs from the history
 ```
 
 `--host` / `--port` (or `QI_DASHBOARD_HOST` / `QI_DASHBOARD_PORT`) change the address. The data is
@@ -20,6 +21,7 @@ read once at start-up; restart to load new result files.
 | Requirements | id, title, feature, criticality, automated / linked test cases, coverage status, execution status; status filter | requirement -> its test cases and their latest executions |
 | Tests | every executed test with run, pass, fail, error, skip counts and last failure; search; latest-outcome filter | test -> full execution history, failure message and stack trace |
 | Runs | every imported run with context, counts and pass rate | run -> all results, failures first |
+| Stability | class counts; tests needing attention with evidence; recurring failures; duration regressions; runs per context | test -> history; run strip -> run ([history.md](history.md)) |
 
 Filters (feature, criticality, test type, framework, environment, browser) apply to every view
 and are kept in the address, so a filtered view can be bookmarked or shared. The drop-down values
@@ -52,6 +54,7 @@ Interactive documentation: `/docs` (generated from the routes, so it cannot drif
 | `GET /api/tests/history?key=` | all executions of one test, newest first (key in the query: it contains `/` and `::`) |
 | `GET /api/runs` | runs, newest first |
 | `GET /api/runs/{run_id}` | one run, failures first |
+| `GET /api/stability?window=&include_stable=` | stability classes with evidence, recurring failures, duration regressions, trends per context |
 
 Filter parameters are repeatable: `?criticality=critical&criticality=high&browser=firefox`.
 Unknown ids give **404**; a value that can never match (`criticality=urgent`, `outcome=green`)

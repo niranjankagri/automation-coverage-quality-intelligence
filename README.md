@@ -58,7 +58,8 @@ src/qualityintel/
   reporting/      text (and later JSON/HTML) renderers, no calculations
   dashboard/      FastAPI JSON API + static HTML/JS front end               M5
   workspace.py    view models behind every dashboard page (tested without a server)
-  history/        SQLite history, trends, flaky-test candidates             M6
+  history/        SQLite store; stability classes, recurring failures,     M6
+                  duration regressions, trends, run comparison
   gates/          release criteria, reports, pipeline exit status           M7
   config.py       settings from QI_* environment variables
   cli.py          the `qi` command
@@ -74,9 +75,9 @@ docs/
 
 ![Dashboard overview on the sample data](docs/images/dashboard-overview.png)
 
-Read-only views of coverage, gaps, the latest runs, every test's history and every run, with
-filters kept in the address and a JSON API documented at `/docs`. Details:
-[docs/dashboard.md](docs/dashboard.md).
+Read-only views of coverage, gaps, the latest runs, every test's history, every run and test
+stability, with filters kept in the address and a JSON API documented at `/docs`. Details:
+[docs/dashboard.md](docs/dashboard.md), [docs/history.md](docs/history.md).
 
 ## Setup
 
@@ -110,6 +111,9 @@ qi inspect samples/results                       # what the result files contain
 qi inspect "target/surefire-reports/TEST-*.xml"  # quoted patterns work in cmd.exe too
 qi coverage --catalog samples/catalog.toml samples/results   # coverage, gaps, execution status
 qi dashboard --catalog samples/catalog.toml samples/results  # web dashboard on http://127.0.0.1:8000
+qi history import samples/results     # store runs in .qi/quality.db (SQLite)
+qi history report                     # flaky candidates, recurring failures, slow-downs, trends
+qi history compare <base> <head>      # what changed between two runs
 python -m qualityintel version   # same, when the qi script is not on PATH
 ```
 
@@ -149,7 +153,7 @@ Chromium, and keeps the JUnit XML of each job (and the dashboard screenshots) as
 | 3 | Multi-framework result ingestion (JUnit XML) | Done |
 | 4 | Requirement traceability engine | Done |
 | 5 | Quality dashboard | Done |
-| 6 | Historical quality intelligence | Planned |
+| 6 | Historical quality intelligence | Done |
 | 7 | CI/CD quality gates | Planned |
 | 8 | Portfolio-ready release | Planned |
 

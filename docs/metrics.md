@@ -151,5 +151,76 @@ it describes what ran.
 
 ## History metrics
 
-Defined in Milestone 6 (comparable executions, flaky-test candidates, recurring failures,
-duration regressions) and added to this page then.
+Computed by `qualityintel.history.analysis` over stored or freshly imported runs.
+
+**Comparable executions.** A test is only compared with itself (same key) in the same **run
+context** (framework, environment, browser, platform). A Firefox failure says nothing about
+Chrome.
+
+**Verdicts and window.** A verdict is an execution that passed, failed or errored; skips are
+ignored. Classification looks at the last `window` verdicts (default **10**) of a test in one
+context.
+
+**Flip.** Two consecutive verdicts where one passed and the other did not.
+
+### Stability classes (first matching rule wins)
+
+| # | Class | Rule (defaults) | Meaning |
+|---|---|---|---|
+| 1 | insufficient data | fewer than **3** verdicts and no pass-after-retry | too early to say anything |
+| 2 | consistently failing | the last **2** verdicts both failed or errored | a reproduced failure: treat as a real defect, **not** as flakiness |
+| 3 | flaky candidate | a pass after a retry inside one run, **or** one build that both passed and failed, **or** at least **2** flips (`flips_for_flaky`) | mixed results without a code change; a *candidate*, to be confirmed by a person |
+| 4 | new failure | the latest verdict failed (and none of the above) | broke recently; one failure is not yet a confirmed failure |
+| 5 | recovered | a failure earlier in the window, passing now | watch it |
+| 6 | stable | every verdict passed | |
+
+Failure rate (shown with every class) = failed or errored verdicts / verdicts in the window.
+
+"Same build passed and failed" is the strongest flaky signal the data can give: nothing in the
+code changed between the two outcomes. On the sample data it finds four tests: one Selenium test
+that timed out once on 13 Oct (build `f5a40d5` passed on the other nightlies) and three Playwright
+tests that failed in attempts 1 or 2 of run 39229363499 and passed on attempt 3 of the same commit.
+
+### Recurring failures
+
+Failure **signature** = exception type + first line of the message, with UUIDs, hex ids and all
+numbers masked (`Timeout 15000ms` and `Timeout 30000ms` are one cause). A signature is
+*recurring* when it occurs in at least **2** different runs. Tests with outcome `error` in at
+least 2 runs are listed separately (errors usually mean set-up or environment problems, not
+assertion failures).
+
+### Durations
+
+| Metric | Rule (defaults) |
+|---|---|
+| Slow tests | highest **median** duration per test and context (one slow run does not make a test slow) |
+| Duration regression | the last **2** durations (`slow_confirm_runs`) are each more than **50 %** above **and** at least **1.0 s** above the baseline; baseline = median of up to `window` earlier durations, at least **3** |
+
+The absolute floor stops 0.01 s -> 0.02 s from counting as "100 % slower". Requiring two slow
+runs in a row is a lesson from the sample data: in the 19 Oct nightly individual TestNG tests
+reported up to 5x their usual time while the suite's wall time did not change (tests running in
+parallel share the machine). With one run, 19 tests were flagged; with two consecutive runs, two
+remain, both slow on the first two runs of a new build.
+
+### Run comparison and grouping
+
+`compare(base, head)` lists newly failing, fixed, still failing, added, removed and clearly
+slower tests (same thresholds as duration regressions). Runs can also be grouped by build,
+environment or framework with a pooled pass rate (all results of the group together).
+
+### Limits of these numbers
+
+- **Small samples.** With 5 runs, one failure is a 20 % failure rate. Classes need at least 3
+  verdicts, but a stable class after 3 runs is weak evidence.
+- **Identity is the test name.** Renaming a test starts a new history; the old one stays.
+- **Context is only as good as the files.** Runs whose files do not record browser or environment
+  (and that were imported without `--context`) share one context and are compared with each other.
+- **Retries are only visible if the producer reports them.** Surefire writes `flakyFailure`;
+  pytest, Robot and Playwright's JUnit output do not record in-run retries. A CI re-run is
+  visible only if each attempt's file is imported (as the Playwright samples are).
+- **Time order** uses the suite timestamp. Files without one sort before dated runs.
+- **Durations in parallel suites** depend on what ran beside the test; trust trends, not
+  single values.
+- **Flaky candidate is a hypothesis.** The class says the history *looks* intermittent. The cause
+  (test, product, environment, test data) needs a person; the sample candidates were all caused
+  by the environment (public demo site outage, a page-ready timeout on Firefox).

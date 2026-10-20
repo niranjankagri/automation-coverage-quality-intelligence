@@ -39,7 +39,7 @@ not run tests itself and does not replace any framework.
 | `qualityintel.traceability` | Result matching, coverage metrics, gaps, execution status | 4 |
 | `qualityintel.reporting` | Text/JSON/HTML renderers; formatting only, no calculations | 4, 7 |
 | `qualityintel.dashboard` | Web view over the other packages | 5 |
-| `qualityintel.history` | SQLite execution history, trends, flaky-test candidates | 6 |
+| `qualityintel.history` | SQLite store (all SQL lives here); stability classes, recurring failures, durations, trends | 6 |
 | `qualityintel.gates` | Release criteria, JSON/HTML reports, pipeline exit status | 7 |
 | `qualityintel.config` | Settings from `QI_*` environment variables | 1 |
 | `qualityintel.cli` | The `qi` command | 1 |
