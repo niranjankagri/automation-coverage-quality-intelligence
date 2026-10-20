@@ -36,7 +36,7 @@ namespaced elements.
 | `<flakyFailure>`, `<flakyError>`, `<rerunFailure>`, `<rerunError>` | `TestResult.retries` (one per element) |
 | `<testcase time>` | `duration_seconds`; missing = unknown; invalid (`abc`, negative, `1,234`) = unknown + warning |
 | `<testsuite timestamp>` | earliest one = `TestRun.started_at`; no offset = UTC |
-| testcase property `test_id` / `test_case_id`, `[ID-123]` in the name | `TestResult.test_ids` (explicit link to a catalog test case) |
+| testcase property `test_id` / `test_case_id`, `[TC-101]` in the name (upper-case prefix, so pytest ids like `[over-100]` do not count) | `TestResult.test_ids` (explicit link to a catalog test case) |
 | suite properties `framework`, `browser`, `environment`/`env`, `platform`, `build`/`build_version` | `RunContext` (values given on the command line win) |
 
 **Deliberately not read:** `<system-out>` and `<system-err>` (logs may contain secrets and are

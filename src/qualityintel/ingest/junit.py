@@ -31,8 +31,10 @@ from qualityintel.models.results import MAX_FAILURE_TEXT, FailureDetails, RunCon
 FORMAT = "junit-xml"
 # Big enough for tens of thousands of results; larger files are almost certainly a mistake
 MAX_FILE_BYTES = 50 * 1024 * 1024
-# "Login works [TC-101]" -> TC-101; brackets keep ids like "HTTP-404" in names from matching
-DEFAULT_ID_PATTERN = re.compile(r"\[([A-Za-z][A-Za-z0-9]*-\d+)\]")
+# "Login works [TC-101]" -> TC-101. Brackets keep ids like "HTTP-404" in names from matching;
+# the upper-case prefix keeps pytest parameter ids such as "[over-100]" from matching (found
+# when this project gated its own test results)
+DEFAULT_ID_PATTERN = re.compile(r"\[([A-Z][A-Z0-9]*-\d+)\]")
 # Testcase properties that carry an explicit test case id
 ID_PROPERTIES = frozenset({"test_id", "test_case_id", "testcase_id"})
 # Suite properties copied into the run context (everything else is ignored, see module docstring)

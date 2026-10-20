@@ -159,12 +159,13 @@ def test_test_ids_come_from_properties_and_name_tokens() -> None:
     """Explicit ids: test_id property and [ID] tokens in the name, without duplicates."""
     xml = """<testsuite name="s"><testcase name="Login works [TC-101] [TC-102]">
       <properties><property name="test_id" value="TC-101"/><property name="owner" value="x"/></properties>
-    </testcase><testcase name="HTTP-404 page"/></testsuite>"""
+    </testcase><testcase name="HTTP-404 page"/><testcase name="test_rate[over-100]"/></testsuite>"""
 
     results, _ = parse(xml)
 
     assert results[0].test_ids == ("TC-101", "TC-102")
     assert results[1].test_ids == ()
+    assert results[2].test_ids == ()  # a pytest parameter id, not a test case id
 
 
 def test_context_comes_from_allow_listed_properties_only() -> None:
