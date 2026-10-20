@@ -444,3 +444,24 @@ def test_api_answers_are_not_kept_by_caches_and_https_gets_hsts() -> None:
     assert plain.headers["Cache-Control"] == "no-cache"
     assert "Strict-Transport-Security" not in plain.headers
     assert "Cross-Origin-Opener-Policy" not in plain.headers  # see docs/security.md
+
+
+def test_the_access_log_is_one_json_line_per_request_without_queries_or_logins(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Method, path, status and duration; never the query string or the Authorization header."""
+    import json
+
+    workspace, _ = Workspace.load(SAMPLES / "catalog.toml", [])
+    client = TestClient(create_app(workspace, ("qi", "correct horse battery"), access_log=True))
+    capsys.readouterr()
+
+    client.get("/api/runs", params={"framework": "secret-team-name"}, auth=("qi", "correct horse battery"))
+    client.get("/api/health", auth=("qi", "wrong password!!"))
+
+    lines = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert [(e["method"], e["path"], e["status"]) for e in lines] == [
+        ("GET", "/api/runs", 200),
+        ("GET", "/api/health", 401),
+    ]
+    assert all(set(e) == {"time", "method", "path", "status", "ms"} for e in lines)

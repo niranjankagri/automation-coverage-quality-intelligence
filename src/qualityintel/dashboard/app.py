@@ -11,6 +11,7 @@ import base64
 import binascii
 import contextlib
 import hmac
+import json
 import math
 import time
 from collections.abc import AsyncIterator
@@ -151,6 +152,28 @@ class SecurityHeaders(BaseHTTPMiddleware):
         return response
 
 
+class AccessLog(BaseHTTPMiddleware):
+    """One JSON line per request on standard output, for a hosting platform's log search.
+
+    Only method, path, status and duration: no query string (it can name tests), no client
+    address, no headers (they can carry the login).
+    """
+
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        """Time the request and log it after the answer."""
+        started = time.perf_counter()
+        response = await call_next(request)
+        entry = {
+            "time": datetime.now(UTC).isoformat(timespec="seconds"),
+            "method": request.method,
+            "path": request.url.path,
+            "status": response.status_code,
+            "ms": round((time.perf_counter() - started) * 1000, 1),
+        }
+        print(json.dumps(entry), flush=True)
+        return response
+
+
 class LoginThrottle:
     """Failed logins per client address in a sliding window; too many lock that address out.
 
@@ -256,6 +279,7 @@ def create_app(
     credentials: tuple[str, str] | None = None,
     collection_hours: float = 26.0,
     collection_url: str | None = None,
+    access_log: bool = False,
 ) -> FastAPI:
     """Build the application around the dashboard data.
 
@@ -266,6 +290,7 @@ def create_app(
             (the command line only allows that on this machine's loopback address).
         collection_hours: Hours after which a repository's last collection counts as overdue.
         collection_url: Link to the collection workflow, shown on the Collection page.
+        access_log: Log every request as a JSON line (``QI_ACCESS_LOG=json``).
     """
     live = data if isinstance(data, LiveData) else LiveData.fixed(data)
 
@@ -293,6 +318,9 @@ def create_app(
     if credentials is not None:
         # Added last, so it runs first: nothing is answered before the check
         app.add_middleware(BasicAuth, user=credentials[0], password=credentials[1])
+    if access_log:
+        # Added last, so it runs first: refused requests (401, 429) are logged too
+        app.add_middleware(AccessLog)
     app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
     @app.get("/", include_in_schema=False)

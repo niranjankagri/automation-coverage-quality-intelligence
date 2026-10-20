@@ -42,6 +42,7 @@ from qualityintel.history.analysis import (
     summary_by,
     trend,
 )
+from qualityintel.history.fetch import FetchError, fetch_history
 from qualityintel.history.store import SCHEMA_VERSION, HistoryError, HistoryStore
 from qualityintel.history.trends import coverage_snapshot
 from qualityintel.ingest.batch import Batch, import_pipeline, import_results
@@ -235,6 +236,12 @@ def build_parser() -> argparse.ArgumentParser:
     restore.add_argument("source", type=Path, help="backup file written by `qi history backup`")
     restore.add_argument("--database", type=Path, help="SQLite file (default: QI_DATABASE or .qi/quality.db)")
     restore.add_argument("--replace", action="store_true", help="replace an existing database file")
+
+    fetch = history_commands.add_parser(
+        "fetch", help="download a published history and swap it in once verified (docs/deployment.md)"
+    )
+    fetch.add_argument("url", help="https address of a history database (e.g. a release asset)")
+    fetch.add_argument("--database", type=Path, help="SQLite file (default: QI_DATABASE or .qi/quality.db)")
 
     compare = history_commands.add_parser("compare", help="what changed between two stored runs")
     compare.add_argument("base", help="run id (or its first characters) or the end of its source name")
@@ -540,6 +547,16 @@ def _cmd_history(args: argparse.Namespace) -> int:
             ),
             end="",
         )
+        return EXIT_OK
+
+    if args.history_command == "fetch":
+        try:
+            fetched = fetch_history(args.url, path)
+        except FetchError as error:
+            print(f"qi: error: {error}", file=sys.stderr)
+            return EXIT_INPUT
+        state = "updated" if fetched.changed else "unchanged"
+        print(f"{path}: {state}, {fetched.runs} runs, {fetched.results} results")
         return EXIT_OK
 
     if args.history_command in ("prune", "backup", "check", "restore"):
@@ -875,7 +892,9 @@ def _cmd_dashboard(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
     live = LiveData(first, sources, interval_seconds=refresh)
-    app = create_app(live, credentials, settings.collection_hours, settings.collection_url)
+    app = create_app(
+        live, credentials, settings.collection_hours, settings.collection_url, settings.access_log
+    )
     # Behind a proxy, its X-Forwarded-For/-Proto give the client address (login throttling) and
     # https (HSTS); only the proxies named in QI_FORWARDED_ALLOW_IPS are believed
     uvicorn.run(

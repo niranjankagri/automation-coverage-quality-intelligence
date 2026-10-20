@@ -37,6 +37,7 @@ class Settings:
             then the dashboard only serves on this machine). Never printed: left out of repr.
         dashboard_public: Serve without a login on any address, on purpose: for a public
             demonstration of data that is public anyway (docs/operations.md).
+        access_log: Log every dashboard request as one JSON line on standard output.
         forwarded_allow_ips: Proxies whose ``X-Forwarded-*`` headers are trusted (client
             address, https), comma-separated or ``*``; ``None``: only 127.0.0.1.
     """
@@ -51,6 +52,7 @@ class Settings:
     collection_url: str | None = None
     dashboard_public: bool = False
     forwarded_allow_ips: str | None = None
+    access_log: bool = False
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> Settings:
@@ -80,7 +82,17 @@ class Settings:
             collection_url=_check_url(source.get("QI_COLLECTION_URL")),
             dashboard_public=_parse_flag("QI_DASHBOARD_PUBLIC", source.get("QI_DASHBOARD_PUBLIC")),
             forwarded_allow_ips=source.get("QI_FORWARDED_ALLOW_IPS") or None,
+            access_log=_parse_access_log(source.get("QI_ACCESS_LOG")),
         )
+
+
+def _parse_access_log(raw: str | None) -> bool:
+    """``QI_ACCESS_LOG``: ``json`` logs every request as a JSON line; empty or ``off``: none."""
+    if not raw or raw.lower() == "off":
+        return False
+    if raw.lower() != "json":
+        raise ConfigError(f"QI_ACCESS_LOG must be json or off, got {raw!r}")
+    return True
 
 
 def _parse_flag(name: str, raw: str | None) -> bool:
