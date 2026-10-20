@@ -29,3 +29,6 @@ reports/
 # IDEs
 .idea/
 .vscode/
+
+# Output of tools/demo.py
+demo-output/
