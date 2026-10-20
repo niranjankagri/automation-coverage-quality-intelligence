@@ -4,7 +4,7 @@ The history turns many runs into answers that one run cannot give: which tests a
 candidates, which failures recur, which tests got slower, how each pipeline trends.
 
 ```bash
-qi history import samples/results          # store runs (default database: .qi/quality.db)
+qi history import samples/results --catalog samples/catalog.toml   # store runs + a coverage snapshot
 qi history report                          # stability, recurring failures, durations, trends
 qi history compare 39229363499-attempt1.xml 39229363499-attempt3.xml
 qi dashboard --catalog samples/catalog.toml --database .qi/quality.db   # Stability page
@@ -21,7 +21,8 @@ SQLite through Python's standard `sqlite3` ([ADR 0003](adr/0003-sqlite-first.md)
 |---|---|
 | `runs` | run id (SHA-256 of the result file, primary key), source name, framework, environment, browser, platform, build, start time, import time |
 | `results` | one row per result: name, classname, suite, outcome, duration, timestamp, failure message/type/text, explicit test ids, retries |
-| `schema_version` | version of the layout; a database written by a newer version is refused |
+| `coverage_snapshots` | the catalog's three coverage metrics, recorded by `qi history import --catalog` when the catalog changed |
+| `schema_version` | version of the layout (2); older files are upgraded when opened, a database written by a newer version is refused |
 
 Properties, each with a test in `tests/unit/history/test_store.py`:
 

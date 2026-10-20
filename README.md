@@ -55,9 +55,9 @@ CI on Linux and Windows on every push: [docs/validation.md](docs/validation.md).
 | Ingestion | `qi inspect` | JUnit XML from files, folders or quoted patterns; outcomes, reruns, nested suites, explicit test ids, run context; every unreadable file reported | [ingestion](docs/ingestion.md) |
 | Requirements | `qi requirements import` | CSV export (id, title, description, component, priority, criticality ...) into the catalog: preview, row-level errors, all-or-nothing, re-import without duplicates, test-case links preserved | [requirements import](docs/requirements-import.md) |
 | Traceability | `qi coverage` | requirement coverage, automation coverage, automated requirement coverage; gaps; breakdowns by feature, criticality, test type, platform; execution status per requirement | [traceability](docs/traceability.md), [metrics](docs/metrics.md) |
-| History | `qi history import / report / compare` | SQLite history; stability classes with evidence (flaky candidates, consistent and new failures); recurring failures; duration regressions; trends | [history](docs/history.md) |
+| History | `qi history import / report / compare` | SQLite history with coverage snapshots; stability classes with evidence (flaky candidates, consistent and new failures); recurring failures; duration regressions; trends | [history](docs/history.md) |
 | Quality gates | `qi gate` | configurable rules; passed / failed / incomplete as exit codes 0 / 1 / 3; JSON, HTML and Markdown reports | [quality gates](docs/quality-gates.md) |
-| Dashboard | `qi dashboard` | read-only web UI and JSON API (`/docs`) over the same numbers | [dashboard](docs/dashboard.md), [OpenAPI](docs/api/openapi.json) |
+| Dashboard | `qi dashboard` | read-only web UI and JSON API (`/docs`) over the same numbers, incl. trend charts per day and per context checked against the stored records | [dashboard](docs/dashboard.md), [OpenAPI](docs/api/openapi.json) |
 
 ## The sample data is real
 

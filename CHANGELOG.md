@@ -12,6 +12,11 @@
   overwritten, rollback when the catalog would break. Catalogs can `include` other files; the
   sample requirements now come from `samples/requirements.csv`. Requirements have an optional
   description, shown on the dashboard.
+- **Trend analytics:** Trends page and `/api/trends`: results, pass rate, test duration and
+  requirements by status per day (the snapshot at the end of each day), duration per run for each
+  context, recorded coverage snapshots (`qi history import --catalog`, schema 2 with upgrade);
+  days with new suites or carried-over runs are flagged; build and date-range filters everywhere;
+  values checked against plain SQL on the stored records.
 
 ## 1.0.0 (2026-10-20)
 

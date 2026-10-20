@@ -21,9 +21,10 @@ read once at start-up; restart to load new result files.
 | Requirements | id, title, feature, criticality, automated / linked test cases, coverage status, execution status; status filter | requirement -> its test cases and their latest executions |
 | Tests | every executed test with run, pass, fail, error, skip counts and last failure; search; latest-outcome filter | test -> full execution history, failure message and stack trace |
 | Runs | every imported run with context, counts and pass rate | run -> all results, failures first |
+| Trends | daily snapshots (results, pass rate, test duration, requirements by status), days that are not comparable (new suites, carried-over runs), duration per run for each context, coverage snapshots; every chart with its numbers in a table | run context charts list each run with its build |
 | Stability | class counts; tests needing attention with evidence; recurring failures; duration regressions; runs per context | test -> history; run strip -> run ([history.md](history.md)) |
 
-Filters (feature, criticality, test type, framework, environment, browser) apply to every view
+Filters (feature, criticality, test type, framework, environment, browser, build, from/to date) apply to every view
 and are kept in the address, so a filtered view can be bookmarked or shared. The drop-down values
 come from the data (`/api/facets`), never from a fixed list.
 
@@ -35,6 +36,7 @@ Coverage and pass rate are separate cards on purpose ([ADR 0004](adr/0004-separa
 |---|---|
 | ![Overview](images/dashboard-overview.png) | ![Requirements, critical only](images/dashboard-requirements.png) |
 | ![History of the test that failed on 13 Oct](images/dashboard-test-history.png) | ![Runs, dark theme](images/dashboard-run.png) |
+| ![Trends](images/dashboard-trends.png) | ![Stability](images/dashboard-stability.png) |
 
 Made by `python tools/screenshots.py`; CI takes the same screenshots on every run (artifact
 `dashboard-e2e`).
@@ -54,9 +56,11 @@ Interactive documentation: `/docs` (generated from the routes, so it cannot drif
 | `GET /api/tests/history?key=` | all executions of one test, newest first (key in the query: it contains `/` and `::`) |
 | `GET /api/runs` | runs, newest first |
 | `GET /api/runs/{run_id}` | one run, failures first |
+| `GET /api/trends` | daily snapshots, run series per context, coverage snapshots, notes on what is not comparable |
 | `GET /api/stability?window=&include_stable=` | stability classes with evidence, recurring failures, duration regressions, trends per context |
 
-Filter parameters are repeatable: `?criticality=critical&criticality=high&browser=firefox`.
+Filter parameters are repeatable: `?criticality=critical&criticality=high&browser=firefox`; dates are
+`since=2026-10-13&until=2026-10-15` (inclusive, UTC; `since` after `until` is a 422).
 Unknown ids give **404**; a value that can never match (`criticality=urgent`, `outcome=green`)
 gives **422** with the allowed values; a valid value nobody used (`browser=safari`) gives an empty
 scope with `n/a` metrics.
@@ -84,3 +88,9 @@ pages and ids.
 Found by the browser tests while building it: the section links in the header dropped the active
 filters (fixed: they are rebuilt with the filters on every view change), and a broken string in
 the script (caught by the console-error check).
+
+## Charts
+
+Charts are inline SVG drawn by the page itself (no chart library, nothing from a CDN, allowed by
+the strict CSP). Each chart has a text summary for screen readers and a "Show the numbers" table
+with exactly the values it draws; the browser tests compare that table with the API.

@@ -39,6 +39,14 @@ up and what to do about it.
 | Durations in parallel suites depend on neighbours | single slow values are noise (seen in the 19 Oct TestNG sample) | duration regressions need two slow runs in a row; trust trends over single values |
 | "Flaky candidate" is a hypothesis | it says the history looks intermittent, not why | investigate; all four sample candidates were caused by the environment |
 
+### Trends
+
+| Limitation | Effect | What to do |
+|---|---|---|
+| Past days are judged with today's catalog | a requirement added today shows as "not run" on earlier days | read the requirements chart as "how would today's requirements have looked"; coverage snapshots show the catalog as it was |
+| Coverage history starts when snapshots are recorded | no coverage trend for the time before `--catalog` was used (the sample data has one snapshot) | record a snapshot with every import |
+| Totals depend on which suites ran | days on which a new suite appears are flagged, but the bars still grow | compare pass rates, or filter to one framework |
+
 ### Storage and operation
 
 | Limitation | Effect | What to do |

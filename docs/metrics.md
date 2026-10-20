@@ -202,6 +202,21 @@ reported up to 5x their usual time while the suite's wall time did not change (t
 parallel share the machine). With one run, 19 tests were flagged; with two consecutive runs, two
 remain, both slow on the first two runs of a new build.
 
+### Trends
+
+| Series | Definition |
+|---|---|
+| Daily snapshot | for every day with at least one run (UTC date): the latest run of each run context started on or before that day; outcome counts, pass rate (section 4) and the sum of recorded test durations of those runs |
+| Requirements by execution status per day | the **current** catalog applied to each day's snapshot (a requirement added today is "not run" on earlier days) |
+| Carried over | contexts whose latest run on that day is from an earlier day: the point is not a single run |
+| New suites | contexts that appear for the first time on that day: totals before and after count different suites and are not comparable (the sample data has three such days: 9, 13 and 17 Oct) |
+| Run series | per context, every run with its counts, pass rate and summed test duration |
+| Coverage snapshots | recorded by `qi history import --catalog` only when the catalog's content changed (SHA-256 of the parsed catalog, so reformatting does not count); never reconstructed for the past |
+
+Filters for trends: framework, environment, browser, build, and an inclusive date range on the
+run's start (UTC); runs without a start time are left out of the time axis and counted in a note.
+Values are checked against plain SQL on the stored records (`tests/integration/test_trends_against_database.py`).
+
 ### Run comparison and grouping
 
 `compare(base, head)` lists newly failing, fixed, still failing, added, removed and clearly
