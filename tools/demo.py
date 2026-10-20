@@ -36,19 +36,32 @@ def steps(out: Path) -> list[Step]:
     return [
         Step("1. What do the result files contain?", ["inspect", results], 0),
         Step("2. Coverage, gaps and execution status", ["coverage", "--catalog", catalog, results], 0),
-        Step("3. Store the runs in the history", ["history", "import", results, "--database", database], 0),
         Step(
-            "4. Importing the same files again adds nothing",
+            "3. Preview importing the requirements CSV again: every requirement unchanged",
+            [
+                "requirements",
+                "import",
+                "samples/requirements.csv",
+                "--into",
+                "samples/requirements.toml",
+                "--catalog",
+                catalog,
+            ],
+            0,
+        ),
+        Step("4. Store the runs in the history", ["history", "import", results, "--database", database], 0),
+        Step(
+            "5. Importing the same files again adds nothing",
             ["history", "import", results, "--database", database],
             0,
         ),
         Step(
-            "5. Stability, recurring failures, slow-downs, trends",
+            "6. Stability, recurring failures, slow-downs, trends",
             ["history", "report", "--database", database],
             0,
         ),
         Step(
-            "6. What changed between attempt 1 and attempt 3 of the same CI run",
+            "7. What changed between attempt 1 and attempt 3 of the same CI run",
             [
                 "history",
                 "compare",
@@ -60,22 +73,22 @@ def steps(out: Path) -> list[Step]:
             0,
         ),
         Step(
-            "7. Nightly gate on the latest runs: passes",
+            "8. Nightly gate on the latest runs: passes",
             ["gate", "--catalog", catalog, "--config", nightly, results, *_reports(out, "nightly")],
             0,
         ),
         Step(
-            "8. Release gate: fails on two critical requirements without automation",
+            "9. Release gate: fails on two critical requirements without automation",
             ["gate", "--catalog", catalog, "--config", release, results, *_reports(out, "release")],
             1,
         ),
         Step(
-            "9. Nightly gate on the real failed attempt of 19 Oct: fails (critical SHOP-006)",
+            "10. Nightly gate on the real failed attempt of 19 Oct: fails (critical SHOP-006)",
             ["gate", "--catalog", catalog, "--config", nightly, attempt1, *_reports(out, "nightly-attempt1")],
             1,
         ),
         Step(
-            "10. Gate without result files: incomplete, never passed",
+            "11. Gate without result files: incomplete, never passed",
             [
                 "gate",
                 "--catalog",

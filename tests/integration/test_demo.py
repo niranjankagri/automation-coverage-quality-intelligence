@@ -13,13 +13,13 @@ import demo  # noqa: E402
 
 
 def test_every_demonstration_step_returns_its_documented_exit_code(tmp_path: Path) -> None:
-    """Ten steps, each a separate `python -m qualityintel` process, each with the expected code."""
+    """Eleven steps, each a separate `python -m qualityintel` process, each with the expected code."""
     outcomes = demo.run(tmp_path, show=False)
 
     assert [(step.title, code) for step, code in outcomes] == [
         (step.title, step.expected_exit) for step, _ in outcomes
     ]
-    assert len(outcomes) == 10
+    assert len(outcomes) == 11
 
 
 def test_demonstration_writes_its_reports_and_history(tmp_path: Path) -> None:
@@ -45,4 +45,4 @@ def test_main_reports_success(tmp_path: Path, capsys: pytest.CaptureFixture[str]
     """The command line entry ends with the summary line and exit code 0."""
     assert demo.main([str(tmp_path)]) == 0
 
-    assert "10 of 10 steps behaved as documented" in capsys.readouterr().out
+    assert "11 of 11 steps behaved as documented" in capsys.readouterr().out

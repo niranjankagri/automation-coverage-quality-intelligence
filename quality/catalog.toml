@@ -101,6 +101,14 @@ title = "The dashboard is usable on desktop and mobile"
 feature = "Dashboard"
 criticality = "medium"
 
+# ---- Post-1.0 plan, phase 3 ----------------------------------------------------------------
+
+[[requirement]]
+id = "IMP-01"
+title = "Valid requirements import reliably from CSV; invalid records are reported clearly; re-importing does not duplicate"
+feature = "Requirements import"
+criticality = "high"
+
 # ---- Test cases ----------------------------------------------------------------------------
 
 [[test_case]]
@@ -213,7 +221,7 @@ automated_by = ["tests.unit.models.*"]
 
 [[test_case]]
 id = "TC-DEMO"
-title = "The ten demonstration steps return their documented exit codes"
+title = "Every demonstration step returns its documented exit code"
 automation_status = "automated"
 test_type = "integration"
 framework = "pytest"
@@ -288,4 +296,16 @@ requirements = ["RULE-05"]
 automated_by = [
   "tests.e2e.test_dashboard::test_layout_fits_small_screens*",
   "tests.e2e.test_dashboard::test_keyboard_users_can_skip_to_the_content",
+]
+
+[[test_case]]
+id = "TC-CSV-IMPORT"
+title = "CSV parsing, row errors, plan, round trip, CLI preview/apply/re-import/refusal/rollback, sample drift"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["IMP-01"]
+automated_by = [
+  "tests.unit.ingest.test_requirements_csv::*",
+  "tests.unit.test_cli_requirements::*",
+  "tests.integration.test_sample_requirements_import::*",
 ]
