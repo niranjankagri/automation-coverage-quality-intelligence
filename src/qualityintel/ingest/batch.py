@@ -131,17 +131,19 @@ def import_pipeline(
     commit: str | None = None,
     context: RunContext | None = None,
     id_pattern: re.Pattern[str] = DEFAULT_ID_PATTERN,
+    job_contexts: Mapping[str, RunContext] | None = None,
 ) -> Batch:
     """Import the inputs of every job of one pipeline execution (docs/pipelines.md).
 
     Each job's runs carry its :class:`PipelineJob` and a source prefixed with the job name
     (``api/junit.xml``). The same file content under two jobs is imported once, for the first.
+    ``job_contexts`` gives a job its own run context (its browser, say) instead of ``context``.
     """
     batch = Batch()
     seen: dict[str, str] = {}
     for job, inputs in jobs.items():
         tag = PipelineJob(pipeline_id=pipeline_id, job=job, attempt=attempt, branch=branch, commit=commit)
-        part = import_results(inputs, context=context, id_pattern=id_pattern)
+        part = import_results(inputs, context=(job_contexts or {}).get(job, context), id_pattern=id_pattern)
         batch.errors.extend(part.errors)
         batch.duplicates.extend(f"{job}: {note}" for note in part.duplicates)
         batch.warnings.extend(f"{job}/{warning}" for warning in part.warnings)

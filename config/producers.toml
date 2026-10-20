@@ -1,0 +1,146 @@
+# Producers: the public automation repositories whose CI results are collected (docs/collection.md).
+#
+# Each job names the artifact it uploads and the ONE path inside it that is imported. The
+# enterprise jobs upload Allure results and Surefire JUnit XML of the same execution; only the
+# Allure results are named, so no test is counted twice. Every artifact layout below was checked
+# against real runs on 2026-10-20 (enterprise 39420085112 and 39385969773, pytest 39403545716,
+# Cypress 39403537526, Robot 39392334640).
+#
+# Not collected yet: playwright-typescript-framework uploads only Playwright blob reports (an
+# internal format, up to 271 MB per job); it needs a JUnit file in its artifacts first.
+
+[[producer]]
+repository = "niranjankagri/enterprise-test-automation-framework"
+workflow = "regression.yml"              # "Main": every push to main
+context = { environment = "ci", platform = "linux" }
+
+[[producer.job]]
+name = "unit"
+artifact = "results-unit"
+path = "."                               # the artifact is an allure-results folder
+
+[[producer.job]]
+name = "api"
+artifact = "results-api"
+path = "allure-results"
+
+[[producer.job]]
+name = "ui-chrome"
+artifact = "results-ui-chrome"
+path = "allure-results"
+context = { browser = "chrome" }
+
+[[producer.job]]
+name = "smoke-edge"
+artifact = "results-smoke-edge"
+path = "allure-results"
+context = { browser = "edge" }
+
+[[producer]]
+repository = "niranjankagri/enterprise-test-automation-framework"
+workflow = "nightly.yml"                 # "Nightly regression": scheduled
+context = { environment = "ci", platform = "linux" }
+
+[[producer.job]]
+name = "full-chrome"
+artifact = "results-full-chrome"
+path = "allure-results"
+context = { browser = "chrome" }
+
+[[producer.job]]
+name = "regression-edge"
+artifact = "results-regression-edge"
+path = "allure-results"
+context = { browser = "edge" }
+
+[[producer.job]]
+name = "regression-firefox"
+artifact = "results-regression-firefox"
+path = "allure-results"
+context = { browser = "firefox" }
+
+[[producer.job]]
+name = "grid-firefox"
+artifact = "results-grid-firefox"
+path = "allure-results"
+context = { browser = "firefox", environment = "ci-grid" }
+
+[[producer]]
+repository = "niranjankagri/python-pytest-framework"
+workflow = "ci.yml"
+context = { framework = "pytest", environment = "ci", platform = "linux" }
+
+[[producer.job]]
+name = "api"
+artifact = "report-api"
+path = "junit.xml"
+
+[[producer.job]]
+name = "ui-chromium"
+artifact = "report-chromium"
+path = "reports/junit.xml"
+context = { browser = "chromium" }
+
+[[producer.job]]
+name = "ui-firefox"
+artifact = "report-firefox"
+path = "reports/junit.xml"
+context = { browser = "firefox" }
+
+[[producer.job]]
+name = "ui-webkit"
+artifact = "report-webkit"
+path = "reports/junit.xml"
+context = { browser = "webkit" }
+
+[[producer]]
+repository = "niranjankagri/cypress-typescript-framework"
+workflow = "ci.yml"
+context = { framework = "cypress", environment = "ci", platform = "linux" }
+
+[[producer.job]]
+name = "api"
+artifact = "report-api"
+path = "index.html"
+context = { browser = "electron" }
+
+[[producer.job]]
+name = "ui-chrome"
+artifact = "report-ui-chrome"
+path = "index.html"
+context = { browser = "chrome" }
+
+[[producer.job]]
+name = "ui-firefox"
+artifact = "report-ui-firefox"
+path = "index.html"
+context = { browser = "firefox" }
+
+[[producer.job]]
+name = "ui-edge"
+artifact = "report-ui-edge"
+path = "index.html"
+context = { browser = "edge" }
+
+[[producer.job]]
+name = "component"
+artifact = "report-component"
+path = "index.html"
+context = { browser = "chrome" }
+
+[[producer]]
+repository = "niranjankagri/robot-framework-automation"
+workflow = "ci.yml"
+context = { framework = "robot-framework", environment = "ci", platform = "linux" }
+
+[[producer.job]]
+name = "ui-chrome"
+artifact = "results-chrome"
+path = "xunit.xml"
+context = { browser = "chrome" }
+
+[[producer.job]]
+name = "ui-firefox"
+artifact = "results-firefox"
+path = "xunit.xml"
+context = { browser = "firefox" }
