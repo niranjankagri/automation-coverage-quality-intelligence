@@ -18,14 +18,14 @@ def write(path: Path, content: str) -> Path:
 
 
 def test_directory_imports_every_xml_file_below_it(tmp_path: Path) -> None:
-    """A directory input finds XML files in sub-directories too; other files are ignored."""
+    """A directory input finds XML files in sub-directories too, named relative to it."""
     write(tmp_path / "a.xml", GOOD.format(name="a"))
     write(tmp_path / "nested" / "b.xml", GOOD.format(name="b"))
     write(tmp_path / "report.html", "<html/>")
 
     batch = import_results([tmp_path])
 
-    assert sorted(r.source for r in batch.runs) == ["a.xml", "b.xml"]
+    assert sorted(r.source for r in batch.runs) == ["a.xml", "nested/b.xml"]
     assert batch.complete
 
 
@@ -112,7 +112,7 @@ def test_expand_inputs_reports_files_in_a_stable_order(tmp_path: Path) -> None:
 
     files, errors = expand_inputs([tmp_path])
 
-    assert [f.name for f in files] == ["a.xml", "b.xml", "c.xml"]
+    assert [name for _, name in files] == ["a.xml", "b.xml", "c.xml"]
     assert errors == []
 
 
@@ -122,3 +122,13 @@ def test_error_types_are_the_ingest_hierarchy() -> None:
 
     for kind in (MalformedResultError, UnsupportedFormatError, NoResultFilesError):
         assert issubclass(kind, IngestError)
+
+
+def test_files_with_the_same_name_in_two_folders_stay_distinguishable(tmp_path: Path) -> None:
+    """Every pytest job writes junit.xml; the folder keeps the runs apart."""
+    write(tmp_path / "api" / "junit.xml", GOOD.format(name="api"))
+    write(tmp_path / "ui" / "junit.xml", GOOD.format(name="ui"))
+
+    batch = import_results([tmp_path])
+
+    assert sorted(r.source for r in batch.runs) == ["api/junit.xml", "ui/junit.xml"]

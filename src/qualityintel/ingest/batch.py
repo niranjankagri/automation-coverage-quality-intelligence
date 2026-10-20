@@ -42,32 +42,43 @@ class Batch:
         return not self.errors and bool(self.runs)
 
 
-def expand_inputs(inputs: Iterable[str | Path]) -> tuple[list[Path], list[IngestError]]:
+def expand_inputs(inputs: Iterable[str | Path]) -> tuple[list[tuple[Path, str]], list[IngestError]]:
     """Resolve files, directories (all ``*.xml`` below them) and glob patterns to files.
 
     Patterns are expanded here rather than by the shell, so ``"reports/TEST-*.xml"`` works the
     same in cmd.exe, PowerShell and bash. Each input that matches nothing is an error.
+
+    Returns:
+        ``(path, source name)`` pairs and the errors. The source name is the path relative to
+        a directory input (``pytest-api/junit.xml``), otherwise the file name, so two files
+        called ``junit.xml`` in different folders stay distinguishable.
     """
-    files: list[Path] = []
+    files: list[tuple[Path, str]] = []
     errors: list[IngestError] = []
     for item in inputs:
         text = str(item)
         path = Path(text)
         if _GLOB_CHARS.search(text):
-            matches = sorted(Path(p) for p in glob.glob(text, recursive=True) if Path(p).is_file())
+            matches = [
+                (p, p.name) for p in sorted(Path(m) for m in glob.glob(text, recursive=True)) if p.is_file()
+            ]
         elif path.is_dir():
-            matches = sorted(p for p in path.rglob("*.xml") if p.is_file())
+            matches = [
+                (p, p.relative_to(path).as_posix()) for p in sorted(path.rglob("*.xml")) if p.is_file()
+            ]
         elif path.is_file():
-            matches = [path]
+            matches = [(path, path.name)]
         else:
             errors.append(NoResultFilesError(text, "no such file or directory"))
             continue
         if not matches:
             errors.append(NoResultFilesError(text, "matched no result files"))
         files.extend(matches)
-    # The same file reached through two inputs is read once
-    unique = list(dict.fromkeys(p.resolve() for p in files))
-    return unique, errors
+    # The same file reached through two inputs is read once (first name wins)
+    unique: dict[Path, str] = {}
+    for file, name in files:
+        unique.setdefault(file.resolve(), name)
+    return list(unique.items()), errors
 
 
 def import_results(
@@ -84,17 +95,17 @@ def import_results(
     batch = Batch()
     files, batch.errors = expand_inputs(inputs)
     seen: dict[str, str] = {}
-    for path in files:
+    for path, name in files:
         try:
-            parsed = read_junit_file(path, context=context, id_pattern=id_pattern)
+            parsed = read_junit_file(path, context=context, id_pattern=id_pattern, source=name)
         except IngestError as error:
             batch.errors.append(error)
             continue
         run = parsed.run
         if run.run_id in seen:
-            batch.duplicates.append(f"{path.name} has the same content as {seen[run.run_id]}; skipped")
+            batch.duplicates.append(f"{name} has the same content as {seen[run.run_id]}; skipped")
             continue
-        seen[run.run_id] = path.name
+        seen[run.run_id] = name
         batch.runs.append(run)
-        batch.warnings.extend(f"{path.name}: {warning}" for warning in parsed.warnings)
+        batch.warnings.extend(f"{name}: {warning}" for warning in parsed.warnings)
     return batch

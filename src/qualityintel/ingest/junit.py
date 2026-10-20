@@ -65,6 +65,7 @@ def read_junit_file(
     path: Path,
     context: RunContext | None = None,
     id_pattern: re.Pattern[str] = DEFAULT_ID_PATTERN,
+    source: str | None = None,
 ) -> ParsedFile:
     """Read one JUnit XML file from disk.
 
@@ -72,12 +73,14 @@ def read_junit_file(
         path: The result file.
         context: Run context given by the caller; its values win over values found in the file.
         id_pattern: Pattern whose first group extracts a test case id from a test name.
+        source: Name to record for the run; the file name when omitted. Never an absolute
+            path, so local directory names stay out of stored runs and reports.
 
     Raises:
         MalformedResultError: Unreadable, empty, too large or not well-formed.
         UnsupportedFormatError: Well-formed XML that is not JUnit XML.
     """
-    source = path.name
+    source = source or path.name
     try:
         size = path.stat().st_size
         if size > MAX_FILE_BYTES:
