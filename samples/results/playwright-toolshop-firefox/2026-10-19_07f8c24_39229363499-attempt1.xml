@@ -51,16 +51,16 @@
 
 
     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a1\resources\f9b179ffc778c0f37e2c94aee5d7df1d8d731987.png
+    &lt;local path&gt;
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
-    Error Context: C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a1\resources\43eb3aeb54f916d6d4a9541cdcb5ec0b95ee9022.md
+    Error Context: &lt;local path&gt;
 
     attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
-    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a1\resources\91f8e0fef15b63a40edd838bd8f7bff1e083d269.zip
+    &lt;local path&gt;
     Usage:
 
-        npx playwright show-trace C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a1\resources\91f8e0fef15b63a40edd838bd8f7bff1e083d269.zip
+        npx playwright show-trace &lt;local path&gt;
 
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -80,20 +80,20 @@
 
 
     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a1\resources\454dabf039cab804275b13d86a29c55d27ead618.png
+    &lt;local path&gt;
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
     attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a1\resources\5b8d6672f5581ea3dcfc2c6746b42d9d49eded59.webm
+    &lt;local path&gt;
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
-    Error Context: C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a1\resources\993b70df799f64e5f9f440b8e576bdde9cc279e9.md
+    Error Context: &lt;local path&gt;
 
     attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
-    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a1\resources\45540a7c2db7e3318c7a2740a15e67897ad1e4c0.zip
+    &lt;local path&gt;
     Usage:
 
-        npx playwright show-trace C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a1\resources\45540a7c2db7e3318c7a2740a15e67897ad1e4c0.zip
+        npx playwright show-trace &lt;local path&gt;
 
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -113,16 +113,16 @@
 
 
     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a1\resources\9db3f065808d56544bdb090774b13a6b73b125f7.png
+    &lt;local path&gt;
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
-    Error Context: C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a1\resources\a332bba8e969231b68c0cef29be5e372bde38daa.md
+    Error Context: &lt;local path&gt;
 
     attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
-    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a1\resources\6f52feeae5794299d9d1bdcac069fc2bdb301b55.zip
+    &lt;local path&gt;
     Usage:
 
-        npx playwright show-trace C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a1\resources\6f52feeae5794299d9d1bdcac069fc2bdb301b55.zip
+        npx playwright show-trace &lt;local path&gt;
 
     ────────────────────────────────────────────────────────────────────────────────────────────────
 

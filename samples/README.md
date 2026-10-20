@@ -32,6 +32,10 @@ because one run was re-run twice. The commit is the build that was tested.
 - removed test logs (`<system-out>`, `<system-err>`), `hostname` attributes, XML comments and
   properties outside an allow-list (Surefire writes every JVM property: class paths, home
   directories, user names);
+- replaced local file paths in failure messages with `<local path>`: `playwright merge-reports`
+  writes the attachment paths of the machine that merged the reports into the failure text.
+  (The first published version of the two failed Playwright attempts still contained such a
+  path; `tests/integration/test_repository_hygiene.py` found it and now guards every file);
 - added run context as suite properties: `framework`, `browser`, `environment=ci`,
   `platform=linux` and `build=<commit>`, taken from the CI job definition and run page;
 - added a suite `timestamp` with the CI run's start time where the producer wrote none

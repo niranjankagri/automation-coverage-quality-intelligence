@@ -35,16 +35,16 @@
         at Object.exports.test._test.test.extend.testUser.scope (/home/runner/work/playwright-typescript-framework/playwright-typescript-framework/src/fixtures/test.ts:71:51)
 
     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\ccf0bb029ca5d904f1f664022c5787fe1c2c7c93.png
+    &lt;local path&gt;
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
-    Error Context: C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\c6faa4f23820933ab5c37f474af48710210c9f29.md
+    Error Context: &lt;local path&gt;
 
     attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
-    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\6ad2c1025f835ae4e5e1b3df37e1ad42837f19e6.zip
+    &lt;local path&gt;
     Usage:
 
-        npx playwright show-trace C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\6ad2c1025f835ae4e5e1b3df37e1ad42837f19e6.zip
+        npx playwright show-trace &lt;local path&gt;
 
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -73,20 +73,20 @@
         at Object.exports.test._test.test.extend.testUser.scope (/home/runner/work/playwright-typescript-framework/playwright-typescript-framework/src/fixtures/test.ts:71:51)
 
     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\e167463d106583c3d8c95641d9a8c9ee27a16f5b.png
+    &lt;local path&gt;
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
     attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\b0912f01e2fd9214518db1b377fa3a83fe6c1db5.webm
+    &lt;local path&gt;
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
-    Error Context: C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\382fb41b60468ef07b35f77d0ac9e1433dc7af57.md
+    Error Context: &lt;local path&gt;
 
     attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
-    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\b5d0485a6162a70df3537dba9c4db8e85f005735.zip
+    &lt;local path&gt;
     Usage:
 
-        npx playwright show-trace C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\b5d0485a6162a70df3537dba9c4db8e85f005735.zip
+        npx playwright show-trace &lt;local path&gt;
 
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -115,16 +115,16 @@
         at Object.exports.test._test.test.extend.testUser.scope (/home/runner/work/playwright-typescript-framework/playwright-typescript-framework/src/fixtures/test.ts:71:51)
 
     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\1673a993ce655ce9f696eec701383c1c38229f9f.png
+    &lt;local path&gt;
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
-    Error Context: C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\4c845bca556a1d1e5b0d13592b7bad125ee16205.md
+    Error Context: &lt;local path&gt;
 
     attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
-    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\bbef05253990ac700b32bb107c446e7504e428c9.zip
+    &lt;local path&gt;
     Usage:
 
-        npx playwright show-trace C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\bbef05253990ac700b32bb107c446e7504e428c9.zip
+        npx playwright show-trace &lt;local path&gt;
 
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -157,16 +157,16 @@
         at Object.exports.test._test.test.extend.testUser.scope (/home/runner/work/playwright-typescript-framework/playwright-typescript-framework/src/fixtures/test.ts:71:51)
 
     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\fccee4413ff9b7666c7d1ff37040f3f6c8cdd142.png
+    &lt;local path&gt;
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
-    Error Context: C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\e72db8fdc60f6473c3b1db3dfbf2e13d49c1534b.md
+    Error Context: &lt;local path&gt;
 
     attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
-    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\97ebd31fd17775a0faffa1f2b2e4f7ca8ef1134d.zip
+    &lt;local path&gt;
     Usage:
 
-        npx playwright show-trace C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\97ebd31fd17775a0faffa1f2b2e4f7ca8ef1134d.zip
+        npx playwright show-trace &lt;local path&gt;
 
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -195,20 +195,20 @@
         at Object.exports.test._test.test.extend.testUser.scope (/home/runner/work/playwright-typescript-framework/playwright-typescript-framework/src/fixtures/test.ts:71:51)
 
     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\7beed0fcbad61303278aa65f3d727e82e3fd23e6.png
+    &lt;local path&gt;
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
     attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\7095bc76e96f10a74cdc4b6f6a306eeff0f8c20d.webm
+    &lt;local path&gt;
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
-    Error Context: C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\9f00e407a79136cbacd1977de7481bbd8a551cc4.md
+    Error Context: &lt;local path&gt;
 
     attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
-    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\6f6a914588259726a2241daa0376c178e3985d4f.zip
+    &lt;local path&gt;
     Usage:
 
-        npx playwright show-trace C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\6f6a914588259726a2241daa0376c178e3985d4f.zip
+        npx playwright show-trace &lt;local path&gt;
 
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -237,16 +237,16 @@
         at Object.exports.test._test.test.extend.testUser.scope (/home/runner/work/playwright-typescript-framework/playwright-typescript-framework/src/fixtures/test.ts:71:51)
 
     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\22508ada0528020c1bf24957a8e5c6e35402a4fa.png
+    &lt;local path&gt;
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
-    Error Context: C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\067af74388ff4a6f9883f116b94cf11ccc40a7ca.md
+    Error Context: &lt;local path&gt;
 
     attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
-    C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\30dd277973a3412646ea4e3bc3f4ef03855736fe.zip
+    &lt;local path&gt;
     Usage:
 
-        npx playwright show-trace C:\Users\niran\AppData\Local\Temp\claude\C--Users-niran\9c50f164-85e5-400e-b05e-342d68c257d7\scratchpad\dl\pw\blob\firefox\2026-10-19_39229363499_a2\resources\30dd277973a3412646ea4e3bc3f4ef03855736fe.zip
+        npx playwright show-trace &lt;local path&gt;
 
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
