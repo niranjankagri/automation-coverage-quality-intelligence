@@ -40,7 +40,7 @@ values.
    exceeds Windows' 260-character limit. The basic install and the demo were not affected. Fixed in
    the README: clone into a short folder or enable long paths.
 3. **Windows was only checked by hand.** Fixed: CI now runs the tests and the demonstration on
-   `windows-latest` as well as Ubuntu.
+   Windows (now pinned to `windows-2025`, see [ci.md](ci.md)) as well as Ubuntu.
 
 Not a problem, noted while testing: when the output of `qi` is piped into a program that exits
 early (for example a `findstr` with a wrong argument), Python reports `OSError: [Errno 22]` on
@@ -51,8 +51,8 @@ file.
 
 | CI job | What it reproduces |
 |---|---|
-| Demonstration from a clean checkout (ubuntu-latest, windows-latest) | fresh checkout, `pip install -e .`, `python tools/demo.py`: all ten exit codes |
-| Tests (Python 3.12, 3.13 on Ubuntu; 3.13 on Windows) | the full unit and integration suite with coverage |
+| Demonstration from a clean checkout (ubuntu-26.04, windows-2025) | fresh checkout, `pip install -e .`, `python tools/demo.py`: all eleven steps and their exit codes |
+| Tests (Python 3.12, 3.13 on Ubuntu 26.04; 3.13 on Windows and on the latest Ubuntu image) | the full unit and integration suite with coverage |
 | Dashboard in Chromium | the browser tests |
 | Quality gates (sample data) | gate passed, failed, failed on a real attempt, incomplete |
 | Self gate | the plan's acceptance criteria on this repository's own results |
