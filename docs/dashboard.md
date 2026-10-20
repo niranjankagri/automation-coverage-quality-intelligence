@@ -39,7 +39,8 @@ every page and API call needs HTTP basic authentication. Put TLS in front when o
 | Requirements | id, title, feature, criticality, automated / linked test cases, coverage status, execution status; status filter | requirement -> its test cases and their latest executions |
 | Tests | every executed test with run, pass, fail, error, skip counts and last failure; search; latest-outcome filter | test -> full execution history, failure message and stack trace |
 | Runs | every imported run with pipeline / job, context, counts and pass rate | run -> all results, failures first |
-| Pipelines | pipeline executions newest first: jobs with attempt, runs, counts and pass rate; missing jobs; state complete / incomplete against the expected jobs entered on the page ([pipelines.md](pipelines.md)) | job -> its run |
+| Pipelines | pipeline executions newest first, collected ones included even when they uploaded nothing; per pipeline: status (incomplete before the CI conclusion success / failure / cancelled), repository, workflow, run number, branch, commit, links to the exact GitHub run and commit, recorded problems, jobs with start time, attempt and counts, attempts of re-runs side by side; status chips and a workflow filter (both in the address); expected jobs ([pipelines.md](pipelines.md)) | job -> its run; run and commit -> GitHub |
+| Collection | per repository: last collection, fresh or overdue against `QI_COLLECTION_HOURS` (default 26 h), pipelines, complete, incomplete, results and CI conclusions of the last 7 days, every missing artifact and ingestion problem, link to the collection workflow (`QI_COLLECTION_URL`) ([collection.md](collection.md)) | repository -> its pipelines |
 | Trends | daily snapshots (results, pass rate, test duration, requirements by status), days that are not comparable (new suites, carried-over runs), duration per run for each context, coverage snapshots; every chart with its numbers in a table | run context charts list each run with its build |
 | Stability | class counts; tests needing attention with evidence; recurring failures; duration regressions; runs per context | test -> history; run strip -> run ([history.md](history.md)) |
 
@@ -78,7 +79,8 @@ Interactive documentation: `/docs` (generated from the routes, so it cannot drif
 | `GET /api/tests/history?key=` | all executions of one test, newest first (key in the query: it contains `/` and `::`) |
 | `GET /api/runs` | runs, newest first |
 | `GET /api/runs/{run_id}` | one run, failures first |
-| `GET /api/pipelines?jobs=` | pipeline executions with jobs, missing jobs, problems and state; `jobs` = expected jobs, comma-separated |
+| `GET /api/pipelines?jobs=&status=&workflow=` | pipeline executions with status, CI conclusion, GitHub links, attempts, jobs, missing jobs and problems; status counts and workflows for the filters |
+| `GET /api/collection` | collection health per repository |
 | `GET /api/trends` | daily snapshots, run series per context, coverage snapshots, notes on what is not comparable |
 | `GET /api/stability?window=&include_stable=` | stability classes with evidence, recurring failures, duration regressions, trends per context |
 

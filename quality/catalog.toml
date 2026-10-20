@@ -151,6 +151,12 @@ title = "The overview shows a release status derived from the documented gate po
 feature = "Dashboard"
 criticality = "high"
 
+[[requirement]]
+id = "UI-04"
+title = "Pipeline explorer and collection health: every collected pipeline is visible with its status, problems, attempts and links; repositories are flagged when collection is overdue"
+feature = "Dashboard"
+criticality = "high"
+
 # ---- Test cases ----------------------------------------------------------------------------
 
 [[test_case]]
@@ -492,4 +498,19 @@ automated_by = [
   "tests.unit.traceability.test_report::test_runs_can_be_chosen_by_repository",
   "tests.e2e.test_dashboard::test_overview_shows_the_release_status_with_its_reasons",
   "tests.e2e.test_dashboard::test_the_repository_selection_is_kept_across_pages_and_reloads",
+]
+
+[[test_case]]
+id = "TC-PIPELINE-EXPLORER"
+title = "Collected pipelines without runs, links, attempts, status and workflow filters, context filter, collection health; browser"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["UI-04"]
+automated_by = [
+  "tests.unit.dashboard.test_pipelines_api::test_collected_pipelines_show_conclusion_links_and_attempts",
+  "tests.unit.dashboard.test_pipelines_api::test_pipelines_filter_by_status_and_workflow",
+  "tests.unit.dashboard.test_pipelines_api::test_a_context_filter_hides_collected_pipelines_without_runs",
+  "tests.unit.dashboard.test_pipelines_api::test_collection_health_per_repository",
+  "tests.e2e.test_dashboard::test_status_chips_filter_the_pipelines_and_stay_in_the_address",
+  "tests.e2e.test_dashboard::test_explorer_links_to_github_and_the_collection_page_shows_health",
 ]
