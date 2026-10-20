@@ -60,6 +60,12 @@ def build_parser() -> argparse.ArgumentParser:
     coverage.add_argument("--catalog", required=True, type=Path, help="requirement catalog (TOML)")
     add_result_arguments(coverage, required=False)
     add_filter_arguments(coverage)
+
+    dashboard = commands.add_parser("dashboard", help="serve the read-only web dashboard")
+    dashboard.add_argument("--catalog", required=True, type=Path, help="requirement catalog (TOML)")
+    add_result_arguments(dashboard, required=False)
+    dashboard.add_argument("--host", help="address to listen on (default: QI_DASHBOARD_HOST or 127.0.0.1)")
+    dashboard.add_argument("--port", type=int, help="port (default: QI_DASHBOARD_PORT or 8000)")
     return parser
 
 
@@ -199,11 +205,44 @@ def _cmd_coverage(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _cmd_dashboard(args: argparse.Namespace) -> int:
+    """Load the data once, then serve it until interrupted (Ctrl+C)."""
+    try:
+        settings = Settings.from_env()
+    except ConfigError as error:
+        print(f"qi: configuration error: {error}", file=sys.stderr)
+        return EXIT_USAGE
+    catalog = load_catalog_or_report(args.catalog)
+    if catalog is None:
+        return EXIT_INPUT
+    runs = []
+    if args.results:
+        batch = import_results(args.results, context=context_from(args))
+        report_batch_problems(batch)
+        if not batch.complete:
+            return EXIT_INPUT
+        runs = batch.runs
+    # Imported here so the other commands start without loading the web stack
+    import uvicorn
+
+    from qualityintel.dashboard.app import create_app
+    from qualityintel.workspace import Workspace
+
+    host = args.host or settings.dashboard_host
+    port = args.port or settings.dashboard_port
+    print(
+        f"qi: dashboard on http://{host}:{port}  ({len(catalog.requirements)} requirements, {len(runs)} runs)"
+    )
+    uvicorn.run(create_app(Workspace(catalog, runs)), host=host, port=port, log_level="warning")
+    return EXIT_OK
+
+
 COMMANDS: dict[str, Callable[[argparse.Namespace], int]] = {
     "version": _cmd_version,
     "config": _cmd_config,
     "inspect": _cmd_inspect,
     "coverage": _cmd_coverage,
+    "dashboard": _cmd_dashboard,
 }
 
 
