@@ -1,0 +1,4 @@
+# Same line endings on Windows and in CI, so sample result files compare byte for byte
+* text=auto eol=lf
+*.png binary
+*.jpg binary
