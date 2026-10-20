@@ -210,7 +210,7 @@ def _page(browser: Browser, url: str) -> Iterator[Page]:
     if ENGINE == "webkit":
         # WebKit logs a request to this page's own API that a reload cancelled as failing "due to
         # access control checks"; there is no access control on a same-origin request
-        own_api = f"{url.removeprefix('http:')}/api/"
+        own_api = f"{url.split('//', 1)[-1]}/api/"  # host:port/api/ (WebKit shortens the URL)
         allowed += [e for e in errors if "access control checks" in e and own_api in e]
     assert [e for e in errors if e not in allowed] == []
 
