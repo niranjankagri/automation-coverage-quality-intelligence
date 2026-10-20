@@ -22,7 +22,12 @@ from qualityintel.traceability.report import FAILING, PASSING, build_report
 pytestmark = pytest.mark.integration
 
 ROOT = Path(__file__).parents[2] / "samples"
-RAW = tomllib.loads((ROOT / "catalog.toml").read_text(encoding="utf-8"))
+# The naive implementation reads the two files the catalog is made of: the generated
+# requirements (from requirements.csv) and the hand-written test cases
+RAW = {
+    "requirement": tomllib.loads((ROOT / "requirements.toml").read_text(encoding="utf-8"))["requirement"],
+    "test_case": tomllib.loads((ROOT / "catalog.toml").read_text(encoding="utf-8"))["test_case"],
+}
 
 
 @pytest.fixture(scope="module")
