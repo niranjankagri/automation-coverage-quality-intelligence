@@ -443,4 +443,4 @@ def test_api_answers_are_not_kept_by_caches_and_https_gets_hsts() -> None:
     plain = public.get("/api/health")
     assert plain.headers["Cache-Control"] == "no-cache"
     assert "Strict-Transport-Security" not in plain.headers
-    assert plain.headers["Cross-Origin-Opener-Policy"] == "same-origin"
+    assert "Cross-Origin-Opener-Policy" not in plain.headers  # see docs/security.md
