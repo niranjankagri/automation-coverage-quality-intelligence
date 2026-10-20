@@ -272,3 +272,30 @@ def test_collected_runs_carry_their_repository(store: HistoryStore) -> None:
         repositories = {r.pipeline.repository for r in store.runs() if r.pipeline}
 
     assert repositories == {"niranjankagri/python-pytest-framework"}
+
+
+def test_runs_before_the_producers_since_are_neither_collected_nor_incomplete(store: HistoryStore) -> None:
+    """A repository that started publishing results today: yesterday's runs are not missing data."""
+    data = CONFIG.model_dump()
+    data["producer"][0]["since"] = datetime(2026, 10, 19, 12, tzinfo=UTC)
+    config = ProducersConfig.model_validate(data)
+    before = run(run_id=100)  # started 10:33, before the contract
+    after = WorkflowRun(
+        **{**before.__dict__, "id": 101, "started_at": datetime(2026, 10, 19, 13, tzinfo=UTC)}
+    )
+
+    with store:
+        (outcome,) = collect(config, FakeSource([before, after], good_artifacts()), store, SINCE, now=NOW)
+        records = store.collections()
+
+    assert outcome.seen == 1
+    assert [r.pipeline_id for r in records] == ["python-pytest-framework#101"]
+
+
+def test_since_must_carry_its_offset() -> None:
+    """A date-time without an offset would be read in some time zone: refused."""
+    data = CONFIG.model_dump()
+    data["producer"][0]["since"] = "2026-10-19T12:00:00"
+
+    with pytest.raises(ValueError, match="timezone"):
+        ProducersConfig.model_validate(data)

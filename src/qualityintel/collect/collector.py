@@ -66,6 +66,8 @@ def collect(
             outcome.errors.append(str(error))
             continue
         for run in sorted(runs, key=lambda r: (r.started_at or since, r.id)):
+            if producer.since is not None and (run.started_at is None or run.started_at < producer.since):
+                continue  # predates the producer's publishing contract: neither seen nor incomplete
             outcome.seen += 1
             if store.is_collected(pipeline_id(producer, run), run.attempt):
                 outcome.already_collected += 1

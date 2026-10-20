@@ -26,7 +26,15 @@ import tomllib
 from pathlib import Path, PurePosixPath
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 from qualityintel.models.results import RunContext
 
@@ -72,11 +80,18 @@ class JobSource(_Section):
 
 
 class Producer(_Section):
-    """One repository's workflow and its jobs."""
+    """One repository's workflow and its jobs.
+
+    Attributes:
+        since: Start of the first run that publishes the artifacts named here (an offset
+            date-time). Earlier runs are not collected: they are not incomplete, they predate
+            the publishing contract. ``None``: every run in the look-back.
+    """
 
     repository: Annotated[str, Field(pattern=_REPOSITORY)]
     workflow: Annotated[str, Field(min_length=1, max_length=200)]
     branch: Annotated[str, Field(min_length=1, max_length=200)] = "main"
+    since: AwareDatetime | None = None
     context: RunContext = RunContext()
     job: tuple[JobSource, ...] = Field(min_length=1)
 
