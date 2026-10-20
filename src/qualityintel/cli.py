@@ -16,12 +16,18 @@ from __future__ import annotations
 
 import argparse
 import ipaddress
+import os
 import sys
 import traceback
 from collections.abc import Callable, Sequence
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from qualityintel import __version__
+from qualityintel.collect.audit import audit, render_markdown, render_text
+from qualityintel.collect.collector import collect
+from qualityintel.collect.config import ProducersError, load_producers
+from qualityintel.collect.github import GitHubActions
 from qualityintel.config import ConfigError, Settings
 from qualityintel.gates.config import GateConfigError, load_gate_config
 from qualityintel.gates.evaluate import evaluate
@@ -117,11 +123,36 @@ def build_parser() -> argparse.ArgumentParser:
     gate.add_argument("--config", required=True, type=Path, help="gate definition (TOML)")
     add_result_arguments(gate, required=False)
     add_pipeline_arguments(gate)
+    gate.add_argument(
+        "--database",
+        type=Path,
+        help="decide on a collected pipeline (--pipeline ID) from this history database (docs/collection.md)",
+    )
     gate.add_argument("--json", type=Path, metavar="FILE", help="write the machine-readable report")
     gate.add_argument("--html", type=Path, metavar="FILE", help="write the HTML report")
     gate.add_argument(
         "--summary", type=Path, metavar="FILE", help="append a Markdown summary (e.g. $GITHUB_STEP_SUMMARY)"
     )
+
+    collector = commands.add_parser(
+        "collect", help="collect results of CI pipeline runs into history (docs/collection.md)"
+    )
+    collector.add_argument(
+        "--producers", type=Path, default=Path("config/producers.toml"), help="producers file (TOML)"
+    )
+    collector.add_argument(
+        "--database", type=Path, help="SQLite file (default: QI_DATABASE or .qi/quality.db)"
+    )
+    collector.add_argument(
+        "--days", type=int, default=7, help="runs started in the last N days (1-90, default 7)"
+    )
+    collector.add_argument(
+        "--repository", action="append", default=[], metavar="NAME", help="only this producer; repeatable"
+    )
+    collector.add_argument(
+        "--audit-only", action="store_true", help="no downloads: print the ingestion audit of the database"
+    )
+    collector.add_argument("--summary", type=Path, metavar="FILE", help="append the audit as Markdown")
 
     requirements = commands.add_parser("requirements", help="import requirements from a CSV file")
     requirement_commands = requirements.add_subparsers(
@@ -406,7 +437,7 @@ def _cmd_history(args: argparse.Namespace) -> int:
         if store is None:
             return EXIT_INPUT
         with store:
-            refused = already_imported_jobs(store, batch.runs)
+            refused = store.conflicting_jobs(batch.runs)
             if refused:
                 for message in refused:
                     print(f"qi: error: {message}", file=sys.stderr)
@@ -478,28 +509,6 @@ def _cmd_history(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
-def already_imported_jobs(store: HistoryStore, runs: list[TestRun]) -> list[str]:
-    """Job attempts that are already stored with other results (importing them again is refused).
-
-    Re-importing exactly the same files is harmless (they are already stored); different files
-    for a job attempt that is already there would mix two executions of that job.
-    """
-    new: dict[tuple[str, str, int], set[str]] = {}
-    for run in runs:
-        if run.pipeline is not None:
-            key = (run.pipeline.pipeline_id, run.pipeline.job, run.pipeline.attempt)
-            new.setdefault(key, set()).add(run.run_id)
-    messages = []
-    for (pipeline_id, job, attempt), ids in sorted(new.items()):
-        stored = store.job_runs(pipeline_id, job, attempt)
-        if stored and not ids <= stored:
-            messages.append(
-                f"job {job} of pipeline {pipeline_id} (attempt {attempt}) is already imported with other "
-                f"results; nothing was stored. A re-run of the job is --attempt {attempt + 1}"
-            )
-    return messages
-
-
 def _cmd_gate(args: argparse.Namespace) -> int:
     """Evaluate a gate and write its reports; the exit code is the verdict."""
     try:
@@ -523,7 +532,26 @@ def _cmd_gate(args: argparse.Namespace) -> int:
     execution = None
     # Any input option is checked, so a --job without --pipeline is an error, not ignored
     pipeline_options = (args.pipeline, args.job, args.branch, args.commit, args.attempt != 1)
-    if args.results or any(pipeline_options):
+    if args.database is not None:
+        if args.pipeline is None or args.job or args.results:
+            raise UsageError(
+                "--database decides on one collected pipeline: give --pipeline ID, no files or --job"
+            )
+        store = open_store(args.database)
+        if store is None:
+            return EXIT_INPUT
+        with store:
+            stored = store.runs()
+            records = [c for c in store.collections() if c.pipeline_id == args.pipeline]
+        latest = max(records, key=lambda c: c.attempt, default=None)
+        if latest is not None and latest.state == "incomplete":
+            # What collection found missing or unreadable is missing input for the gate too
+            problems += [
+                f"pipeline {args.pipeline} attempt {latest.attempt}: {p}" for p in latest.problems
+            ] or [f"pipeline {args.pipeline} attempt {latest.attempt} was collected incomplete"]
+        execution = pipeline_execution(stored, args.pipeline, config.pipeline.jobs)
+        runs = execution.runs
+    elif args.results or any(pipeline_options):
         batch = read_inputs(args)
         report_batch_problems(batch)
         problems = [str(error) for error in batch.errors]
@@ -728,7 +756,52 @@ def is_loopback(host: str) -> bool:
         return False  # a host name: it may resolve to anything
 
 
+def _cmd_collect(args: argparse.Namespace) -> int:
+    """Collect completed pipeline runs of every producer; print the ingestion audit.
+
+    Exit code 0 when every producer could be read (incomplete pipelines are recorded, not
+    errors), 3 when a producer or a run could not be read (it is tried again next time), 2 for
+    wrong usage or an invalid producers file.
+    """
+    if not 1 <= args.days <= 90:
+        raise UsageError("--days must be between 1 and 90")
+    try:
+        producers = load_producers(args.producers)
+        path = database_path(args)
+    except (ProducersError, ConfigError) as error:
+        print(f"qi: configuration error: {error}", file=sys.stderr)
+        return EXIT_USAGE
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    if not args.audit_only and not token:
+        print("qi: error: set GITHUB_TOKEN (GitHub needs a token to download artifacts)", file=sys.stderr)
+        return EXIT_USAGE
+    # Whole days: GitHub filters runs by creation date, and the audit must count the same runs
+    today = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+    since = today - timedelta(days=args.days)
+    store = open_store(path)
+    if store is None:
+        return EXIT_INPUT
+    with store:
+        outcomes = (
+            [] if args.audit_only else collect(producers, GitHubActions(token), store, since, args.repository)
+        )
+        rows = audit(store.collections(), [p.repository for p in producers.producer], since, outcomes)
+    for outcome in outcomes:
+        print(
+            f"{outcome.repository} {outcome.workflow}: {outcome.seen} completed run(s), "
+            f"{len(outcome.collected)} collected, "
+            f"{outcome.already_collected} collected before"
+        )
+    print(render_text(rows, since), end="")
+    if args.summary is not None:
+        args.summary.parent.mkdir(parents=True, exist_ok=True)
+        with args.summary.open("a", encoding="utf-8") as summary:
+            summary.write(render_markdown(rows, since))
+    return EXIT_INPUT if any(outcome.errors for outcome in outcomes) else EXIT_OK
+
+
 COMMANDS: dict[str, Callable[[argparse.Namespace], int]] = {
+    "collect": _cmd_collect,
     "version": _cmd_version,
     "config": _cmd_config,
     "inspect": _cmd_inspect,
