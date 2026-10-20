@@ -1,0 +1,78 @@
+{
+ "uuid": "2b5ba364-6729-452e-81c1-b6e1f52b8326",
+ "historyId": "ae05df24ddbfcac8aab61df8dcd6aeac",
+ "testCaseId": "eca79f4c8a97664c922fadd5cafbca3f",
+ "fullName": "com.enterprise.automation.tests.api.ProductApiTest.patchUpdatesPriceAndStock",
+ "titlePath": [
+  "API",
+  "API",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "api",
+  "ProductApiTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "patchUpdatesPriceAndStock"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "API"
+  },
+  {
+   "name": "feature",
+   "value": "ProductApi"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "api"
+  },
+  {
+   "name": "parentSuite",
+   "value": "API"
+  },
+  {
+   "name": "suite",
+   "value": "API"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  }
+ ],
+ "links": [],
+ "name": "patchUpdatesPriceAndStock",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792115344717,
+ "stop": 1792115344962
+}

@@ -1,0 +1,78 @@
+{
+ "uuid": "c7c0b3d2-5df3-46a8-b394-a420f663434c",
+ "historyId": "c3e8ea04564bbca812b210093e19dc36",
+ "testCaseId": "eb4152f9686c923007ff47d2cf754c31",
+ "fullName": "com.enterprise.automation.tests.api.OrderApiTest.ordersCanBeListedPerCustomerAndStatus",
+ "titlePath": [
+  "API",
+  "API",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "api",
+  "OrderApiTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.api.OrderApiTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.api.OrderApiTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "ordersCanBeListedPerCustomerAndStatus"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "API"
+  },
+  {
+   "name": "feature",
+   "value": "OrderApi"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "api"
+  },
+  {
+   "name": "parentSuite",
+   "value": "API"
+  },
+  {
+   "name": "suite",
+   "value": "API"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.api.OrderApiTest"
+  }
+ ],
+ "links": [],
+ "name": "ordersCanBeListedPerCustomerAndStatus",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792418961869,
+ "stop": 1792418962222
+}

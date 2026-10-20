@@ -1,0 +1,91 @@
+{
+ "uuid": "e5c4a436-1b27-40d5-97fd-9c3e1b8a9e87",
+ "historyId": "677de0e5af013d6d7ab9d77f8270d2f8",
+ "testCaseId": "aa9bde95e7aa555e46c76bfdbe7412b8",
+ "fullName": "com.enterprise.automation.tests.api.ProductApiTest.catalogueMatchesTheReferenceData",
+ "titlePath": [
+  "API",
+  "API",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "api",
+  "ProductApiTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "catalogueMatchesTheReferenceData"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "API"
+  },
+  {
+   "name": "feature",
+   "value": "ProductApi"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "smoke"
+  },
+  {
+   "name": "tag",
+   "value": "api"
+  },
+  {
+   "name": "parentSuite",
+   "value": "API"
+  },
+  {
+   "name": "suite",
+   "value": "API"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  }
+ ],
+ "links": [],
+ "name": "catalogueMatchesTheReferenceData",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [
+  {
+   "name": "expected",
+   "value": "ProductData[sku=MON-2001, name=27-inch 4K Monitor, category=Monitors, price=429.00, stock=40]"
+  },
+  {
+   "name": "sku",
+   "value": "MON-2001"
+  }
+ ],
+ "start": 1792239083514,
+ "stop": 1792239083821
+}

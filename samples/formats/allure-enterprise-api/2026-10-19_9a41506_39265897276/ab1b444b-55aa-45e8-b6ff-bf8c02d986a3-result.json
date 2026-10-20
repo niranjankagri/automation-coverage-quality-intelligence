@@ -1,0 +1,78 @@
+{
+ "uuid": "ab1b444b-55aa-45e8-b6ff-bf8c02d986a3",
+ "historyId": "7915bba908638ce47386fffe6a68b02a",
+ "testCaseId": "f2584e17048749650c33ed6307b2cd98",
+ "fullName": "com.enterprise.automation.tests.api.AuthApiTest.theClientsRequestIdIsUsedForCorrelation",
+ "titlePath": [
+  "API",
+  "API",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "api",
+  "AuthApiTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.api.AuthApiTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.api.AuthApiTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "theClientsRequestIdIsUsedForCorrelation"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "API"
+  },
+  {
+   "name": "feature",
+   "value": "AuthApi"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "api"
+  },
+  {
+   "name": "parentSuite",
+   "value": "API"
+  },
+  {
+   "name": "suite",
+   "value": "API"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.api.AuthApiTest"
+  }
+ ],
+ "links": [],
+ "name": "theClientsRequestIdIsUsedForCorrelation",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792418957475,
+ "stop": 1792418957731
+}

@@ -1,0 +1,78 @@
+{
+ "uuid": "1cb93226-b11b-413e-baa8-07b20d246994",
+ "historyId": "d4448e8f7f78ae71f66812ff07586973",
+ "testCaseId": "338b354523d07db335734edc56e1e32",
+ "fullName": "com.enterprise.automation.tests.api.UserApiTest.adminCannotDeleteTheirOwnAccount",
+ "titlePath": [
+  "API",
+  "API",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "api",
+  "UserApiTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.api.UserApiTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.api.UserApiTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "adminCannotDeleteTheirOwnAccount"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "API"
+  },
+  {
+   "name": "feature",
+   "value": "UserApi"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "api"
+  },
+  {
+   "name": "parentSuite",
+   "value": "API"
+  },
+  {
+   "name": "suite",
+   "value": "API"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.api.UserApiTest"
+  }
+ ],
+ "links": [],
+ "name": "adminCannotDeleteTheirOwnAccount",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792418953617,
+ "stop": 1792418956039
+}

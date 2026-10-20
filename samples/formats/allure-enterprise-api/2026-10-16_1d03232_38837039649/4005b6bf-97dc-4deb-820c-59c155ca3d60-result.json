@@ -1,0 +1,78 @@
+{
+ "uuid": "4005b6bf-97dc-4deb-820c-59c155ca3d60",
+ "historyId": "c1aea1b249788e8b5c9b1e8463b03a95",
+ "testCaseId": "e923faece0a7ff3d521128b6471730aa",
+ "fullName": "com.enterprise.automation.tests.api.AuthApiTest.wrongPasswordGives401WithoutRevealingWhichPartWasWrong",
+ "titlePath": [
+  "API",
+  "API",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "api",
+  "AuthApiTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.api.AuthApiTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.api.AuthApiTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "wrongPasswordGives401WithoutRevealingWhichPartWasWrong"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "API"
+  },
+  {
+   "name": "feature",
+   "value": "AuthApi"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "api"
+  },
+  {
+   "name": "parentSuite",
+   "value": "API"
+  },
+  {
+   "name": "suite",
+   "value": "API"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.api.AuthApiTest"
+  }
+ ],
+ "links": [],
+ "name": "wrongPasswordGives401WithoutRevealingWhichPartWasWrong",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792115343986,
+ "stop": 1792115344243
+}

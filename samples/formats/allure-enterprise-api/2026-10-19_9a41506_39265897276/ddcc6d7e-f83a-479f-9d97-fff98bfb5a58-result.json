@@ -1,0 +1,78 @@
+{
+ "uuid": "ddcc6d7e-f83a-479f-9d97-fff98bfb5a58",
+ "historyId": "1b46da07fe5ea6e2585c4f24d2328a33",
+ "testCaseId": "7738f6c582c96e3a737313a5dc5b2c25",
+ "fullName": "com.enterprise.automation.tests.api.UserApiTest.adminCreatesAUserWhoCanSignInWithTheirRole",
+ "titlePath": [
+  "API",
+  "API",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "api",
+  "UserApiTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.api.UserApiTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.api.UserApiTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "adminCreatesAUserWhoCanSignInWithTheirRole"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "API"
+  },
+  {
+   "name": "feature",
+   "value": "UserApi"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "api"
+  },
+  {
+   "name": "parentSuite",
+   "value": "API"
+  },
+  {
+   "name": "suite",
+   "value": "API"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.api.UserApiTest"
+  }
+ ],
+ "links": [],
+ "name": "adminCreatesAUserWhoCanSignInWithTheirRole",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1792418956064,
+ "stop": 1792418957400
+}

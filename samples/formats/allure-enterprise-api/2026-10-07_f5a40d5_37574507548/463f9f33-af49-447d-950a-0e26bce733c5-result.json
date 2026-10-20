@@ -1,0 +1,91 @@
+{
+ "uuid": "463f9f33-af49-447d-950a-0e26bce733c5",
+ "historyId": "531f0a18f9c3ac205bef29387c4ac33d",
+ "testCaseId": "aa9bde95e7aa555e46c76bfdbe7412b8",
+ "fullName": "com.enterprise.automation.tests.api.ProductApiTest.catalogueMatchesTheReferenceData",
+ "titlePath": [
+  "API",
+  "API",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "api",
+  "ProductApiTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "catalogueMatchesTheReferenceData"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "API"
+  },
+  {
+   "name": "feature",
+   "value": "ProductApi"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "smoke"
+  },
+  {
+   "name": "tag",
+   "value": "api"
+  },
+  {
+   "name": "parentSuite",
+   "value": "API"
+  },
+  {
+   "name": "suite",
+   "value": "API"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  }
+ ],
+ "links": [],
+ "name": "catalogueMatchesTheReferenceData",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [
+  {
+   "name": "expected",
+   "value": "ProductData[sku=MON-2002, name=34-inch Ultrawide Monitor, category=Monitors, price=649.00, stock=15]"
+  },
+  {
+   "name": "sku",
+   "value": "MON-2002"
+  }
+ ],
+ "start": 1791349501106,
+ "stop": 1791349501354
+}

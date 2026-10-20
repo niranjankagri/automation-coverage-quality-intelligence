@@ -1,0 +1,78 @@
+{
+ "uuid": "5ccda66e-7f31-429a-9f1a-4daaa1f07fd4",
+ "historyId": "4415c69caede65d12d9232bd3fec2cb7",
+ "testCaseId": "756c25d4b477bd3102bfad526d049321",
+ "fullName": "com.enterprise.automation.tests.api.UserApiTest.deletedUserCannotSignIn",
+ "titlePath": [
+  "API",
+  "API",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "api",
+  "UserApiTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.api.UserApiTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.api.UserApiTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "deletedUserCannotSignIn"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "API"
+  },
+  {
+   "name": "feature",
+   "value": "UserApi"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "api"
+  },
+  {
+   "name": "parentSuite",
+   "value": "API"
+  },
+  {
+   "name": "suite",
+   "value": "API"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.api.UserApiTest"
+  }
+ ],
+ "links": [],
+ "name": "deletedUserCannotSignIn",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1791315271043,
+ "stop": 1791315271473
+}

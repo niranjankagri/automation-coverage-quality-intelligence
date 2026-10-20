@@ -1,0 +1,78 @@
+{
+ "uuid": "05c60a56-5fde-4fc8-a83e-efb8149e7e24",
+ "historyId": "2006a4fe40a99192d9168708ef6a6d0b",
+ "testCaseId": "5a27b69c6e6232ae62c881d0331da8de",
+ "fullName": "com.enterprise.automation.tests.api.CustomerApiTest.deleteRemovesTheCustomer",
+ "titlePath": [
+  "API",
+  "API",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "api",
+  "CustomerApiTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.api.CustomerApiTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.api.CustomerApiTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "deleteRemovesTheCustomer"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "API"
+  },
+  {
+   "name": "feature",
+   "value": "CustomerApi"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "api"
+  },
+  {
+   "name": "parentSuite",
+   "value": "API"
+  },
+  {
+   "name": "suite",
+   "value": "API"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.api.CustomerApiTest"
+  }
+ ],
+ "links": [],
+ "name": "deleteRemovesTheCustomer",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [],
+ "start": 1791349503674,
+ "stop": 1791349504019
+}

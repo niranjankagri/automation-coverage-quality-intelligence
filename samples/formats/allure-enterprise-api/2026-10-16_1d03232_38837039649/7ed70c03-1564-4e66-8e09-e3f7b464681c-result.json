@@ -1,0 +1,91 @@
+{
+ "uuid": "7ed70c03-1564-4e66-8e09-e3f7b464681c",
+ "historyId": "ac12339a2ec6ea1c145d9d440d8b6a4e",
+ "testCaseId": "aa9bde95e7aa555e46c76bfdbe7412b8",
+ "fullName": "com.enterprise.automation.tests.api.ProductApiTest.catalogueMatchesTheReferenceData",
+ "titlePath": [
+  "API",
+  "API",
+  "com",
+  "enterprise",
+  "automation",
+  "tests",
+  "api",
+  "ProductApiTest"
+ ],
+ "labels": [
+  {
+   "name": "package",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  },
+  {
+   "name": "testClass",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  },
+  {
+   "name": "testMethod",
+   "value": "catalogueMatchesTheReferenceData"
+  },
+  {
+   "name": "framework",
+   "value": "testng"
+  },
+  {
+   "name": "language",
+   "value": "java"
+  },
+  {
+   "name": "epic",
+   "value": "API"
+  },
+  {
+   "name": "feature",
+   "value": "ProductApi"
+  },
+  {
+   "name": "tag",
+   "value": "regression"
+  },
+  {
+   "name": "tag",
+   "value": "smoke"
+  },
+  {
+   "name": "tag",
+   "value": "api"
+  },
+  {
+   "name": "parentSuite",
+   "value": "API"
+  },
+  {
+   "name": "suite",
+   "value": "API"
+  },
+  {
+   "name": "subSuite",
+   "value": "com.enterprise.automation.tests.api.ProductApiTest"
+  }
+ ],
+ "links": [],
+ "name": "catalogueMatchesTheReferenceData",
+ "status": "passed",
+ "statusDetails": {
+  "known": false,
+  "muted": false,
+  "flaky": false
+ },
+ "stage": "finished",
+ "parameters": [
+  {
+   "name": "expected",
+   "value": "ProductData[sku=ACC-3003, name=USB-C Dock, category=Accessories, price=189.00, stock=60]"
+  },
+  {
+   "name": "sku",
+   "value": "ACC-3003"
+  }
+ ],
+ "start": 1792115342947,
+ "stop": 1792115343242
+}

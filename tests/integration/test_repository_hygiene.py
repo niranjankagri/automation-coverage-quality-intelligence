@@ -5,10 +5,13 @@ are published. This test turns that into rules a machine can check. Test files a
 purpose: they contain fake secrets (``hunter2``) to prove that the sanitiser removes them.
 """
 
+import json
 import re
 import subprocess
 import xml.etree.ElementTree as ET
+from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -95,3 +98,37 @@ def test_the_rules_catch_what_they_should() -> None:
         assert {**SECRETS, **PRIVATE_PATHS}[label].search(example), label
     assert not PRIVATE_PATHS["home folder (other than CI's runner)"].search("/home/runner/work/x/")
     assert EMPLOYERS.search("worked at Sycamore")
+
+
+FORMATS = ROOT / "samples" / "formats"
+
+
+@pytest.mark.parametrize(
+    "path", sorted(FORMATS.glob("cypress-*/*.json")), ids=lambda p: f"{p.parent.name}/{p.name}"
+)
+def test_cypress_samples_carry_no_test_code_or_screenshots(path: Path) -> None:
+    """Mochawesome copies keep results only: no test 'code', no 'context' (embedded screenshots)."""
+    text = path.read_text(encoding="utf-8")
+
+    def tests(suite: dict[str, Any]) -> Iterator[dict[str, Any]]:
+        yield from suite.get("tests") or []
+        for child in suite.get("suites") or []:
+            yield from tests(child)
+
+    found = [t for root in json.loads(text)["results"] for t in tests(root)]
+    assert found
+    assert not any("code" in t or "context" in t for t in found)
+    assert "base64" not in text
+
+
+def test_allure_samples_hold_results_and_environment_only() -> None:
+    """No attachments, containers, executor files, steps or machine labels in the Allure copies."""
+    files = [p for p in (FORMATS / "allure-enterprise-api").rglob("*") if p.is_file()]
+
+    assert files
+    assert {p.name for p in files if not p.name.endswith("-result.json")} == {"environment.properties"}
+    for path in files:
+        text = path.read_text(encoding="utf-8")
+        assert '"steps"' not in text
+        assert '"host"' not in text
+        assert '"thread"' not in text
