@@ -38,13 +38,18 @@ jobs:
         run: mypy
 
   tests:
-    name: Tests (Python ${{ matrix.python }})
+    name: Tests (Python ${{ matrix.python }}${{ matrix.os == 'windows-latest' && ', Windows' || '' }})
     needs: checks
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest]
         python: ["3.12", "3.13"]
+        # Windows too: the README's first instructions are for cmd.exe
+        include:
+          - os: windows-latest
+            python: "3.13"
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
@@ -59,7 +64,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: junit-python-${{ matrix.python }}
+          name: junit-python-${{ matrix.python }}${{ matrix.os == 'windows-latest' && '-windows' || '' }}
           path: reports/
           if-no-files-found: error
 
@@ -184,9 +189,13 @@ jobs:
 
   # Acceptance criterion 9: a clean checkout reproduces the documented demonstration
   demo:
-    name: Demonstration from a clean checkout
+    name: Demonstration from a clean checkout (${{ matrix.os }})
     needs: checks
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
@@ -200,6 +209,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: demo-output
+          name: demo-output-${{ matrix.os }}
           path: demo-output/
           if-no-files-found: error
