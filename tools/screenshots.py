@@ -1,4 +1,4 @@
-"""Take the dashboard screenshots used in the README (docs/images).
+"""Take the dashboard and gate-report screenshots used in the docs (docs/images).
 
 Starts the dashboard on the sample data in this process, opens each page in headless
 Chromium and saves PNGs. Needs the e2e extra: ``pip install -e ".[e2e]"`` and
@@ -9,8 +9,11 @@ Usage: ``python tools/screenshots.py [output directory]`` (default ``docs/images
 
 from __future__ import annotations
 
+import contextlib
+import io
 import socket
 import sys
+import tempfile
 import threading
 import time
 from pathlib import Path
@@ -18,6 +21,7 @@ from pathlib import Path
 import uvicorn
 from playwright.sync_api import sync_playwright
 
+from qualityintel.cli import main as cli_main
 from qualityintel.dashboard.app import create_app
 from qualityintel.workspace import Workspace
 
@@ -73,6 +77,25 @@ def main(argv: list[str]) -> int:
                 page.screenshot(path=out / name, full_page=full)
                 print(f"saved {out / name}")
                 context.close()
+            # The release gate's HTML report, produced by the real command
+            with tempfile.TemporaryDirectory() as folder:
+                report = Path(folder) / "release.html"
+                gate = [
+                    "gate",
+                    "--catalog",
+                    str(ROOT / "samples" / "catalog.toml"),
+                    "--config",
+                    str(ROOT / "samples" / "gates" / "release.toml"),
+                    str(ROOT / "samples" / "results"),
+                    "--html",
+                    str(report),
+                ]
+                with contextlib.redirect_stdout(io.StringIO()):
+                    cli_main(gate)
+                page = browser.new_page(viewport={"width": 1100, "height": 900})
+                page.goto(report.as_uri())
+                page.screenshot(path=out / "gate-report-release.png", full_page=True)
+                print(f"saved {out / 'gate-report-release.png'}")
             browser.close()
     finally:
         server.should_exit = True
