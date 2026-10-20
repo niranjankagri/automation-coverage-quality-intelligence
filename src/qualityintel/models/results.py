@@ -6,9 +6,10 @@ from collections import Counter
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from qualityintel.models.enums import Outcome
+from qualityintel.models.redaction import redact
 
 # Failure texts (stack traces) can be very long; the framework's own report keeps the full text
 MAX_FAILURE_TEXT = 4000
@@ -27,11 +28,20 @@ class FailureDetails(_Frozen):
         message: One-line summary from the producer (``message`` attribute in JUnit XML).
         type: Exception or assertion type when the producer gives one.
         text: Body text, usually a stack trace, cut to ``MAX_FAILURE_TEXT`` characters.
+
+    Message and text pass through :func:`~qualityintel.models.redaction.redact` whoever creates
+    them, so secrets in assertion messages are never stored or reported.
     """
 
     message: str = ""
     type: str = ""
     text: Annotated[str, Field(max_length=MAX_FAILURE_TEXT)] = ""
+
+    @field_validator("message", "text")
+    @classmethod
+    def _without_secrets(cls, value: str) -> str:
+        """Redacted, and still within the length limit (a replacement can be longer)."""
+        return redact(value)[:MAX_FAILURE_TEXT]
 
 
 class TestResult(_Frozen):
