@@ -36,7 +36,8 @@ not run tests itself and does not replace any framework.
 |---|---|---|
 | `qualityintel.models` | Typed data model: requirements, test cases, mappings, results | 2 |
 | `qualityintel.ingest` | Reads result files into the model; JUnit XML first | 3 |
-| `qualityintel.traceability` | Requirement-to-test links, gaps, coverage metrics | 4 |
+| `qualityintel.traceability` | Result matching, coverage metrics, gaps, execution status | 4 |
+| `qualityintel.reporting` | Text/JSON/HTML renderers; formatting only, no calculations | 4, 7 |
 | `qualityintel.dashboard` | Web view over the other packages | 5 |
 | `qualityintel.history` | SQLite execution history, trends, flaky-test candidates | 6 |
 | `qualityintel.gates` | Release criteria, JSON/HTML reports, pipeline exit status | 7 |

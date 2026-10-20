@@ -96,10 +96,58 @@ rate with 40 % requirement coverage means "what we test works", not "the product
 
 ## Breakdowns
 
-Coverage metrics are also computed per **feature**, **criticality**, **test type** and
-**platform**. Missing metadata is grouped as `unspecified`, never guessed. For test type, a
-requirement belongs to every test type of its linked test cases, so the per-type rows can add up
-to more than the total; the total is always computed directly, not summed.
+Coverage metrics are also computed per **feature**, **criticality**, **platform** and
+**test type**. Missing metadata is grouped as `unspecified`, never guessed (and `unspecified`
+can be used as a filter value to find incomplete records).
+
+- Feature, criticality, platform group the **requirements**. A requirement with two platforms
+  is in both platform rows.
+- Test type groups the **test cases**: the row for `api` keeps every in-scope requirement in the
+  denominator and counts only the linked `api` test cases. "api: requirement coverage 38 %"
+  therefore reads "API tests reach 38 % of the requirements".
+
+Rows can add up to more than the total; the total is always computed directly, never summed.
+
+## Filters
+
+| Filter | Applies to | Effect |
+|---|---|---|
+| feature, criticality, platform | requirements | chooses the requirements in scope (the denominators) |
+| test type, framework | test cases | only these linked cases count; a requirement whose cases are all filtered out has "no tests" in this scope |
+| framework, environment, browser | runs | chooses the runs for the execution status |
+
+## Execution status
+
+Execution status joins the catalog with result files.
+
+**Snapshot.** For each *run context* (framework, environment, browser, platform; the build is
+not part of it) only the **latest** run is used. A re-run attempt replaces the attempt before it;
+an older nightly does not hide today's result. Runs without a timestamp sort before dated runs.
+
+**Matching.** A result belongs to a test case when it carries the case id explicitly (JUnit
+property `test_id`, or `[TC-1]` in its name), otherwise when its key matches one of the case's
+`automated_by` patterns (`*` and `?` only). One result may belong to several cases.
+
+**Test case status** (automated cases, from their snapshot results):
+
+| Status | Rule |
+|---|---|
+| failing | at least one result `failed` or `error` |
+| passing | at least one `passed`, none failed |
+| skipped | every result `skipped` |
+| not run | no result at all |
+
+Manual, planned and blocked cases are `not automated`.
+
+**Requirement status** = the worst status of its automated cases, in the order
+`failing` > `not run` > `skipped` > `passing`; `not automated` when it has no automated case.
+`not run` ranks above `passing` on purpose: if one automated case did not run, the requirement
+is not fully verified even though another case passed.
+
+**Failing critical requirement** = criticality `critical` and status `failing`.
+
+The execution pass rate (section 4) is computed over **all** snapshot results, matched or not:
+it describes what ran.
 
 ## History metrics
 

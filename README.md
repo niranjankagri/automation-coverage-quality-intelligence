@@ -54,7 +54,8 @@ dashboard; a test parses every import and fails the build if it does. Details an
 src/qualityintel/
   models/         typed data model (requirements, test cases, results)      M2
   ingest/         result files -> model, JUnit XML first                    M3
-  traceability/   requirement links, gaps, coverage metrics                 M4
+  traceability/   result matching, coverage metrics, gaps, execution status M4
+  reporting/      text (and later JSON/HTML) renderers, no calculations
   dashboard/      FastAPI + HTML/JS view over the packages above            M5
   history/        SQLite history, trends, flaky-test candidates             M6
   gates/          release criteria, reports, pipeline exit status           M7
@@ -96,12 +97,15 @@ qi version          # prints the version
 qi config           # prints the settings in effect
 qi inspect samples/results                       # what the result files contain
 qi inspect "target/surefire-reports/TEST-*.xml"  # quoted patterns work in cmd.exe too
+qi coverage --catalog samples/catalog.toml samples/results   # coverage, gaps, execution status
 python -m qualityintel version   # same, when the qi script is not on PATH
 ```
 
 Result files from pytest, Robot Framework, Maven Surefire/TestNG and Playwright Test are
 imported and tested with real CI files ([docs/ingestion.md](docs/ingestion.md),
-[samples/README.md](samples/README.md)).
+[samples/README.md](samples/README.md)). Requirements and their links to tests live in a TOML
+catalog ([docs/traceability.md](docs/traceability.md)); metric formulas are in
+[docs/metrics.md](docs/metrics.md).
 
 Settings are optional environment variables, listed with their defaults in
 [.env.example](.env.example). The tool needs no credentials.
@@ -130,7 +134,7 @@ of each run as an artifact.
 | 1 | Project foundation: package, tooling, CI, architecture | Done |
 | 2 | Coverage data model and metric definitions | Done |
 | 3 | Multi-framework result ingestion (JUnit XML) | Done |
-| 4 | Requirement traceability engine | Planned |
+| 4 | Requirement traceability engine | Done |
 | 5 | Quality dashboard | Planned |
 | 6 | Historical quality intelligence | Planned |
 | 7 | CI/CD quality gates | Planned |
