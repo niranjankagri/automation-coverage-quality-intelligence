@@ -10,8 +10,21 @@ qi dashboard --catalog samples/catalog.toml samples/results
 qi dashboard --catalog samples/catalog.toml --database .qi/quality.db   # runs from the history
 ```
 
-`--host` / `--port` (or `QI_DASHBOARD_HOST` / `QI_DASHBOARD_PORT`) change the address. The data is
-read once at start-up; restart to load new result files.
+`--host` / `--port` (or `QI_DASHBOARD_HOST` / `QI_DASHBOARD_PORT`) change the address.
+
+**Fresh data without a restart.** The server watches its sources (the catalog and the files it
+includes, the history database, result files) and rebuilds the data when one of them changes,
+every `--refresh` seconds (or `QI_REFRESH_SECONDS`; default 30, 0 = off). A rebuild is a complete
+new snapshot swapped in at once, so a page never shows half-updated numbers; one rebuild runs at
+a time. If a rebuild fails (database locked by a running import, corrupted file, broken catalog)
+the last good data stays, and the page says so: "The last refresh failed ...; the figures shown
+are from ...".
+
+The bar under the filters shows when the data was loaded, the latest run, the last collection
+and incomplete collections of the last 7 days ([collection.md](collection.md)). The page asks
+`/api/status` at the server's interval and re-renders the current view when the data changed;
+the address and every filter stay as they are. *Auto-refresh* switches that off (remembered in
+the browser); *Refresh* checks at once (the server accepts one forced check every 5 seconds).
 
 **Login:** on 127.0.0.1 (the default) no login is needed. Any other address is refused unless
 `QI_DASHBOARD_PASSWORD` (12+ characters; user `QI_DASHBOARD_USER`, default `qi`) is set; then
@@ -55,6 +68,7 @@ Interactive documentation: `/docs` (generated from the routes, so it cannot drif
 | Route | Answer |
 |---|---|
 | `GET /api/health` | status, version, number of requirements and runs |
+| `GET /api/status?check=` | data version, when it was loaded, latest run, refresh interval, last check and error, stale flag, collection freshness; `check=true` looks for new data first |
 | `GET /api/facets` | filter values present in the data |
 | `GET /api/summary` | coverage metrics, gaps, snapshot runs, outcome counts, pass rate |
 | `GET /api/requirements?status=` | requirement rows; `status` = a coverage or execution status |

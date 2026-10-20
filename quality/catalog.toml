@@ -139,6 +139,12 @@ title = "CI results are collected without manual copying: idempotent per pipelin
 feature = "Collection"
 criticality = "critical"
 
+[[requirement]]
+id = "REFRESH-01"
+title = "New data appears in the dashboard without a restart; filters stay; a failed refresh keeps the last good data and is shown as stale"
+feature = "Dashboard"
+criticality = "high"
+
 # ---- Test cases ----------------------------------------------------------------------------
 
 [[test_case]]
@@ -449,4 +455,19 @@ automated_by = [
   "tests.unit.collect.test_collector::*",
   "tests.unit.collect.test_config_and_audit::*",
   "tests.unit.collect.test_cli_collect::*",
+]
+
+[[test_case]]
+id = "TC-REFRESH"
+title = "Reload on change, failures keep data, locked/corrupted/empty database, rate limit, status API, browser refresh"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["REFRESH-01"]
+automated_by = [
+  "tests.unit.test_live::*",
+  "tests.unit.dashboard.test_api::test_status_describes_the_data_and_its_freshness",
+  "tests.unit.dashboard.test_api::test_status_check_reloads_live_data_and_reports_failures",
+  "tests.unit.test_cli_dashboard::test_the_dashboard_serves_live_data_with_the_refresh_interval",
+  "tests.e2e.test_dashboard::test_new_history_appears_without_a_restart_and_the_filters_stay",
+  "tests.e2e.test_dashboard::test_a_failed_refresh_keeps_the_data_and_warns",
 ]

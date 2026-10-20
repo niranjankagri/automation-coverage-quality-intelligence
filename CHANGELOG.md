@@ -10,6 +10,11 @@
   problems); idempotent; transient failures are retried, not recorded; artifacts unpacked
   safely; daily ingestion audit; `qi gate --database --pipeline` decides on a collected
   pipeline; scheduled workflow `collect.yml`. History schema 4.
+- **Dashboard refresh without restart** (`qualityintel/live.py`, [docs/dashboard.md](docs/dashboard.md)):
+  sources are fingerprinted and rebuilt into a complete snapshot when they change (`--refresh`,
+  `QI_REFRESH_SECONDS`, default 30 s); a failed rebuild keeps the last good data and is shown as
+  stale; `/api/status`; freshness bar with auto-refresh and Refresh; filters and address kept.
+- **Allure:** repeated TestNG invocations (`invocationCount`) are executions, not retries.
 
 ## 1.1.0 (2026-10-20)
 
