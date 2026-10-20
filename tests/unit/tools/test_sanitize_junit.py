@@ -103,3 +103,26 @@ def test_command_line_rejects_set_without_a_value(tmp_path: Path, capsys: pytest
 
     assert main([str(source), str(tmp_path / "out.xml"), "--set", "build"]) == 2
     assert "--set needs NAME=VALUE" in capsys.readouterr().err
+
+
+def test_timestamp_fills_only_missing_suite_timestamps() -> None:
+    """Surefire files get a start time; a producer's own timestamp is never overwritten."""
+    surefire = b'<testsuite name="TestSuite"><testcase name="t"/></testsuite>'
+
+    filled = parse_junit(sanitize(surefire, timestamp="2026-10-13T09:00:00Z"), source="x.xml").run
+    kept = parse_junit(sanitize(ORIGINAL, timestamp="2030-01-01T00:00:00Z"), source="x.xml").run
+
+    assert filled.started_at is not None
+    assert filled.started_at.isoformat() == "2026-10-13T09:00:00+00:00"
+    assert kept.started_at is not None
+    assert kept.started_at.year == 2026
+
+
+def test_overwrite_timestamp_replaces_merge_time_on_all_suites() -> None:
+    """Merged Playwright reports carry the merge time; the run's start time replaces it."""
+    merged = b'<testsuites><testsuite name="a" timestamp="2030-01-01T00:00:00Z"><testsuite name="b" timestamp="2030-01-01T00:00:00Z"><testcase name="t"/></testsuite></testsuite></testsuites>'
+
+    cleaned = sanitize(merged, timestamp="2026-10-19T09:15:00Z", overwrite_timestamp=True)
+
+    assert b"2030" not in cleaned
+    assert cleaned.count(b'timestamp="2026-10-19T09:15:00Z"') == 2

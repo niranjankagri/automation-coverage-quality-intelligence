@@ -9,13 +9,20 @@ public repository should not contain and what the importer ignores anyway:
 - ``hostname`` attributes and XML comments.
 
 Optionally it records run context (``--set build=1d03232``) as properties on the top-level
-suites, so the copy carries the facts that were only known from the CI run page.
+suites, and a start time (``--timestamp 2026-10-13T09:00:00Z``) on top-level suites that have
+none (Maven Surefire writes no timestamp), so the copy carries facts that were only known from
+the CI run page. ``--overwrite-timestamp`` replaces existing timestamps too; needed for files
+made by ``playwright merge-reports``, which stamps suites with the time of the merge, not of
+the run.
 
 Test names, outcomes, durations, timestamps and failure messages are kept unchanged, so the
 copy imports to exactly the same results as the original (checked by
 tests/unit/tools/test_sanitize_junit.py).
 
-Usage: ``python tools/sanitize_junit.py <in.xml> <out.xml> [--set name=value ...]``
+Usage::
+
+    python tools/sanitize_junit.py <in.xml> <out.xml> [--set name=value ...]
+        [--timestamp ISO [--overwrite-timestamp]]
 """
 
 from __future__ import annotations
@@ -32,13 +39,20 @@ KEEP_PROPERTIES = CONTEXT_NAMES | {"test_id", "test_case_id"}
 DROP_ATTRIBUTES = frozenset({"hostname"})
 
 
-def sanitize(data: bytes, context: Mapping[str, str] | None = None) -> bytes:
+def sanitize(
+    data: bytes,
+    context: Mapping[str, str] | None = None,
+    timestamp: str | None = None,
+    overwrite_timestamp: bool = False,
+) -> bytes:
     """Return the sanitised XML document as UTF-8 bytes.
 
     Args:
         data: Original JUnit XML.
         context: Run context to record as properties on every top-level ``<testsuite>``;
             only names from ``CONTEXT_NAMES`` are accepted.
+        timestamp: Start time for top-level suites without a ``timestamp`` attribute.
+        overwrite_timestamp: Also replace existing timestamps (all suites, nested ones too).
     """
     unknown = set(context or {}) - CONTEXT_NAMES
     if unknown:
@@ -46,12 +60,18 @@ def sanitize(data: bytes, context: Mapping[str, str] | None = None) -> bytes:
     # The default parser drops comments, which is what we want
     root = ET.fromstring(data)
     _clean(root)
-    if context:
-        suites = (
-            [root] if _local(root.tag) == "testsuite" else [c for c in root if _local(c.tag) == "testsuite"]
-        )
-        for suite in suites:
+    top_level = (
+        [root] if _local(root.tag) == "testsuite" else [c for c in root if _local(c.tag) == "testsuite"]
+    )
+    for suite in top_level:
+        if context:
             _set_properties(suite, context)
+        if timestamp and not suite.get("timestamp"):
+            suite.set("timestamp", timestamp)
+    if timestamp and overwrite_timestamp:
+        for suite in root.iter():
+            if _local(suite.tag) == "testsuite":
+                suite.set("timestamp", timestamp)
     ET.indent(root, space="  ")
     document: bytes = ET.tostring(root, encoding="utf-8", xml_declaration=True)
     return document + b"\n"
@@ -99,6 +119,8 @@ def main(argv: list[str]) -> int:
     parser.add_argument("source", type=Path)
     parser.add_argument("target", type=Path)
     parser.add_argument("--set", action="append", default=[], metavar="NAME=VALUE", help="record run context")
+    parser.add_argument("--timestamp", help="start time for suites that have none (ISO 8601)")
+    parser.add_argument("--overwrite-timestamp", action="store_true", help="replace existing timestamps too")
     try:
         args = parser.parse_args(argv)
     except SystemExit as stop:
@@ -109,7 +131,9 @@ def main(argv: list[str]) -> int:
         return 2
     context = dict(pair.split("=", 1) for pair in args.set)
     args.target.parent.mkdir(parents=True, exist_ok=True)
-    args.target.write_bytes(sanitize(args.source.read_bytes(), context))
+    args.target.write_bytes(
+        sanitize(args.source.read_bytes(), context, args.timestamp, args.overwrite_timestamp)
+    )
     return 0
 
 
