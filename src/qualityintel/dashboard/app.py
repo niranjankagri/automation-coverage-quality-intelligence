@@ -9,8 +9,10 @@ from __future__ import annotations
 
 import base64
 import binascii
+import contextlib
 import hmac
-from datetime import date
+from collections.abc import AsyncIterator
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Annotated
 
@@ -21,6 +23,7 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 
 from qualityintel import __version__
 from qualityintel.history.analysis import DEFAULTS, HistorySettings
+from qualityintel.live import LiveData
 from qualityintel.models.enums import Criticality, Outcome, TestType
 from qualityintel.traceability.coverage import UNSPECIFIED, Filters
 from qualityintel.traceability.report import RunFilters
@@ -37,6 +40,7 @@ from qualityintel.workspace import (
     TestHistory,
     TestRow,
     TrendsView,
+    View,
     Workspace,
 )
 
@@ -154,15 +158,50 @@ class BasicAuth(BaseHTTPMiddleware):
         )
 
 
-def create_app(workspace: Workspace, credentials: tuple[str, str] | None = None) -> FastAPI:
-    """Build the application around one loaded workspace.
+class DataStatus(View):
+    """Freshness of the data the dashboard shows (``/api/status``)."""
+
+    version: str
+    loaded_at: datetime
+    sources_modified_at: datetime | None
+    latest_run_started_at: datetime | None
+    refresh_seconds: float
+    last_check: datetime | None
+    last_error: str | None
+    last_error_at: datetime | None
+    stale: bool
+    collections: int
+    latest_collection_at: datetime | None
+    incomplete_collections_7d: int
+    collection_problems: tuple[str, ...]
+
+
+def create_app(data: Workspace | LiveData, credentials: tuple[str, str] | None = None) -> FastAPI:
+    """Build the application around the dashboard data.
 
     Args:
-        workspace: The data to serve.
+        data: The data to serve: a fixed workspace, or :class:`LiveData` that reloads when its
+            sources change (each request answers from one complete snapshot).
         credentials: ``(user, password)`` to require on every request; ``None`` for none
             (the command line only allows that on this machine's loopback address).
     """
+    live = data if isinstance(data, LiveData) else LiveData.fixed(data)
+
+    def current() -> Workspace:
+        """The workspace of the snapshot that is current now."""
+        return live.current().workspace
+
+    @contextlib.asynccontextmanager
+    async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        """Background refresh while the server runs."""
+        live.start()
+        try:
+            yield
+        finally:
+            live.stop()
+
     app = FastAPI(
+        lifespan=lifespan,
         title="Quality Intelligence Dashboard",
         version=__version__,
         description="Read-only API over a requirement catalog and imported test results.",
@@ -182,6 +221,7 @@ def create_app(workspace: Workspace, credentials: tuple[str, str] | None = None)
     @app.get("/api/health", tags=["meta"])
     def health() -> dict[str, object]:
         """Liveness check with the size of the loaded data."""
+        workspace = current()
         return {
             "status": "ok",
             "version": __version__,
@@ -189,41 +229,72 @@ def create_app(workspace: Workspace, credentials: tuple[str, str] | None = None)
             "runs": len(workspace.runs),
         }
 
+    @app.get("/api/status", tags=["meta"])
+    def status(check: bool = False) -> DataStatus:
+        """When the data was loaded, how fresh it is, and the last refresh error.
+
+        ``check=true`` looks for new data now (at most once every few seconds); the answer
+        describes the data current after that check.
+        """
+        if check:
+            live.check(force=True)
+        state = live.status()
+        snapshot = live.current()
+        starts = [run.started_at for run in snapshot.workspace.runs if run.started_at is not None]
+        week_ago = datetime.now(UTC) - timedelta(days=7)
+        recent = [c for c in snapshot.collections if c.collected_at >= week_ago]
+        incomplete = [c for c in recent if c.state == "incomplete"]
+        return DataStatus(
+            version=state.version,
+            loaded_at=state.loaded_at,
+            sources_modified_at=state.sources_modified_at,
+            latest_run_started_at=max(starts, default=None),
+            refresh_seconds=state.interval_seconds,
+            last_check=state.last_check,
+            last_error=state.last_error,
+            last_error_at=state.last_error_at,
+            stale=state.stale,
+            collections=len(snapshot.collections),
+            latest_collection_at=max((c.collected_at for c in snapshot.collections), default=None),
+            incomplete_collections_7d=len(incomplete),
+            collection_problems=tuple(f"{c.pipeline_id}: {p}" for c in incomplete for p in c.problems)[:20],
+        )
+
     @app.get("/api/facets", tags=["meta"])
     def facets() -> Facets:
         """Filter values that exist in the data."""
-        return workspace.facets()
+        return current().facets()
 
     @app.get("/api/summary", tags=["coverage"])
     def summary(chosen: FullScope) -> Summary:
         """Coverage metrics, gaps and the execution snapshot."""
-        return workspace.summary(chosen)
+        return current().summary(chosen)
 
     @app.get("/api/requirements", tags=["coverage"])
     def requirements(chosen: FullScope, status: str | None = None) -> tuple[RequirementRow, ...]:
         """In-scope requirements; ``status`` drills down to one coverage or execution status."""
         if status is not None:
             _check("status", [status], REQUIREMENT_STATUSES)
-        return workspace.requirements(chosen, status=status)
+        return current().requirements(chosen, status=status)
 
     @app.get("/api/requirements/{requirement_id}", tags=["coverage"])
     def requirement(requirement_id: str, chosen: RunScope) -> RequirementDetail:
         """One requirement with its test cases and their latest executions."""
         try:
-            return workspace.requirement(requirement_id, chosen)
+            return current().requirement(requirement_id, chosen)
         except KeyError:
             raise HTTPException(status_code=404, detail=f"unknown requirement {requirement_id!r}") from None
 
     @app.get("/api/tests", tags=["executions"])
     def tests(chosen: RunScope, outcome: Outcome | None = None) -> tuple[TestRow, ...]:
         """Every executed test with its counts; ``outcome`` keeps tests whose latest result has it."""
-        return workspace.tests(chosen, outcome=outcome)
+        return current().tests(chosen, outcome=outcome)
 
     @app.get("/api/tests/history", tags=["executions"])
     def test_history(key: Annotated[str, Query(min_length=1)], chosen: RunScope) -> TestHistory:
         """All executions of one test, newest first (the key goes in the query: it contains '/')."""
         try:
-            return workspace.test_history(key, chosen)
+            return current().test_history(key, chosen)
         except KeyError:
             raise HTTPException(status_code=404, detail=f"no executions of {key!r}") from None
 
@@ -234,17 +305,17 @@ def create_app(workspace: Workspace, credentials: tuple[str, str] | None = None)
         include_stable: bool = False,
     ) -> StabilityView:
         """Flaky candidates, consistent and new failures, recurring failures, slow-downs, trends."""
-        return workspace.stability(chosen, HistorySettings(window=window), include_stable=include_stable)
+        return current().stability(chosen, HistorySettings(window=window), include_stable=include_stable)
 
     @app.get("/api/trends", tags=["history"])
     def trends(chosen: FullScope) -> TrendsView:
         """Daily execution snapshots, per-context run series and recorded coverage snapshots."""
-        return workspace.trends(chosen)
+        return current().trends(chosen)
 
     @app.get("/api/runs", tags=["executions"])
     def runs(chosen: RunScope) -> tuple[RunView, ...]:
         """Imported runs, newest first."""
-        return workspace.run_list(chosen)
+        return current().run_list(chosen)
 
     @app.get("/api/pipelines", tags=["executions"])
     def pipelines(
@@ -255,13 +326,13 @@ def create_app(workspace: Workspace, credentials: tuple[str, str] | None = None)
     ) -> PipelinesView:
         """Pipeline executions, newest first; with ``jobs``, the ones missing a job are incomplete."""
         expected = [job.strip() for job in (jobs or "").split(",") if job.strip()]
-        return workspace.pipelines(chosen, expected)
+        return current().pipelines(chosen, expected)
 
     @app.get("/api/runs/{run_id}", tags=["executions"])
     def run(run_id: str) -> RunDetail:
         """One run with all results, failures first."""
         try:
-            return workspace.run(run_id)
+            return current().run(run_id)
         except KeyError:
             raise HTTPException(status_code=404, detail=f"unknown run {run_id!r}") from None
 

@@ -102,6 +102,131 @@
         "title": "DailyView",
         "type": "object"
       },
+      "DataStatus": {
+        "description": "Freshness of the data the dashboard shows (``/api/status``).",
+        "properties": {
+          "collection_problems": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Collection Problems",
+            "type": "array"
+          },
+          "collections": {
+            "title": "Collections",
+            "type": "integer"
+          },
+          "incomplete_collections_7d": {
+            "title": "Incomplete Collections 7D",
+            "type": "integer"
+          },
+          "last_check": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Check"
+          },
+          "last_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error"
+          },
+          "last_error_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error At"
+          },
+          "latest_collection_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Collection At"
+          },
+          "latest_run_started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Run Started At"
+          },
+          "loaded_at": {
+            "format": "date-time",
+            "title": "Loaded At",
+            "type": "string"
+          },
+          "refresh_seconds": {
+            "title": "Refresh Seconds",
+            "type": "number"
+          },
+          "sources_modified_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sources Modified At"
+          },
+          "stale": {
+            "title": "Stale",
+            "type": "boolean"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "loaded_at",
+          "sources_modified_at",
+          "latest_run_started_at",
+          "refresh_seconds",
+          "last_check",
+          "last_error",
+          "last_error_at",
+          "stale",
+          "collections",
+          "latest_collection_at",
+          "incomplete_collections_7d",
+          "collection_problems"
+        ],
+        "title": "DataStatus",
+        "type": "object"
+      },
       "ExecutionView": {
         "description": "One execution of one test, with the run it belongs to.",
         "properties": {
@@ -2453,6 +2578,50 @@
         "summary": "Stability",
         "tags": [
           "history"
+        ]
+      }
+    },
+    "/api/status": {
+      "get": {
+        "description": "When the data was loaded, how fresh it is, and the last refresh error.\n\n``check=true`` looks for new data now (at most once every few seconds); the answer\ndescribes the data current after that check.",
+        "operationId": "status_api_status_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "check",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Check",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Status",
+        "tags": [
+          "meta"
         ]
       }
     },

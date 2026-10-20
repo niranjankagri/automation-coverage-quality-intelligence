@@ -39,6 +39,13 @@
     <button type="button" id="clear-filters" class="ghost">Clear</button>
   </form>
 
+  <div class="databar" role="region" aria-label="Data freshness">
+    <span id="data-fresh">Loading data status…</span>
+    <label class="inline"><input type="checkbox" id="auto-refresh" checked> Auto-refresh</label>
+    <button type="button" id="refresh-now" class="ghost">Refresh</button>
+  </div>
+  <p class="notice" id="data-stale" role="alert" hidden></p>
+
   <main id="main" tabindex="-1">
     <p class="status" id="status" role="status" aria-live="polite">Loading…</p>
     <div id="view"></div>

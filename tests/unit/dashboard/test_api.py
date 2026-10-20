@@ -142,6 +142,7 @@ def test_openapi_documentation_lists_every_route(client: TestClient) -> None:
 
     assert paths == {
         "/api/health",
+        "/api/status",
         "/api/facets",
         "/api/summary",
         "/api/requirements",
@@ -217,3 +218,50 @@ def test_the_api_accepts_no_writes(client: TestClient, method: str) -> None:
     """Read-only: no route takes a body or changes anything, so there is nothing to upload into."""
     for path in ("/api/summary", "/api/runs", "/api/pipelines", "/"):
         assert client.request(method, path).status_code == 405, (method, path)
+
+
+def test_status_describes_the_data_and_its_freshness(client: TestClient) -> None:
+    """Fixed data: loaded once, never refreshed, nothing stale; latest run of the samples."""
+    body = client.get("/api/status").json()
+
+    assert body["version"] == "fixed"
+    assert body["refresh_seconds"] == 0
+    assert body["stale"] is False
+    assert body["last_error"] is None
+    assert body["latest_run_started_at"].startswith("2026-10-19")
+
+
+def test_status_check_reloads_live_data_and_reports_failures(tmp_path: Path) -> None:
+    """check=true picks up a new run; a broken database leaves the data and sets stale."""
+    import os
+    import shutil
+
+    from qualityintel.history.store import HistoryStore
+    from qualityintel.live import MIN_FORCED_SECONDS, LiveData, Sources, load_snapshot
+
+    shutil.copy(SAMPLES / "catalog.toml", tmp_path / "catalog.toml")
+    shutil.copy(SAMPLES / "requirements.toml", tmp_path / "requirements.toml")
+    database = tmp_path / "h.db"
+    runs = Workspace.load(SAMPLES / "catalog.toml", [SAMPLES / "results" / "pytest-notes-api"])[0].runs
+    with HistoryStore(database) as store:
+        store.add(runs[0])
+    sources = Sources(tmp_path / "catalog.toml", database)
+    now = [0.0]
+    live = LiveData(load_snapshot(sources), sources, interval_seconds=30, clock=lambda: now[0])
+    client = TestClient(create_app(live))
+    before = client.get("/api/status").json()["version"]
+
+    with HistoryStore(database) as store:
+        store.add(runs[1])
+    os.utime(database, (1e9, 2e9))
+    now[0] += MIN_FORCED_SECONDS + 1
+    after = client.get("/api/status", params={"check": "true"}).json()
+    assert after["version"] != before
+    assert client.get("/api/health").json()["runs"] == 2
+
+    database.write_bytes(b"garbage" * 100)
+    now[0] += MIN_FORCED_SECONDS + 1
+    broken = client.get("/api/status", params={"check": "true"}).json()
+    assert broken["stale"] is True
+    assert broken["version"] == after["version"]
+    assert client.get("/api/health").json()["runs"] == 2  # the last good data is still served

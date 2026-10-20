@@ -15,8 +15,10 @@ import uvicorn
 from playwright.sync_api import Browser, Page, sync_playwright
 
 from qualityintel.dashboard.app import create_app
+from qualityintel.history.store import HistoryStore
 from qualityintel.ingest.batch import import_pipeline
 from qualityintel.ingest.catalog_file import load_catalog
+from qualityintel.live import LiveData, Sources, load_snapshot
 from qualityintel.models.results import TestRun
 from qualityintel.workspace import Workspace
 
@@ -55,6 +57,26 @@ def pipelines_url() -> Iterator[str]:
     yield from _serve(Workspace(load_catalog(PIPELINES / "catalog.toml"), pipeline_runs()))
 
 
+@pytest.fixture
+def live_server(tmp_path: Path) -> Iterator[tuple[str, Sources]]:
+    """A dashboard on a history database the test can change (refresh every second)."""
+    database = tmp_path / "quality.db"
+    with HistoryStore(database) as store:
+        store.add_all(
+            import_pipeline({"api": [str(SAMPLES / "results" / "pytest-notes-api")]}, "p#1").runs[:3]
+        )
+    sources = Sources(SAMPLES / "catalog.toml", database)
+    live = LiveData(load_snapshot(sources), sources, interval_seconds=1)
+    for url in _serve(live):
+        yield url, sources
+
+
+@pytest.fixture
+def live_page(browser: Browser, live_server: tuple[str, Sources]) -> Iterator[Page]:
+    """A page on the live-data dashboard."""
+    yield from _page(browser, live_server[0])
+
+
 @pytest.fixture(scope="session")
 def secured_url() -> Iterator[str]:
     """The sample dashboard with a login (QI_DASHBOARD_PASSWORD set)."""
@@ -62,7 +84,7 @@ def secured_url() -> Iterator[str]:
     yield from _serve(workspace, LOGIN)
 
 
-def _serve(workspace: Workspace, credentials: tuple[str, str] | None = None) -> Iterator[str]:
+def _serve(workspace: Workspace | LiveData, credentials: tuple[str, str] | None = None) -> Iterator[str]:
     """Start uvicorn in a background thread, wait until it answers, stop it afterwards."""
     port = _free_port()
     server = uvicorn.Server(

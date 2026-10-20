@@ -1,9 +1,16 @@
 """The dashboard in a real browser, against the sample data."""
 
 import re
+from pathlib import Path
 
 import pytest
 from playwright.sync_api import Browser, Locator, Page, Route, expect
+
+from qualityintel.history.store import HistoryStore
+from qualityintel.ingest.batch import import_pipeline
+from qualityintel.live import Sources
+
+SAMPLES = Path(__file__).parents[2] / "samples"
 
 pytestmark = pytest.mark.e2e
 
@@ -283,3 +290,44 @@ def test_with_a_login_the_whole_dashboard_works_after_signing_in(browser: Browse
     page.get_by_role("link", name="Trends", exact=True).click()
     expect(page.locator("figure.chart").first).to_be_visible()
     context.close()
+
+
+def test_new_history_appears_without_a_restart_and_the_filters_stay(
+    live_page: Page, live_server: tuple[str, Sources]
+) -> None:
+    """A run is stored while the page is open: Refresh shows it, the filtered address is kept."""
+    page = live_page
+    _, sources = live_server
+    page.goto("/#/runs?framework=pytest")
+    rows = page.locator("#view tbody tr")
+    expect(rows).to_have_count(3)
+    expect(page.locator("#data-fresh")).to_contain_text("Data loaded")
+
+    assert sources.database is not None
+    with HistoryStore(sources.database) as store:
+        newer = import_pipeline({"api": [str(SAMPLES / "results" / "pytest-notes-api")]}, "p#2").runs[3:4]
+        store.add_all(newer)
+    page.get_by_role("button", name="Refresh").click()
+
+    expect(rows).to_have_count(4)
+    expect(page).to_have_url(re.compile(r"#/runs\?framework=pytest$"))
+    expect(page.get_by_label("Framework")).to_have_value("pytest")
+    expect(page.locator("#data-stale")).to_be_hidden()
+
+
+def test_a_failed_refresh_keeps_the_data_and_warns(live_page: Page, live_server: tuple[str, Sources]) -> None:
+    """The database becomes unreadable: the page keeps its figures and says they are stale."""
+    page = live_page
+    _, sources = live_server
+    page.goto("/#/runs")
+    rows = page.locator("#view tbody tr")
+    expect(rows).to_have_count(3)
+
+    assert sources.database is not None
+    sources.database.write_bytes(b"not a database" * 100)
+    page.get_by_role("button", name="Refresh").click()
+
+    expect(page.locator("#data-stale")).to_be_visible()
+    expect(page.locator("#data-stale")).to_contain_text("The last refresh failed")
+    page.reload()
+    expect(rows).to_have_count(3)  # still the last good data

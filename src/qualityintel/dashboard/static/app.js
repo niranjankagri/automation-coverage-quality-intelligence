@@ -674,13 +674,102 @@ async function render() {
 }
 
 window.addEventListener("hashchange", render);
+// ---- data freshness and automatic refresh --------------------------------------------------
+// The server reloads when its history or catalog change (docs/dashboard.md); the page asks
+// /api/status regularly and re-renders the current view when the data version changes. The
+// address, and with it every filter, stays as it is.
+
+let dataVersion = null;
+let statusTimer = null;
+const freshLine = document.getElementById("data-fresh");
+const staleNote = document.getElementById("data-stale");
+const autoBox = document.getElementById("auto-refresh");
+const refreshButton = document.getElementById("refresh-now");
+
+function readPreference() {
+  try {
+    return localStorage.getItem("qi-auto-refresh") !== "off";
+  } catch (_) {
+    return true; // storage can be blocked; the default is on
+  }
+}
+
+function writePreference(on) {
+  try {
+    localStorage.setItem("qi-auto-refresh", on ? "on" : "off");
+  } catch (_) {
+    /* not remembered, still applied */
+  }
+}
+
+async function showDataSize() {
+  const health = await api("/api/health");
+  document.getElementById("data-size").textContent = `${health.requirements} requirements · ${health.runs} runs · qi ${health.version}`;
+}
+
+function describe(status) {
+  const parts = [`Data loaded ${formatDate(status.loaded_at)}`];
+  if (status.latest_run_started_at) parts.push(`latest run ${formatDate(status.latest_run_started_at)}`);
+  if (status.latest_collection_at) parts.push(`last collection ${formatDate(status.latest_collection_at)}`);
+  if (status.incomplete_collections_7d) parts.push(`${status.incomplete_collections_7d} incomplete collection(s) in 7 days`);
+  if (!status.refresh_seconds) parts.push("this server does not reload");
+  return parts.join(" · ");
+}
+
+async function checkStatus(force = false) {
+  let status;
+  try {
+    status = await api(`/api/status${force ? "?check=true" : ""}`);
+  } catch (error) {
+    staleNote.hidden = false;
+    staleNote.textContent = `Data status unavailable (${error.message}); the page shows the data it loaded last.`;
+    return;
+  }
+  freshLine.textContent = describe(status);
+  staleNote.hidden = !status.stale;
+  if (status.stale) {
+    staleNote.textContent = `The last refresh failed (${formatDate(status.last_error_at)}): ${status.last_error}. The figures shown are from ${formatDate(status.loaded_at)}.`;
+  }
+  if (dataVersion !== null && status.version !== dataVersion) {
+    dataVersion = status.version;
+    await showDataSize();
+    await loadFacets();
+    await render(); // same address, same filters, new data
+  }
+  dataVersion = status.version;
+  scheduleChecks(status.refresh_seconds);
+}
+
+function scheduleChecks(serverSeconds) {
+  if (statusTimer !== null) clearInterval(statusTimer);
+  statusTimer = null;
+  autoBox.disabled = !serverSeconds;
+  if (autoBox.checked && serverSeconds) {
+    statusTimer = setInterval(() => checkStatus(), Math.max(10, serverSeconds) * 1000);
+  }
+}
+
+autoBox.checked = readPreference();
+autoBox.addEventListener("change", () => {
+  writePreference(autoBox.checked);
+  checkStatus();
+});
+refreshButton.addEventListener("click", async () => {
+  refreshButton.disabled = true;
+  try {
+    await checkStatus(true);
+  } finally {
+    refreshButton.disabled = false;
+  }
+});
+
 (async () => {
   try {
-    const health = await api("/api/health");
-    document.getElementById("data-size").textContent = `${health.requirements} requirements · ${health.runs} runs · qi ${health.version}`;
+    await showDataSize();
     await loadFacets();
   } catch (error) {
     statusLine.textContent = `API not reachable: ${error.message}`;
   }
   await render();
+  await checkStatus();
 })();
