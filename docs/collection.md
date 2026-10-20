@@ -24,6 +24,10 @@ A producer is one repository workflow. For each of its jobs the file names:
 | `path` | the **one** file or folder inside the artifact that is imported: a JUnit XML file, a mochawesome report, or an `allure-results` folder (`.` when the artifact is that folder) |
 | `context` | run context for the job (browser ...), added to the producer's `context` |
 
+and per producer, optionally, `since`: the start (offset date-time) of the first run that
+publishes these artifacts. Earlier runs are skipped, neither collected nor counted as incomplete:
+they predate the contract.
+
 The jobs listed are the jobs a complete execution must have. The build of every collected run is
 the commit it tested.
 
@@ -33,7 +37,14 @@ artifacts hold Allure results *and* Surefire XML (`TEST-TestSuite.xml`, per-clas
 formats, the job is refused with a problem ("holds Allure and JUnit XML results; name one of
 them") instead of being read twice.
 
-**Producers today** (layouts checked against real runs on 2026-10-20):
+**The portfolio's contract** (added 2026-10-20): every job uploads its JUnit XML as its own
+artifact `junit-<job>`, holding nothing else, and the producer names it with `path = "."`. The
+four first producers keep the layouts they already had. `framework` is the runner that wrote the
+results (testng, junit5, playwright, vitest, node-test, k6, cucumber, pytest, ...).
+
+**Producers today**: 23 repositories, 24 workflows, 59 jobs. Each layout was checked against a
+real run, and the first collected run of each against its CI log (same number of tests and
+outcomes):
 
 | Repository | Workflow | Jobs | Format |
 |---|---|---|---|
@@ -42,9 +53,34 @@ them") instead of being read twice.
 | python-pytest-framework | `ci.yml` | api, ui-chromium, ui-firefox, ui-webkit | JUnit XML |
 | cypress-typescript-framework | `ci.yml` | api, ui-chrome, ui-firefox, ui-edge, component | mochawesome HTML |
 | robot-framework-automation | `ci.yml` | ui-chrome, ui-firefox | JUnit XML (`--xunit`) |
+| automation-coverage-quality-intelligence | `ci.yml` (this repository) | unit, e2e-chromium, e2e-firefox, e2e-webkit | JUnit XML |
+| playwright-typescript-framework | `ci.yml` | api, chromium, firefox, webkit | JUnit XML |
+| playwright-framework | `tests.yml` | chromium, firefox, webkit | Surefire XML |
+| appium-framework | `tests.yml` | android (emulator) | Surefire XML |
+| api-automation, jsonplaceholder-auto | `tests.yml` | api / tests | Surefire XML |
+| api-automation-framework | `tests.yml` | tests | Allure |
+| cucumber-java-framework | `tests.yml` | tests | Cucumber JUnit XML |
+| cucumber-bdd-demo, java-selenium-testng-pom-framework | `tests.yml` (new CI) | tests | Surefire XML |
+| integration-testing-testcontainers | `ci.yml` | integration | Surefire XML |
+| mobile-real-device-testing | `ci.yml` | emulation | Surefire XML |
+| llm-feature-testing | `ci.yml` | unit | Surefire XML |
+| ai-assisted-test-automation | `ci.yml` | unit, ui-chromium, ui-firefox, ui-webkit | Surefire XML |
+| accessibility-visual-testing | `ci.yml` | a11y-chromium, a11y-firefox, visual | JUnit XML |
+| security-testing-zap | `ci.yml` | api | JUnit XML (node:test) |
+| k6-performance-testing | `perf.yml` | app, smoke, load, stress, spike | JUnit XML, one case per k6 threshold |
+| pact-contract-testing | `contract.yml` | consumer (Vitest), provider (Surefire) | JUnit XML |
+| jenkins-kubernetes-pipeline | `ci.yml` | checks-service-unit, checks-api-local, kubernetes-smoke, kubernetes-regression | JUnit XML |
 
-Not yet: **playwright-typescript-framework** uploads only Playwright blob reports (an internal
-format, up to 271 MB per job). It needs `--reporter junit` output in its artifacts first.
+Not collected, on purpose: **selenium-java-framework** (frozen; its CI keeps an HTML report only),
+**mobile-test-automation-framework** (its CI compiles only: the app under test may not be
+redistributed), the k6 soak test (scheduled and manual runs only) and the jobs that fail on
+purpose (k6 regression-demo, the "sample answers" jobs), and the repositories that are not test
+automation (JBDL, ExampleApp, the portfolio site). `tests/unit/collect/test_config_and_audit.py`
+fails when a portfolio repository is neither collected nor named here.
+
+**Flaky tests from Playwright** are not visible as retries: its JUnit output records a test that
+passed only on a retry as passed (checked with a deliberately flaky test on 2026-10-20). TestNG's
+retries are (see [ingestion.md](ingestion.md)).
 
 ## What one collection pass does
 

@@ -34,17 +34,53 @@ def write(tmp_path: Path, text: str) -> Path:
     return path
 
 
-def test_the_repository_producers_file_is_valid() -> None:
-    """The file CI uses: four repositories, every job with one path."""
-    config = load_producers(REPO_FILE)
+# Every public repository of the portfolio (checked on 2026-10-20): collected, or named with the
+# reason it is not in the file's header
+COLLECTED = {
+    "enterprise-test-automation-framework",
+    "python-pytest-framework",
+    "cypress-typescript-framework",
+    "robot-framework-automation",
+    "automation-coverage-quality-intelligence",
+    "playwright-typescript-framework",
+    "playwright-framework",
+    "appium-framework",
+    "api-automation",
+    "jsonplaceholder-auto",
+    "api-automation-framework",
+    "cucumber-java-framework",
+    "cucumber-bdd-demo",
+    "java-selenium-testng-pom-framework",
+    "integration-testing-testcontainers",
+    "mobile-real-device-testing",
+    "llm-feature-testing",
+    "ai-assisted-test-automation",
+    "accessibility-visual-testing",
+    "security-testing-zap",
+    "k6-performance-testing",
+    "pact-contract-testing",
+    "jenkins-kubernetes-pipeline",
+}
+NOT_COLLECTED = {
+    "selenium-java-framework",
+    "mobile-test-automation-framework",
+    "JBDL",
+    "ExampleApp",
+    "niranjankagri.github.io",
+}
 
-    assert {p.repository.split("/")[1] for p in config.producer} == {
-        "enterprise-test-automation-framework",
-        "python-pytest-framework",
-        "cypress-typescript-framework",
-        "robot-framework-automation",
-    }
+
+def test_the_repository_producers_file_covers_the_whole_portfolio() -> None:
+    """The file CI uses: every portfolio repository collected or excluded with a reason; one path per job."""
+    config = load_producers(REPO_FILE)
+    header = REPO_FILE.read_text(encoding="utf-8").split("[[producer]]", 1)[0]
+
+    assert {p.repository.split("/")[1] for p in config.producer} == COLLECTED
+    assert all(f"- {name}" in header or f", {name}" in header for name in NOT_COLLECTED)
     assert all(job.path for p in config.producer for job in p.job)
+    assert all(
+        p.since is not None for p in config.producer if any(j.artifact.startswith("junit-") for j in p.job)
+    )
 
 
 def test_job_context_adds_to_the_producer_context(tmp_path: Path) -> None:

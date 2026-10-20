@@ -6,8 +6,23 @@
 # against real runs on 2026-10-20 (enterprise 39420085112 and 39385969773, pytest 39403545716,
 # Cypress 39403537526, Robot 39392334640).
 #
-# Not collected yet: playwright-typescript-framework uploads only Playwright blob reports (an
-# internal format, up to 271 MB per job); it needs a JUnit file in its artifacts first.
+# The other repositories publish JUnit XML as one artifact per job, named junit-<job> and holding
+# nothing else (path "."): added on 2026-10-20 (M6), so each has `since` = the start of its
+# first run with that contract; earlier runs predate it and are not counted as incomplete.
+# `framework` names the runner that wrote the results (testng, junit5, playwright, vitest,
+# node-test, k6, ...), as in the samples; the repository filter tells the projects apart.
+# Counts of the first run of each were checked against its CI log (docs/collection.md).
+#
+# Not collected, on purpose:
+# - selenium-java-framework: frozen (no changes), its CI keeps an HTML report only;
+# - mobile-test-automation-framework: CI compiles only (the app under test may not be
+#   redistributed, so no emulator run);
+# - k6 soak test (scheduled and manual runs only) and the jobs that fail on purpose
+#   (k6 regression-demo, llm/ai "sample answers"): listing them would make pipelines incomplete
+#   or permanently red;
+# - JBDL, ExampleApp, niranjankagri.github.io: not test automation projects.
+# Playwright's JUnit output records a test that passed only on a retry as passed (verified
+# 2026-10-20), so flaky Playwright tests are not visible as retries here.
 
 [[producer]]
 repository = "niranjankagri/enterprise-test-automation-framework"
@@ -144,3 +159,338 @@ name = "ui-firefox"
 artifact = "results-firefox"
 path = "xunit.xml"
 context = { browser = "firefox" }
+
+# ---- added 2026-10-20 (M6): JUnit artifacts junit-<job> ------------------------------------
+
+[[producer]]
+repository = "niranjankagri/automation-coverage-quality-intelligence"
+workflow = "ci.yml"                      # this repository's own CI
+context = { framework = "pytest", environment = "ci", platform = "linux" }
+since = 2026-10-20T18:43:12Z             # first run with the Firefox and WebKit jobs
+
+[[producer.job]]
+name = "unit"
+artifact = "junit-python-3.12"
+path = "junit-3.12.xml"
+
+[[producer.job]]
+name = "e2e-chromium"
+artifact = "dashboard-e2e"
+path = "junit-e2e.xml"
+context = { browser = "chromium" }
+
+[[producer.job]]
+name = "e2e-firefox"
+artifact = "dashboard-e2e-firefox"
+path = "junit-e2e-firefox.xml"
+context = { browser = "firefox" }
+
+[[producer.job]]
+name = "e2e-webkit"
+artifact = "dashboard-e2e-webkit"
+path = "junit-e2e-webkit.xml"
+context = { browser = "webkit" }
+
+[[producer]]
+repository = "niranjankagri/playwright-typescript-framework"
+workflow = "ci.yml"
+context = { framework = "playwright", environment = "ci", platform = "linux" }
+since = 2026-10-20T20:12:29Z
+
+[[producer.job]]
+name = "api"
+artifact = "junit-api"
+path = "."
+
+[[producer.job]]
+name = "chromium"
+artifact = "junit-chromium"
+path = "."
+context = { browser = "chromium" }
+
+[[producer.job]]
+name = "firefox"
+artifact = "junit-firefox"
+path = "."
+context = { browser = "firefox" }
+
+[[producer.job]]
+name = "webkit"
+artifact = "junit-webkit"
+path = "."
+context = { browser = "webkit" }
+
+[[producer]]
+repository = "niranjankagri/playwright-framework"
+workflow = "tests.yml"
+context = { framework = "testng", environment = "ci", platform = "linux" }
+since = 2026-10-20T20:05:59Z
+
+[[producer.job]]
+name = "chromium"
+artifact = "junit-chromium"
+path = "."
+context = { browser = "chromium" }
+
+[[producer.job]]
+name = "firefox"
+artifact = "junit-firefox"
+path = "."
+context = { browser = "firefox" }
+
+[[producer.job]]
+name = "webkit"
+artifact = "junit-webkit"
+path = "."
+context = { browser = "webkit" }
+
+[[producer]]
+repository = "niranjankagri/appium-framework"
+workflow = "tests.yml"
+context = { framework = "testng", environment = "ci-emulator", platform = "android" }
+since = 2026-10-20T20:06:08Z
+
+[[producer.job]]
+name = "android"
+artifact = "junit-android"
+path = "."
+
+[[producer]]
+repository = "niranjankagri/api-automation"
+workflow = "tests.yml"
+context = { framework = "testng", environment = "ci", platform = "linux" }
+since = 2026-10-20T20:06:13Z
+
+[[producer.job]]
+name = "api"
+artifact = "junit-api"
+path = "."
+
+[[producer]]
+repository = "niranjankagri/jsonplaceholder-auto"
+workflow = "tests.yml"
+context = { framework = "testng", environment = "ci", platform = "linux" }
+since = 2026-10-20T20:06:03Z
+
+[[producer.job]]
+name = "tests"
+artifact = "junit-tests"
+path = "."
+
+[[producer]]
+repository = "niranjankagri/api-automation-framework"
+workflow = "tests.yml"                   # Allure results (TestNG), checked: 11 = CI log
+context = { environment = "ci", platform = "linux" }
+
+[[producer.job]]
+name = "tests"
+artifact = "test-reports"
+path = "allure-results"
+
+[[producer]]
+repository = "niranjankagri/cucumber-java-framework"
+workflow = "tests.yml"                   # Cucumber's JUnit XML, checked: 8 scenarios = CI log
+context = { framework = "cucumber", environment = "ci", platform = "linux", browser = "chrome" }
+
+[[producer.job]]
+name = "tests"
+artifact = "cucumber-reports"
+path = "cucumber-reports/cucumber.xml"
+
+[[producer]]
+repository = "niranjankagri/cucumber-bdd-demo"
+workflow = "tests.yml"
+context = { framework = "cucumber", environment = "ci", platform = "linux", browser = "chrome" }
+since = 2026-10-20T20:18:15Z
+
+[[producer.job]]
+name = "tests"
+artifact = "junit-tests"
+path = "."
+
+[[producer]]
+repository = "niranjankagri/java-selenium-testng-pom-framework"
+workflow = "tests.yml"
+context = { framework = "testng", environment = "ci", platform = "linux", browser = "chrome" }
+since = 2026-10-20T20:18:10Z
+
+[[producer.job]]
+name = "tests"
+artifact = "junit-tests"
+path = "."
+
+[[producer]]
+repository = "niranjankagri/integration-testing-testcontainers"
+workflow = "ci.yml"
+context = { framework = "junit5", environment = "ci-containers", platform = "linux" }
+since = 2026-10-20T20:06:18Z
+
+[[producer.job]]
+name = "integration"
+artifact = "junit-integration"
+path = "."
+
+[[producer]]
+repository = "niranjankagri/mobile-real-device-testing"
+workflow = "ci.yml"                      # the emulation job; real devices run on demand only
+context = { framework = "testng", environment = "ci-emulation", platform = "linux", browser = "chrome" }
+since = 2026-10-20T20:06:22Z
+
+[[producer.job]]
+name = "emulation"
+artifact = "junit-emulation"
+path = "."
+
+[[producer]]
+repository = "niranjankagri/llm-feature-testing"
+workflow = "ci.yml"
+context = { framework = "testng", environment = "ci", platform = "linux" }
+since = 2026-10-20T20:06:27Z
+
+[[producer.job]]
+name = "unit"
+artifact = "junit-unit"
+path = "."
+
+[[producer]]
+repository = "niranjankagri/ai-assisted-test-automation"
+workflow = "ci.yml"
+context = { framework = "testng", environment = "ci", platform = "linux" }
+since = 2026-10-20T20:06:32Z
+
+[[producer.job]]
+name = "unit"
+artifact = "junit-unit"
+path = "."
+
+[[producer.job]]
+name = "ui-chromium"
+artifact = "junit-ui-chromium"
+path = "."
+context = { browser = "chromium" }
+
+[[producer.job]]
+name = "ui-firefox"
+artifact = "junit-ui-firefox"
+path = "."
+context = { browser = "firefox" }
+
+[[producer.job]]
+name = "ui-webkit"
+artifact = "junit-ui-webkit"
+path = "."
+context = { browser = "webkit" }
+
+[[producer]]
+repository = "niranjankagri/accessibility-visual-testing"
+workflow = "ci.yml"
+context = { framework = "playwright", environment = "ci", platform = "linux" }
+since = 2026-10-20T20:12:34Z
+
+[[producer.job]]
+name = "a11y-chromium"
+artifact = "junit-a11y-chromium"
+path = "."
+context = { browser = "chromium" }
+
+[[producer.job]]
+name = "a11y-firefox"
+artifact = "junit-a11y-firefox"
+path = "."
+context = { browser = "firefox" }
+
+[[producer.job]]
+name = "visual"
+artifact = "junit-visual"
+path = "."
+context = { browser = "chromium" }
+
+[[producer]]
+repository = "niranjankagri/security-testing-zap"
+workflow = "ci.yml"                      # the API security tests; the ZAP verdict is its own job
+context = { framework = "node-test", environment = "ci", platform = "linux" }
+since = 2026-10-20T20:12:38Z
+
+[[producer.job]]
+name = "api"
+artifact = "junit-api"
+path = "."
+
+[[producer]]
+repository = "niranjankagri/k6-performance-testing"
+workflow = "perf.yml"                    # one test case per k6 threshold
+context = { framework = "k6", environment = "ci", platform = "linux" }
+since = 2026-10-20T20:12:43Z
+
+[[producer.job]]
+name = "app"
+artifact = "junit-app"
+path = "."
+context = { framework = "node-test" }
+
+[[producer.job]]
+name = "smoke"
+artifact = "junit-smoke"
+path = "."
+
+[[producer.job]]
+name = "load"
+artifact = "junit-load"
+path = "."
+
+[[producer.job]]
+name = "stress"
+artifact = "junit-stress"
+path = "."
+
+[[producer.job]]
+name = "spike"
+artifact = "junit-spike"
+path = "."
+
+[[producer]]
+repository = "niranjankagri/pact-contract-testing"
+workflow = "contract.yml"
+context = { environment = "ci", platform = "linux" }
+since = 2026-10-20T20:12:48Z
+
+[[producer.job]]
+name = "consumer"
+artifact = "junit-consumer"
+path = "."
+context = { framework = "vitest" }
+
+[[producer.job]]
+name = "provider"
+artifact = "junit-provider"
+path = "."
+context = { framework = "junit5" }
+
+[[producer]]
+repository = "niranjankagri/jenkins-kubernetes-pipeline"
+workflow = "ci.yml"                      # checked: 4 + 16 (1 skipped) and 3 + 14 = CI log
+context = { environment = "ci", platform = "linux" }
+
+[[producer.job]]
+name = "checks-service-unit"
+artifact = "reports-checks"
+path = "service/reports/unit-tests.xml"
+context = { framework = "node-test" }
+
+[[producer.job]]
+name = "checks-api-local"
+artifact = "reports-checks"
+path = "tests/reports/local.xml"
+context = { framework = "pytest" }
+
+[[producer.job]]
+name = "kubernetes-smoke"
+artifact = "reports-kubernetes"
+path = "smoke.xml"
+context = { framework = "pytest", environment = "ci-kind" }
+
+[[producer.job]]
+name = "kubernetes-regression"
+artifact = "reports-kubernetes"
+path = "regression.xml"
+context = { framework = "pytest", environment = "ci-kind" }
