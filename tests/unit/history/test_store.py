@@ -1,4 +1,5 @@
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 import pytest
@@ -108,7 +109,8 @@ def test_newer_schema_is_refused(tmp_path: Path) -> None:
     """A database from a newer version is not read with old assumptions."""
     path = tmp_path / "h.db"
     HistoryStore(path).close()
-    with sqlite3.connect(path) as db:
+    # closing(): a sqlite3 connection used as a context manager only commits, it does not close
+    with closing(sqlite3.connect(path)) as db, db:
         db.execute("UPDATE schema_version SET version = ?", (SCHEMA_VERSION + 1,))
 
     with pytest.raises(HistoryError, match="written by a newer version"):

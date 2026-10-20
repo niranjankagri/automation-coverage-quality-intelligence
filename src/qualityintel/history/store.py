@@ -76,12 +76,17 @@ class HistoryStore:
         self.path = Path(path)
         if self.path.name != ":memory:":
             self.path.parent.mkdir(parents=True, exist_ok=True)
+        self._db = sqlite3.connect(str(self.path))
         try:
-            self._db = sqlite3.connect(str(self.path))
             self._db.execute("PRAGMA foreign_keys = ON")
             self._migrate()
         except sqlite3.DatabaseError as error:
+            self._db.close()
             raise HistoryError(f"{self.path.name}: cannot be used as a history database ({error})") from None
+        except HistoryError:
+            # A refused database must not keep its file handle open
+            self._db.close()
+            raise
 
     def __enter__(self) -> HistoryStore:
         return self

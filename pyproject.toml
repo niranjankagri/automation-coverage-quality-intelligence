@@ -92,6 +92,8 @@ testpaths = ["tests"]
 # -ra lists every non-passing test at the end; strict options turn typos in markers/config into errors
 addopts = ["-ra", "--strict-markers", "--strict-config", "-m", "not e2e"]
 xfail_strict = true
+# Any warning (deprecations, unclosed files or databases) fails the run instead of scrolling by
+filterwarnings = ["error"]
 markers = [
     "unit: fast tests of one module, no files or processes outside tmp_path",
     "integration: tests that run the installed package as a separate process",
