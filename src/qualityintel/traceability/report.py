@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from qualityintel.models.catalog import Catalog, TestCase
 from qualityintel.models.enums import AutomationStatus, Criticality, Outcome
@@ -28,16 +28,29 @@ NOT_AUTOMATED = "not automated"
 
 @dataclass(frozen=True)
 class RunFilters:
-    """Which runs are analysed; empty = all. Values compare with the run context."""
+    """Which runs are analysed; empty = all. Values compare with the run context.
+
+    ``since`` and ``until`` are inclusive UTC dates of the run's start; when either is set,
+    runs without a start time are left out (their date is unknown).
+    """
 
     frameworks: frozenset[str] = frozenset()
     environments: frozenset[str] = frozenset()
     browsers: frozenset[str] = frozenset()
     platforms: frozenset[str] = frozenset()
+    builds: frozenset[str] = frozenset()
+    since: date | None = None
+    until: date | None = None
 
     def keeps(self, run: TestRun) -> bool:
-        """True when every chosen dimension matches the run's context."""
+        """True when every chosen dimension matches the run's context and date."""
         context = run.context
+        if self.since is not None or self.until is not None:
+            if run.started_at is None:
+                return False
+            day = run.started_at.astimezone(UTC).date()
+            if (self.since is not None and day < self.since) or (self.until is not None and day > self.until):
+                return False
         return all(
             not chosen or value in chosen
             for chosen, value in (
@@ -45,6 +58,7 @@ class RunFilters:
                 (self.environments, context.environment),
                 (self.browsers, context.browser),
                 (self.platforms, context.platform),
+                (self.builds, context.build),
             )
         )
 
