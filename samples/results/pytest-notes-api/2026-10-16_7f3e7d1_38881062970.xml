@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests">
+  <testsuite name="pytest" errors="0" failures="0" skipped="0" tests="32" time="13.735" timestamp="2026-10-16T09:32:19.898261+00:00">
+    <properties>
+      <property name="build" value="7f3e7d1" />
+      <property name="framework" value="pytest" />
+      <property name="environment" value="ci" />
+      <property name="platform" value="linux" />
+    </properties>
+    <testcase classname="tests.api.test_health" name="test_api_reports_it_is_running" time="0.826" />
+    <testcase classname="tests.api.test_notes" name="test_put_replaces_every_field" time="2.406" />
+    <testcase classname="tests.api.test_notes" name="test_get_notes_lists_every_note_of_the_user" time="2.417" />
+    <testcase classname="tests.api.test_notes" name="test_create_note_in_each_category[Work]" time="2.107" />
+    <testcase classname="tests.api.test_notes" name="test_create_note_in_each_category[Home]" time="1.663" />
+    <testcase classname="tests.api.test_notes" name="test_create_note_in_each_category[Personal]" time="1.548" />
+    <testcase classname="tests.api.test_notes" name="test_patch_changes_only_the_completed_flag" time="1.854" />
+    <testcase classname="tests.api.test_notes" name="test_get_note_by_id" time="1.841" />
+    <testcase classname="tests.api.test_notes" name="test_deleted_note_is_gone" time="2.238" />
+    <testcase classname="tests.api.test_notes" name="test_create_note_validates_its_fields[description-too-short]" time="1.747" />
+    <testcase classname="tests.api.test_notes" name="test_get_note_with_a_bad_id[malformed-id]" time="1.593" />
+    <testcase classname="tests.api.test_notes" name="test_create_note_validates_its_fields[unknown-category]" time="1.717" />
+    <testcase classname="tests.api.test_notes" name="test_create_note_validates_its_fields[title-too-short]" time="1.693" />
+    <testcase classname="tests.api.test_notes" name="test_notes_require_a_token" time="0.320" />
+    <testcase classname="tests.api.test_notes" name="test_get_note_with_a_bad_id[unknown-id]" time="1.406" />
+    <testcase classname="tests.api.test_users" name="test_register_validates_its_fields[name-too-short]" time="0.220" />
+    <testcase classname="tests.api.test_users" name="test_register_returns_the_new_user" time="0.965" />
+    <testcase classname="tests.api.test_users" name="test_register_validates_its_fields[password-too-short]" time="0.261" />
+    <testcase classname="tests.api.test_notes" name="test_users_cannot_see_or_delete_each_others_notes" time="3.473" />
+    <testcase classname="tests.api.test_users" name="test_login_failure_does_not_reveal_which_part_was_wrong[wrong-password]" time="1.299" />
+    <testcase classname="tests.api.test_users" name="test_register_refuses_an_email_that_is_taken" time="1.280" />
+    <testcase classname="tests.api.test_users" name="test_login_returns_a_token" time="1.393" />
+    <testcase classname="tests.api.test_users" name="test_login_failure_does_not_reveal_which_part_was_wrong[unknown-user]" time="1.357" />
+    <testcase classname="tests.api.test_users" name="test_profile_requires_a_valid_token[no-token]" time="0.254" />
+    <testcase classname="tests.api.test_users" name="test_profile_returns_the_logged_in_user" time="1.531" />
+    <testcase classname="tests.api.test_users" name="test_register_validates_its_fields[invalid-email]" time="0.199" />
+    <testcase classname="tests.api.test_users" name="test_profile_requires_a_valid_token[invalid-token]" time="0.273" />
+    <testcase classname="tests.api.test_users" name="test_profile_update_validates_the_phone_number" time="1.470" />
+    <testcase classname="tests.api.test_users" name="test_change_password_checks_the_current_password" time="1.510" />
+    <testcase classname="tests.api.test_users" name="test_profile_update_returns_the_new_values" time="1.488" />
+    <testcase classname="tests.api.test_users" name="test_logout_invalidates_the_token" time="2.055" />
+    <testcase classname="tests.api.test_users" name="test_changed_password_replaces_the_old_one" time="2.137" />
+  </testsuite>
+</testsuites>

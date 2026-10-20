@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests">
+  <testsuite name="pytest" errors="0" failures="0" skipped="0" tests="32" time="11.884" timestamp="2026-10-14T09:57:13.622961+00:00">
+    <properties>
+      <property name="build" value="7f3e7d1" />
+      <property name="framework" value="pytest" />
+      <property name="environment" value="ci" />
+      <property name="platform" value="linux" />
+    </properties>
+    <testcase classname="tests.api.test_health" name="test_api_reports_it_is_running" time="0.761" />
+    <testcase classname="tests.api.test_notes" name="test_put_replaces_every_field" time="2.135" />
+    <testcase classname="tests.api.test_notes" name="test_get_notes_lists_every_note_of_the_user" time="2.228" />
+    <testcase classname="tests.api.test_notes" name="test_create_note_in_each_category[Work]" time="1.723" />
+    <testcase classname="tests.api.test_notes" name="test_create_note_in_each_category[Home]" time="1.384" />
+    <testcase classname="tests.api.test_notes" name="test_create_note_in_each_category[Personal]" time="1.641" />
+    <testcase classname="tests.api.test_notes" name="test_patch_changes_only_the_completed_flag" time="1.554" />
+    <testcase classname="tests.api.test_notes" name="test_get_note_by_id" time="1.453" />
+    <testcase classname="tests.api.test_notes" name="test_deleted_note_is_gone" time="1.940" />
+    <testcase classname="tests.api.test_notes" name="test_create_note_validates_its_fields[description-too-short]" time="1.316" />
+    <testcase classname="tests.api.test_notes" name="test_create_note_validates_its_fields[unknown-category]" time="1.551" />
+    <testcase classname="tests.api.test_notes" name="test_get_note_with_a_bad_id[malformed-id]" time="1.552" />
+    <testcase classname="tests.api.test_notes" name="test_create_note_validates_its_fields[title-too-short]" time="1.471" />
+    <testcase classname="tests.api.test_notes" name="test_notes_require_a_token" time="0.210" />
+    <testcase classname="tests.api.test_notes" name="test_get_note_with_a_bad_id[unknown-id]" time="1.289" />
+    <testcase classname="tests.api.test_users" name="test_register_validates_its_fields[name-too-short]" time="0.119" />
+    <testcase classname="tests.api.test_users" name="test_register_returns_the_new_user" time="0.923" />
+    <testcase classname="tests.api.test_users" name="test_register_validates_its_fields[password-too-short]" time="0.276" />
+    <testcase classname="tests.api.test_users" name="test_login_failure_does_not_reveal_which_part_was_wrong[wrong-password]" time="1.131" />
+    <testcase classname="tests.api.test_notes" name="test_users_cannot_see_or_delete_each_others_notes" time="3.099" />
+    <testcase classname="tests.api.test_users" name="test_register_refuses_an_email_that_is_taken" time="1.012" />
+    <testcase classname="tests.api.test_users" name="test_login_returns_a_token" time="1.403" />
+    <testcase classname="tests.api.test_users" name="test_login_failure_does_not_reveal_which_part_was_wrong[unknown-user]" time="0.995" />
+    <testcase classname="tests.api.test_users" name="test_profile_returns_the_logged_in_user" time="1.358" />
+    <testcase classname="tests.api.test_users" name="test_profile_requires_a_valid_token[no-token]" time="0.124" />
+    <testcase classname="tests.api.test_users" name="test_profile_requires_a_valid_token[invalid-token]" time="0.230" />
+    <testcase classname="tests.api.test_users" name="test_register_validates_its_fields[invalid-email]" time="0.211" />
+    <testcase classname="tests.api.test_users" name="test_profile_update_validates_the_phone_number" time="1.367" />
+    <testcase classname="tests.api.test_users" name="test_changed_password_replaces_the_old_one" time="1.737" />
+    <testcase classname="tests.api.test_users" name="test_profile_update_returns_the_new_values" time="1.525" />
+    <testcase classname="tests.api.test_users" name="test_change_password_checks_the_current_password" time="1.219" />
+    <testcase classname="tests.api.test_users" name="test_logout_invalidates_the_token" time="1.155" />
+  </testsuite>
+</testsuites>
