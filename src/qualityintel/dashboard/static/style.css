@@ -62,6 +62,9 @@ body.compact td, body.compact th { padding-top: 3px; padding-bottom: 3px; }
 
 * { box-sizing: border-box; }
 
+/* The hidden attribute always wins over a display set by a class (pagers, notices) */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   background: var(--bg);

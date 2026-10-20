@@ -526,3 +526,12 @@ def test_the_owner_filter_narrows_requirements_and_the_matrix_groups_by_owner(pa
     rows = page.get_by_role("region", name="Requirement list").locator("tbody tr")
     expect(rows).to_have_count(12)
     expect(page.locator("#active-filters")).to_contain_text("Owner: Admin team")
+
+
+def test_a_table_that_fits_on_one_page_shows_no_pager(page: Page) -> None:
+    """Five snapshot runs: no "Rows 1-5 of 5" and no Previous/Next (the hidden attribute wins)."""
+    page.goto("/")
+    expect(page.get_by_role("heading", name="Overview", exact=True)).to_be_visible()
+
+    expect(page.locator(".pagerbox").first).to_be_hidden()
+    assert all(not box.is_visible() for box in page.locator(".pagerbox").all())
