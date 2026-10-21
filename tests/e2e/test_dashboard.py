@@ -76,7 +76,7 @@ def test_requirement_detail_shows_cases_and_latest_executions(page: Page) -> Non
 def test_test_history_shows_the_real_selenium_failure(page: Page) -> None:
     """The 13 Oct Firefox timeout is in the history and its message can be expanded."""
     page.goto("/#/tests")
-    page.get_by_label("Search").fill("adminEditsACustomer")
+    page.get_by_label("Filter tests by name").fill("adminEditsACustomer")
     page.get_by_role("link", name=re.compile("adminEditsACustomer")).click()
 
     executions = page.get_by_role("region", name=re.compile("^Executions"))
@@ -410,7 +410,7 @@ def test_test_investigation_shows_context_pattern_requirements_and_copies(page: 
     """Latest result, a pattern of 13 executions with one failure, duration chart and copy actions."""
     page.context.grant_permissions(["clipboard-read", "clipboard-write"])
     page.goto("/#/tests")
-    page.get_by_label("Search").fill("adminEditsACustomer")
+    page.get_by_label("Filter tests by name").fill("adminEditsACustomer")
     page.get_by_role("link", name=re.compile("adminEditsACustomer")).click()
 
     meta = page.locator("dl.meta")
@@ -483,7 +483,18 @@ def test_a_trend_bar_opens_the_runs_of_its_day_with_the_keyboard(page: Page) -> 
 @pytest.mark.parametrize("width", [390, 768, 1280])
 @pytest.mark.parametrize(
     "route",
-    ["#/", "#/requirements", "#/tests", "#/runs", "#/stability", "#/trends", "#/compare", "#/pipelines"],
+    [
+        "#/",
+        "#/requirements",
+        "#/tests",
+        "#/runs",
+        "#/stability",
+        "#/trends",
+        "#/compare",
+        "#/pipelines",
+        "#/attention",
+        "#/search?q=checkout",
+    ],
 )
 def test_no_horizontal_overflow_at_phone_tablet_and_desktop_widths(
     page: Page, route: str, width: int

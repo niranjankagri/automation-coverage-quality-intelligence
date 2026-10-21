@@ -18,8 +18,14 @@
       <label>Theme <select id="theme-choice"><option value="">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
       <label class="inline"><input type="checkbox" id="compact-choice"> Compact</label>
     </div>
+    <form class="global-search" id="global-search" role="search" aria-label="Search everything">
+      <label for="global-q" class="visually-hidden">Search tests, requirements, pipelines, repositories</label>
+      <input type="search" id="global-q" name="q" placeholder="Search tests, requirements, pipelines…" maxlength="100" autocomplete="off">
+      <button type="submit" class="ghost">Search</button>
+    </form>
     <nav aria-label="Sections">
       <a href="#/" data-nav="overview">Overview</a>
+      <a href="#/attention" data-nav="attention">Needs attention</a>
       <a href="#/requirements" data-nav="requirements">Requirements</a>
       <a href="#/tests" data-nav="tests">Tests</a>
       <a href="#/runs" data-nav="runs">Runs</a>

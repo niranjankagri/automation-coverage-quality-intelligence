@@ -272,4 +272,18 @@ h1[tabindex="-1"]:focus { outline: none; }
 .prefs select { min-width: 0; padding: 2px 6px; }
 @media (max-width: 640px) { .prefs { order: 3; width: 100%; } }
 .catalog-notice { margin: 0; padding: 6px 24px; font-size: 13px; color: var(--warn); background: var(--warn-bg); border-bottom: 1px solid var(--border); }
+/* M12: global search, breadcrumbs, findings */
+.global-search { display: flex; gap: 6px; align-items: center; }
+.global-search input { width: 16rem; max-width: 100%; }
+@media (max-width: 640px) { .global-search { order: 4; width: 100%; } .global-search input { flex: 1; width: auto; } }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.crumbs ol { display: flex; flex-wrap: wrap; gap: 4px; list-style: none; margin: 0 0 8px; padding: 0; font-size: 13px; color: var(--muted); }
+.crumbs li + li::before { content: "›"; margin-right: 4px; }
+.hits { list-style: none; margin: 0 0 16px; padding: 0; }
+.hits li { padding: 6px 0; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+mark { background: var(--warn-bg); color: inherit; padding: 0 1px; }
+.badge.open { background: var(--bad-bg); color: var(--bad); }
+.badge.suspected, .badge.unknown { background: var(--warn-bg); color: var(--warn); }
+.badge.resolved { background: var(--neutral-bg); color: var(--muted); }
+table.pair th[scope="row"] { text-align: left; white-space: nowrap; color: var(--muted); font-weight: 600; }
 

@@ -36,9 +36,11 @@ every page and API call needs HTTP basic authentication. Put TLS in front when o
 | View | Shows | Drill-down |
 |---|---|---|
 | Overview | **release status** (ready / at risk / blocked / unknown, with every reason and the gate's rules, [readiness.md](readiness.md)), test executions, critical requirements without automation, flaky candidates, incomplete pipelines, latest collection; requirements in scope; requirement coverage, automation coverage, automated requirement coverage; execution pass rate and pass / fail / error / skip counts of the snapshot; snapshot runs; critical requirements without automation; failing requirements; other gaps | every card opens the list behind it (e.g. requirement coverage -> requirements without tests) |
+| Search | everything whose text contains every word of the query: repositories, workflows, pipelines (and GitHub run ids), tests, requirements, first lines of failure messages; grouped by kind with counts, query words marked; the header search opens it from any page; the repository and date filters apply | result -> its page (keeping the filters and the result's repository); pipeline -> its GitHub run |
+| Needs attention | newly failing tests, incomplete pipelines, critical gaps, recurring failures, confirmed duration regressions, flaky candidates (suspected), overdue collections; state (open, suspected, unknown, resolved), why each is listed, evidence count, first and last seen ([attention.md](attention.md)) | finding -> its test, pipeline, requirement or collection page; GitHub run |
 | Requirements | id, title, feature, criticality, automated / linked test cases, coverage status, execution status; status filter | requirement -> its test cases and their latest executions |
-| Tests | every executed test with run, pass, fail, error, skip counts and last failure; search; latest-outcome filter | test -> investigation page: latest result and context, source run, pipeline and job with a link to the CI run, linked requirements and test cases, pass/fail pattern, duration chart with its numbers, latest failure and stack trace (shown as text, never as HTML), every execution; copy the test identifier or the page link |
-| Compare | two builds side by side (runs, pass rate, counts, coverage snapshot) and the changes where both ran the same suite: newly failing, recovered, still failing, new, removed, slower, newly flaky; change-type chips; suites that ran in one build only listed separately ([history.md](history.md#comparing-builds)) | test -> its history |
+| Tests | every executed test with run, pass, fail, error, skip counts and last failure; search; latest-outcome filter | test -> investigation page: breadcrumbs (repository > workflow > pipeline > run > test), latest and previous result, context, repository and workflow, stability per context, source run with a link to the CI run, linked requirements and test cases, pass/fail pattern, duration chart with its numbers, latest failure and stack trace (shown as text, never as HTML, collapsed), two executions side by side (missing values say *not recorded*), every execution; copy the test identifier, the page link or a summary (text or Markdown) |
+| Compare | two builds side by side (runs, pass rate, counts and their differences, coverage snapshot, GitHub run attempts and incomplete pipelines of each build, a summary to copy) and the changes where both ran the same suite: newly failing, recovered, still failing, new, removed, slower, newly flaky; change-type chips; suites that ran in one build only listed separately ([history.md](history.md#comparing-builds)) | test -> its history |
 | Runs | every imported run with pipeline / job, context, counts and pass rate | run -> all results, failures first |
 | Pipelines | pipeline executions newest first, collected ones included even when they uploaded nothing; per pipeline: status (incomplete before the CI conclusion success / failure / cancelled), repository, workflow, run number, branch, commit, links to the exact GitHub run and commit, recorded problems, jobs with start time, attempt and counts, attempts of re-runs side by side; status chips and a workflow filter (both in the address); expected jobs ([pipelines.md](pipelines.md)) | job -> its run; run and commit -> GitHub |
 | Collection | per repository: last collection, fresh or overdue against `QI_COLLECTION_HOURS` (default 26 h), pipelines, complete, incomplete, results and CI conclusions of the last 7 days, every missing artifact and ingestion problem, link to the collection workflow (`QI_COLLECTION_URL`) ([collection.md](collection.md)) | repository -> its pipelines |
@@ -75,6 +77,17 @@ section link on screen) instead of pixels, which differ between operating system
 **Filter bar:** quick ranges (24 h, 7 days, 30 days, all dates) set *From*; each active filter is
 a chip under the bar with a remove button; *Copy link to this view* copies the address, which
 holds every filter (a shareable preset); *Clear* removes them all.
+
+**Summaries:** *Copy summary* (text or Markdown) on a test and on a comparison copies what the
+server builds from the same data as the page: identifiers, repository and workflow, observed
+outcomes, counts, evidence links, the time of the data and its limitations (including the
+catalog's notice). It never states a cause or a severity, and the same data always gives the same
+text (`qualityintel/reporting/investigation.py`). Nothing is posted anywhere: the summary goes to
+the clipboard, to paste into an issue or a chat.
+
+**Investigation path:** Needs attention or Search -> a test or pipeline -> its history, its
+requirements, its pipeline and job, its GitHub run and commit; breadcrumbs lead back up, and every
+link keeps the filters of the view (repository, dates ...).
 
 **Tables:** every column sorts (button in the header; `aria-sort` tells screen readers); tables
 with 6 or more rows get a row filter, *Download CSV* (the filtered and sorted rows and visible
@@ -114,6 +127,10 @@ Interactive documentation: `/docs` (generated from the routes, so it cannot drif
 | `GET /api/health` | status, version, number of requirements and runs |
 | `GET /api/status?check=` | data version, when it was loaded, latest run, refresh interval, last check and error, stale flag, collection freshness; `check=true` looks for new data first |
 | `GET /api/facets` | filter values present in the data |
+| `GET /api/search?q=&limit=` | search results grouped by kind (at most `limit`, 1-50, per group) with full counts; `q` 2-100 characters, else 422 |
+| `GET /api/attention` | findings with state, severity, why, evidence, first and last seen, links ([attention.md](attention.md)) |
+| `GET /api/tests/summary?key=&link=` | a copyable summary of a test's investigation, as `text` and `markdown`; `link` (http/https only) is included |
+| `GET /api/compare/summary?base=&head=&link=` | the same for a build comparison |
 | `GET /api/readiness` | release status of the scope with reasons, gate rules and headline numbers |
 | `GET /api/summary` | coverage metrics, gaps, snapshot runs, outcome counts, pass rate |
 | `GET /api/requirements/matrix` | requirements by criticality and feature: coverage, execution and stale counts |

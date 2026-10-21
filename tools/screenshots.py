@@ -46,6 +46,8 @@ SHOTS = [
     ("dashboard-stability.png", "#/stability", 1280, "light", True),
     ("dashboard-trends.png", "#/trends", 1280, "light", False),
     ("dashboard-compare.png", "#/compare?framework=testng&base=f5a40d5&head=1d03232", 1280, "light", False),
+    ("dashboard-attention.png", "#/attention", 1280, "light", False),
+    ("dashboard-search.png", "#/search?q=checkout", 1280, "light", False),
     ("dashboard-phone.png", "#/", 390, "light", False),
 ]
 # Taken on the two real TaskBoard pipeline executions (samples/pipelines)

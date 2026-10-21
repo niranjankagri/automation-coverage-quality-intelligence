@@ -239,3 +239,30 @@ def test_collection_problems_point_to_their_run_attempt(collected: TestClient) -
         assert issue["run_url"].startswith(f"https://github.com/{REPO}/actions/runs/")
         assert issue["run_url"].endswith(f"/attempts/{issue['attempt']}")
         assert issue["text"]
+
+
+def test_one_pipeline_can_be_focused_and_its_build_lists_its_github_run(collected: TestClient) -> None:
+    """pipeline=<id> keeps that pipeline only; workflows are still offered for the selector."""
+    every = collected.get("/api/pipelines").json()
+    first = every["pipelines"][0]["pipeline_id"]
+    focused = collected.get("/api/pipelines", params={"pipeline": first}).json()
+
+    assert [p["pipeline_id"] for p in focused["pipelines"]] == [first]
+    assert focused["workflows"] == every["workflows"]
+    assert collected.get("/api/pipelines", params={"pipeline": "no-such"}).json()["pipelines"] == []
+
+
+def test_build_cards_name_their_github_runs_and_incomplete_pipelines(collected: TestClient) -> None:
+    """Each side of a comparison links the run attempts of its pipelines; incomplete ones are named."""
+    builds = collected.get("/api/builds").json()
+    body = collected.get("/api/compare", params={"base": builds[0], "head": builds[-1]}).json()
+    sides = [body["base"], body["head"]]
+
+    assert all(
+        url.startswith(f"https://github.com/{REPO}/actions/runs/")
+        for side in sides
+        for url in side["ci_runs"]
+    )
+    assert all("/attempts/" in url for side in sides for url in side["ci_runs"])
+    assert any(side["ci_runs"] for side in sides)
+    assert any("38842296207 attempt 1" in side["incomplete_pipelines"] for side in sides)

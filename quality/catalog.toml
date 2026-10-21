@@ -193,6 +193,12 @@ title = "Production data is complete and traceable: the snapshot holds every rep
 feature = "Operations"
 criticality = "critical"
 
+[[requirement]]
+id = "UI-08"
+title = "A user can search across tests, failure messages, requirements, pipelines and repositories, see what needs attention with its evidence, follow a finding to its records and GitHub run, and copy a grounded summary"
+feature = "Dashboard"
+criticality = "high"
+
 # ---- Test cases ----------------------------------------------------------------------------
 
 [[test_case]]
@@ -647,4 +653,19 @@ automated_by = [
   "tests.unit.test_workspace::test_time_independent_views_are_computed_once_per_snapshot_and_bounded",
   "tests.unit.test_workspace::test_readiness_follows_the_clock_while_its_inputs_are_cached",
   "tests.unit.test_live::test_a_refreshed_snapshot_is_warmed_before_it_goes_live",
+]
+
+[[test_case]]
+id = "TC-INVESTIGATION"
+title = "Search index and ranking, Needs Attention rules, summaries, API limits and login, keyboard search, repository context, findings to records, execution comparison, copied summaries"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["UI-08"]
+automated_by = [
+  "tests.unit.test_search::*",
+  "tests.unit.test_attention::*",
+  "tests.unit.test_investigation_summary::*",
+  "tests.unit.dashboard.test_api::test_search_groups_results_links_them_and_validates_input",
+  "tests.unit.dashboard.test_api::test_attention_agrees_with_the_pages_it_summarises",
+  "tests.e2e.test_investigation::*",
 ]
