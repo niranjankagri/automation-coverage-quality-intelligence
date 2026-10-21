@@ -79,6 +79,8 @@ def test_card_values_fit_their_cards_and_nav_links_stay_on_screen(page: Page, wi
     page.set_viewport_size({"width": width, "height": 900})
     page.goto("/")
     expect(page.get_by_role("heading", name="Overview", exact=True)).to_be_visible()
+    if width <= 720:
+        page.locator(".mobile-nav > summary").click()
 
     overflowing = page.evaluate(
         "[...document.querySelectorAll('.card .value')].filter(e => e.scrollWidth > e.clientWidth + 1)"

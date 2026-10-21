@@ -34,6 +34,12 @@ def test_overview_shows_coverage_and_pass_rate_separately(page: Page) -> None:
     expect(card(page, "Requirement coverage")).to_contain_text("38 of 42")
     expect(card(page, "Automation coverage")).to_contain_text("37 of 43")
     expect(card(page, "Execution pass rate")).to_contain_text("221 of 221")
+    expect(page.get_by_role("heading", name="Build comparison", exact=True)).to_be_visible()
+    expect(
+        page.get_by_text(re.compile("Observed changes from .* across .* shared suite")).or_(
+            page.get_by_text("No change summary shown", exact=False)
+        )
+    ).to_be_visible()
     expect(page.get_by_role("link", name="SHOP-008")).to_be_visible()
     expect(page.get_by_role("link", name="ADMIN-012")).to_be_visible()
 
@@ -540,6 +546,101 @@ def test_the_owner_filter_narrows_requirements_and_the_matrix_groups_by_owner(pa
     expect(page.locator("#active-filters")).to_contain_text("Owner: Admin team")
 
 
+def test_navigation_groups_and_the_collapsible_filter_area(page: Page) -> None:
+    """Navigation follows product areas; URL filters stay active while the advanced filters collapse."""
+    page.goto("/#/?criticality=critical")
+
+    expect(page.locator(".section-nav")).to_contain_text("Investigate")
+    expect(page.locator(".section-nav")).to_contain_text("Coverage")
+    expect(page.locator(".section-nav")).to_contain_text("Execution")
+    expect(page.locator(".section-nav")).to_contain_text("Analytics")
+    expect(page.locator(".section-nav")).to_contain_text("Operations")
+    expect(page.locator('.section-nav a[data-nav="overview"]')).to_have_attribute("aria-current", "page")
+
+    page.locator("#filter-panel > summary").click()
+    expect(page.locator("#filters")).to_be_hidden()
+    page.locator("#filter-panel > summary").click()
+    expect(page.locator('#filters select[name="criticality"]')).to_have_value("critical")
+    page.get_by_role("link", name="Requirements", exact=True).click()
+    expect(page).to_have_url(re.compile(r"criticality=critical"))
+
+
+def test_mobile_sections_menu_can_collapse_and_reopen(page: Page) -> None:
+    """On a phone, the whole grouped navigation can be hidden and reopened."""
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto("/")
+
+    sections = page.locator(".mobile-nav > summary")
+    attention = page.get_by_role("link", name="Needs attention", exact=True)
+    expect(sections).to_be_visible()
+    expect(attention).to_be_hidden()
+    sections.click()
+    expect(attention).to_be_visible()
+    sections.click()
+    expect(attention).to_be_hidden()
+    sections.click()
+    attention.click()
+    expect(page.get_by_role("heading", name="Needs attention", exact=True)).to_be_visible()
+
+
+def test_critical_gap_preset_groups_findings_and_returns_to_filtered_results(page: Page) -> None:
+    """The critical gap shortcut uses the existing attention API and keeps a back link from detail."""
+    page.goto("/")
+    page.get_by_role("button", name="Critical gaps").click()
+
+    expect(page).to_have_url(
+        re.compile(r"#/attention\?.*kind=critical\+gap|#/attention\?.*kind=critical%20gap")
+    )
+    expect(page.get_by_role("heading", name="Needs attention", exact=True)).to_be_visible()
+    group = page.locator(".action-group").filter(has_text="Investigate now")
+    expect(group.locator("tbody tr")).to_have_count(2)
+    expect(group.locator("table thead")).to_contain_text("Observed reason")
+    expect(group.locator("table thead")).to_contain_text("Repository")
+    expect(group.get_by_role("button", name=re.compile("Copy link for"))).to_have_count(2)
+
+    group.locator("tbody td").nth(2).get_by_role("link").click()
+    expect(page.get_by_role("heading", name=re.compile("^(SHOP|ADMIN)-"))).to_be_visible()
+    page.get_by_role("link", name="Back to filtered results").click()
+    expect(page).to_have_url(re.compile(r"#/attention\?.*kind=critical"))
+
+
+def test_quick_views_and_metric_definitions_are_shareable(page: Page) -> None:
+    """Presets keep their route filters in the address and KPI help states the metric limits."""
+    page.goto("/")
+    page.get_by_role("button", name="Recent failures").click()
+    expect(page).to_have_url(re.compile(r"#/tests\?.*outcome=failed.*since=\d{4}-\d{2}-\d{2}"))
+    expect(page.locator("#outcome-filter")).to_have_value("failed")
+
+    page.goto("/")
+    help = page.locator(".card-shell").filter(has=page.locator(".label", has_text="Execution pass rate"))
+    help.locator(".help-tip > summary").click()
+    expect(help.locator(".help-popover")).to_contain_text("Skips are excluded")
+    page.get_by_role("button", name="Guide and glossary").click()
+    expect(page.get_by_role("dialog", name="Dashboard guide and glossary")).to_be_visible()
+    page.get_by_role("button", name="Close guide").click()
+
+
+def test_repository_requirement_breakdown_uses_observed_results_and_drills_down(
+    page: Page, pipelines_url: str
+) -> None:
+    """Repository rows are limited to observed linked results; each count opens its exact evidence."""
+    page.goto(f"{pipelines_url}/#/requirements")
+    repository_table = page.locator(".table-block table").filter(has_text="Observed requirements")
+    repo_row = repository_table.locator("tbody tr").first
+    expect(repo_row).to_contain_text("niranjankagri/cypress-typescript-framework")
+    expect(page.get_by_text("does not imply that repository is expected", exact=False)).to_be_visible()
+    observed_count = int(repo_row.locator("td").nth(1).inner_text())
+    repo_row.get_by_role("link").last.click()
+    expect(page).to_have_url(re.compile(r"observed=true"))
+    rows = page.get_by_role("region", name="Requirement list").locator("tbody tr")
+    expect(rows).to_have_count(observed_count)
+    expect(rows.first).to_contain_text("observed")
+    rows.first.locator("td").first.get_by_role("link").click()
+    expect(page.get_by_role("heading", name=re.compile("^(TB|SHOP|ADMIN|NOTES)-"))).to_be_visible()
+    page.get_by_role("link", name="Back to filtered results").click()
+    expect(page).to_have_url(re.compile(r"#/requirements\?"))
+
+
 def test_a_table_that_fits_on_one_page_shows_no_pager(page: Page) -> None:
     """Five snapshot runs: no "Rows 1-5 of 5" and no Previous/Next (the hidden attribute wins)."""
     page.goto("/")
@@ -574,6 +675,17 @@ def test_collection_problems_lead_to_their_pipeline_and_github_run(collected_pag
     page.locator("#data-fresh").get_by_role("link", name=re.compile("incomplete collection")).click()
     expect(page).to_have_url(re.compile(r"#/pipelines\?status=incomplete"))
     expect(page.locator("#view h1")).to_have_text("Pipelines")
+
+
+def test_operations_separates_snapshot_refresh_from_collection_freshness(collected_page: Page) -> None:
+    """Operations shows the last good dashboard snapshot and last complete collection separately."""
+    collected_page.goto("/#/collection")
+
+    expect(collected_page.get_by_role("heading", name="Dashboard snapshot")).to_be_visible()
+    expect(collected_page.get_by_text("It does not start a CI collection workflow.")).to_be_visible()
+    expect(collected_page.get_by_role("columnheader", name="Last complete collection")).to_be_visible()
+    repository = collected_page.locator("#view table tbody tr").first
+    expect(repository.locator("td").nth(3)).to_contain_text(re.compile(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC"))
 
 
 def test_a_compare_link_to_an_unknown_build_still_offers_the_build_choice(page: Page) -> None:

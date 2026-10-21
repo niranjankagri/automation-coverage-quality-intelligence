@@ -15,6 +15,7 @@
       <span>Quality Intelligence</span>
     </div>
     <div class="prefs">
+      <button type="button" id="guide-open" class="ghost">Guide and glossary</button>
       <label>Theme <select id="theme-choice"><option value="">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
       <label class="inline"><input type="checkbox" id="compact-choice"> Compact</label>
     </div>
@@ -23,21 +24,55 @@
       <input type="search" id="global-q" name="q" placeholder="Search tests, requirements, pipelines…" maxlength="100" autocomplete="off">
       <button type="submit" class="ghost">Search</button>
     </form>
-    <nav aria-label="Sections">
+    <details class="mobile-nav" open>
+      <summary>Sections</summary>
+      <nav class="section-nav" aria-label="Sections">
       <a href="#/" data-nav="overview">Overview</a>
-      <a href="#/attention" data-nav="attention">Needs attention</a>
-      <a href="#/requirements" data-nav="requirements">Requirements</a>
-      <a href="#/tests" data-nav="tests">Tests</a>
-      <a href="#/runs" data-nav="runs">Runs</a>
-      <a href="#/pipelines" data-nav="pipelines">Pipelines</a>
-      <a href="#/collection" data-nav="collection">Collection</a>
-      <a href="#/compare" data-nav="compare">Compare</a>
-      <a href="#/stability" data-nav="stability">Stability</a>
-      <a href="#/trends" data-nav="trends">Trends</a>
-    </nav>
+      <details class="nav-group" open>
+        <summary>Investigate</summary>
+        <div class="nav-links">
+          <a href="#/search" data-nav="search">Search</a>
+          <a href="#/attention" data-nav="attention">Needs attention</a>
+          <a href="#/tests" data-nav="tests">Tests</a>
+        </div>
+      </details>
+      <details class="nav-group" open>
+        <summary>Coverage</summary>
+        <div class="nav-links"><a href="#/requirements" data-nav="requirements">Requirements</a></div>
+      </details>
+      <details class="nav-group" open>
+        <summary>Execution</summary>
+        <div class="nav-links">
+          <a href="#/runs" data-nav="runs">Runs</a>
+          <a href="#/pipelines" data-nav="pipelines">Pipelines</a>
+        </div>
+      </details>
+      <details class="nav-group" open>
+        <summary>Analytics</summary>
+        <div class="nav-links">
+          <a href="#/compare" data-nav="compare">Compare</a>
+          <a href="#/stability" data-nav="stability">Stability</a>
+          <a href="#/trends" data-nav="trends">Trends</a>
+        </div>
+      </details>
+      <details class="nav-group" open>
+        <summary>Operations</summary>
+        <div class="nav-links"><a href="#/collection" data-nav="collection">Collection</a></div>
+      </details>
+      </nav>
+    </details>
   </header>
 
-  <form class="filters" id="filters" aria-label="Filters">
+  <div class="preset-bar" role="group" aria-label="Quick views">
+    <span class="preset-label">Quick views</span>
+    <button type="button" class="ghost" data-preset="critical-gaps">Critical gaps</button>
+    <button type="button" class="ghost" data-preset="recent-failures">Recent failures</button>
+    <button type="button" class="ghost" data-preset="incomplete-pipelines">Incomplete pipelines</button>
+    <button type="button" class="ghost" data-preset="stale-evidence">Stale evidence</button>
+  </div>
+  <details class="filter-panel" id="filter-panel" open>
+    <summary><span>Filters</span><span id="filter-summary" class="sub">All data</span></summary>
+    <form class="filters" id="filters" aria-label="Filters">
     <!-- One select per dimension; options are filled from /api/facets -->
     <label>Repository <select name="repository" data-facet="repositories"></select></label>
     <label>Feature <select name="feature" data-facet="features"></select></label>
@@ -59,7 +94,8 @@
     </span>
     <button type="button" id="clear-filters" class="ghost">Clear</button>
     <button type="button" id="copy-view" class="ghost">Copy link to this view</button>
-  </form>
+    </form>
+  </details>
   <ul class="chips active-filters" id="active-filters" aria-label="Active filters"></ul>
 
   <div class="databar" role="region" aria-label="Data freshness">
@@ -79,5 +115,20 @@
     <span id="data-size"></span>
     <a href="/docs">API documentation</a>
   </footer>
+  <dialog id="guide-dialog" aria-labelledby="guide-title">
+    <div class="dialog-head">
+      <h2 id="guide-title">Dashboard guide and glossary</h2>
+      <button type="button" id="guide-close" class="ghost" aria-label="Close guide">Close</button>
+    </div>
+    <p>Start with the release readiness decision and its observed reasons. Follow linked evidence to the relevant test, requirement, run or pipeline, then use the breadcrumbs to return to the results.</p>
+    <dl class="glossary">
+      <dt>Coverage</dt><dd>Requirements linked to at least one test case, divided by requirements in scope. Linked manual or planned tests count.</dd>
+      <dt>Automation coverage</dt><dd>Linked test cases marked automated, divided by all linked test cases. Unlinked cases are reported separately.</dd>
+      <dt>Pass rate</dt><dd>Passed results divided by passed, failed and error results in the latest snapshot. Skips are excluded; it does not measure requirement coverage.</dd>
+      <dt>Flaky candidate</dt><dd>A pattern of mixed outcomes that the history rules suspect may be flaky. It is a candidate for investigation, not a proven cause.</dd>
+      <dt>Stale evidence</dt><dd>The latest execution of a requirement's linked tests is older than the configured dashboard threshold.</dd>
+      <dt>Readiness</dt><dd>The existing release gate result plus documented warnings for missing evidence, flaky candidates, incomplete collections or stale dashboard data.</dd>
+    </dl>
+  </dialog>
 </body>
 </html>
