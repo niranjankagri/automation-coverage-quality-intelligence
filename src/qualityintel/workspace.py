@@ -7,10 +7,11 @@ only turns these view models into JSON and HTML.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Hashable, Iterable, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
+from typing import TypeVar, cast
 
 from pydantic import BaseModel, ConfigDict
 
@@ -517,6 +518,11 @@ class Scope:
 EVERYTHING = Scope()
 
 
+# Distinct filter combinations whose analyses one workspace keeps (each holds a few MB at most)
+MAX_CACHED_VIEWS = 64
+T = TypeVar("T")
+
+
 class Workspace:
     """A catalog and the runs imported for it."""
 
@@ -536,6 +542,25 @@ class Workspace:
         self.stale_days = 14
         self.runs = tuple(sorted(runs, key=lambda r: (r.started_at is None, r.started_at, r.source)))
         self._runs_by_id = {run.run_id: run for run in self.runs}
+        # Results of time-independent analyses: a workspace never changes, so they hold until
+        # the data is reloaded (a new workspace). Bounded: the oldest entry goes first.
+        self._cache: dict[Hashable, object] = {}
+
+    def _cached(self, key: Hashable, compute: Callable[[], T]) -> T:
+        """``compute()`` once per key for this workspace (at most MAX_CACHED_VIEWS kept)."""
+        if key in self._cache:
+            return cast(T, self._cache[key])
+        value = compute()
+        if len(self._cache) >= MAX_CACHED_VIEWS:
+            del self._cache[next(iter(self._cache))]
+        self._cache[key] = value
+        return value
+
+    def warm(self) -> None:
+        """Compute the views every visitor starts with, before this workspace goes live."""
+        self.summary()
+        self.stability()
+        self.tests()
 
     @classmethod
     def load(cls, catalog_path: Path, results: Sequence[str | Path]) -> tuple[Workspace, Batch]:
@@ -672,6 +697,14 @@ class Workspace:
         return RequirementDetail(requirement=self._row(requirement, report), test_cases=tuple(cases))
 
     def tests(self, scope: Scope = EVERYTHING, outcome: Outcome | None = None) -> tuple[TestRow, ...]:
+        """Cached per snapshot: see :meth:`_compute_tests`."""
+        return self._cached(
+            ("tests", scope, outcome), lambda: self._compute_tests(scope=scope, outcome=outcome)
+        )
+
+    def _compute_tests(
+        self, scope: Scope = EVERYTHING, outcome: Outcome | None = None
+    ) -> tuple[TestRow, ...]:
         """Every test key in the chosen runs; ``outcome`` keeps tests whose latest result has it."""
         runs = self._runs(scope)
         cases = self._case_ids_by_key(runs)
@@ -927,6 +960,15 @@ class Workspace:
     def stability(
         self, scope: Scope = EVERYTHING, settings: HistorySettings = DEFAULTS, include_stable: bool = False
     ) -> StabilityView:
+        """Cached per snapshot: see :meth:`_compute_stability`."""
+        return self._cached(
+            ("stability", scope, settings, include_stable),
+            lambda: self._compute_stability(scope=scope, settings=settings, include_stable=include_stable),
+        )
+
+    def _compute_stability(
+        self, scope: Scope = EVERYTHING, settings: HistorySettings = DEFAULTS, include_stable: bool = False
+    ) -> StabilityView:
         """History classification of every test in the chosen runs (docs/metrics.md, history)."""
         runs = self._runs(scope)
         cases = self._case_ids_by_key(runs)
@@ -990,6 +1032,10 @@ class Workspace:
         )
 
     def trends(self, scope: Scope = EVERYTHING) -> TrendsView:
+        """Cached per snapshot: see :meth:`_compute_trends`."""
+        return self._cached(("trends", scope), lambda: self._compute_trends(scope=scope))
+
+    def _compute_trends(self, scope: Scope = EVERYTHING) -> TrendsView:
         """Daily snapshots, per-context run series and recorded coverage (docs/metrics.md, trends)."""
         runs = self._runs(scope)
         daily = daily_trend(runs, self.catalog, scope.filters)
@@ -1061,6 +1107,10 @@ class Workspace:
         return tuple(run for run in self.runs if scope.run_filters.keeps(run))
 
     def _report(self, scope: Scope) -> TraceabilityReport:
+        """Cached per snapshot: see :meth:`_compute_report`."""
+        return self._cached(("report", scope), lambda: self._compute_report(scope=scope))
+
+    def _compute_report(self, scope: Scope) -> TraceabilityReport:
         """Traceability report for the scope."""
         return build_report(self.catalog, self.runs, scope.filters, scope.run_filters)
 

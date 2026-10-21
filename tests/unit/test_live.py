@@ -5,12 +5,15 @@ import shutil
 import sqlite3
 import time
 from contextlib import closing
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 
 from qualityintel.history.store import HistoryStore
+from qualityintel.ingest.catalog_file import load_catalog
 from qualityintel.live import MIN_FORCED_SECONDS, LiveData, LoadError, Sources, load_snapshot
+from qualityintel.workspace import Workspace
 
 from .traceability.helpers import result, run
 
@@ -185,3 +188,34 @@ def test_api_counts_equal_the_database_after_a_reload(sources: Sources) -> None:
     api_runs = client.get("/api/runs").json()
     assert len(api_runs) == runs == 3
     assert sum(sum(r["counts"].values()) for r in api_runs) == results
+
+
+def test_a_refreshed_snapshot_is_warmed_before_it_goes_live(tmp_path: Path) -> None:
+    """Requests keep the old (warm) snapshot until the new one has its views computed."""
+    from qualityintel.live import Snapshot
+
+    warmed: list[str] = []
+
+    class Recording(Workspace):
+        def warm(self) -> None:
+            warmed.append("warm")
+
+    first = Snapshot(
+        workspace=Recording(load_catalog(SAMPLES / "catalog.toml"), []),
+        version="v1",
+        loaded_at=datetime.now(UTC),
+    )
+    second = Snapshot(
+        workspace=Recording(load_catalog(SAMPLES / "catalog.toml"), []),
+        version="v2",
+        loaded_at=datetime.now(UTC),
+    )
+
+    class Sources:
+        def fingerprint(self) -> tuple[str, None]:
+            return "v2", None
+
+    live = LiveData(first, Sources(), interval_seconds=0, loader=lambda _: second)  # type: ignore[arg-type]
+    assert live.check() is True
+    assert warmed == ["warm"]
+    assert live.current() is second
