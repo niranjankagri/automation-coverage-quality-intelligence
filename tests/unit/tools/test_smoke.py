@@ -7,7 +7,8 @@ from types import ModuleType
 from unittest.mock import patch
 
 import pytest
-\n
+
+
 def _load_smoke() -> ModuleType:
     path = Path(__file__).parents[3] / "tools" / "smoke.py"
     spec = importlib.util.spec_from_file_location("live_smoke_under_test", path)
