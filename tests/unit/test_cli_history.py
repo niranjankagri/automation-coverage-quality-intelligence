@@ -140,7 +140,7 @@ def test_backup_writes_a_verified_copy_and_never_overwrites(
 
     assert main(["history", "backup", str(target), "--database", str(database)]) == EXIT_OK
     out = capsys.readouterr().out
-    assert f"{target}: ok, schema 5, 43 runs" in out
+    assert f"{target}: ok, schema 6, 43 runs" in out
     assert "backed up" in out
     assert main(["history", "backup", str(target), "--database", str(database)]) == EXIT_USAGE
 
@@ -176,7 +176,7 @@ def test_check_reports_a_healthy_database_and_refuses_a_missing_one(
     """``check`` never creates the file it is asked to check."""
     capsys.readouterr()
     assert main(["history", "check", "--database", str(database)]) == EXIT_OK
-    assert "ok, schema 5, 43 runs" in capsys.readouterr().out
+    assert "ok, schema 6, 43 runs" in capsys.readouterr().out
 
     missing = tmp_path / "missing.db"
     assert main(["history", "check", "--database", str(missing)]) == EXIT_USAGE

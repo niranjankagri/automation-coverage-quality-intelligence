@@ -108,7 +108,13 @@ def _collect_run(
             repository=producer.repository,
         )
         problems += [str(error) for error in batch.errors]
-        execution = pipeline_execution(batch.runs, pid, [job.name for job in producer.job])
+        # Files without a timestamp (Surefire, JUnit 5, Cucumber, k6, node:test) take the start
+        # of the CI run, so they sort, filter by date and count as latest correctly
+        runs = [
+            r if r.started_at is not None else r.model_copy(update={"started_at": run.started_at})
+            for r in batch.runs
+        ]
+        execution = pipeline_execution(runs, pid, [job.name for job in producer.job])
         # Missing jobs are already named by the artifact problems; keep each reason once
         named = _named(problems)
         problems += [
@@ -131,11 +137,11 @@ def _collect_run(
             started_at=run.started_at,
             collected_at=now,
             state="complete" if execution.state is PipelineState.COMPLETE and not problems else "incomplete",
-            runs=len(batch.runs),
-            results=sum(len(r.results) for r in batch.runs),
+            runs=len(runs),
+            results=sum(len(r.results) for r in runs),
             problems=tuple(dict.fromkeys(problems)),
         )
-        store.add_collection(record, batch.runs)
+        store.add_collection(record, runs)
         return record
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
