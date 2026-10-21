@@ -118,3 +118,17 @@ def test_a_file_above_the_size_limit_is_refused(tmp_path: Path, monkeypatch: pyt
     with pytest.raises(FetchError, match="larger than"):
         fetch_history(URL, tmp_path / "quality.db", Opener(Response(b"0" * 5000)))
     assert not (tmp_path / "quality.db").exists()
+
+
+@pytest.mark.parametrize("fraction", [0.5, 0.9, 0.999])
+def test_a_truncated_download_never_replaces_the_database(tmp_path: Path, fraction: float) -> None:
+    """A real history cut short (interrupted transfer) is refused; the old file stays."""
+    database = tmp_path / "quality.db"
+    published = history_bytes(tmp_path)
+    database.write_bytes(published)
+
+    with pytest.raises(FetchError, match=r"not a usable history|damaged") as refused:
+        fetch_history(URL, database, Opener(Response(published[: int(len(published) * fraction)])))
+
+    assert len(str(refused.value)) < 1000  # a damaged file is described briefly, not row by row
+    assert database.read_bytes() == published

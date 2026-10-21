@@ -1,11 +1,16 @@
 # Smoke test of the hosted demonstration (docs/deployment.md), after the daily collection and on
 # demand. The address is the repository variable QI_LIVE_URL; without it there is nothing to test.
+# A failed run is the alert: GitHub e-mails the owner (docs/operations.md, Monitoring).
 name: Live dashboard
 
 on:
   schedule:
     - cron: "30 8 * * *" # after the collection (07:40 UTC) and the hourly fetch
   workflow_dispatch:
+    inputs:
+      max_collection_age:
+        description: "Hours the latest collection may be old (alert drill: 0.01 makes the run fail)"
+        default: "30"
 
 permissions:
   contents: read
@@ -21,5 +26,15 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.13"
-      # The free service may be asleep: up to three minutes to wake up
-      - run: python tools/smoke.py "${{ vars.QI_LIVE_URL }}" --wait 180 --collected
+      # The free service may be asleep: up to three minutes to wake up. The daily collection runs
+      # at 07:40 UTC: 30 hours allow one late or failed run. The input reaches the shell only as
+      # an environment variable and must be a number (no expression injection into the script).
+      - name: Smoke test
+        env:
+          LIVE_URL: ${{ vars.QI_LIVE_URL }}
+          MAX_AGE: ${{ inputs.max_collection_age || '30' }}
+        run: |
+          case "$MAX_AGE" in
+            ''|*[!0-9.]*) echo "max_collection_age must be a number of hours, got: $MAX_AGE"; exit 2;;
+          esac
+          python tools/smoke.py "$LIVE_URL" --wait 180 --collected --max-collection-age "$MAX_AGE"

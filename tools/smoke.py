@@ -1,4 +1,4 @@
-"""Smoke test of a running dashboard: python tools/smoke.py URL [--wait SECONDS] [--collected].
+"""Smoke test of a running dashboard: python tools/smoke.py URL [--wait S] [--collected] [--max-age H].
 
 Checks what a visitor and an operator rely on (docs/deployment.md): the page and its security
 headers, health, freshness, and that the API answers with data. Over https it also expects HSTS.
@@ -6,7 +6,9 @@ headers, health, freshness, and that the API answers with data. Over https it al
 0 when every check passed, 1 otherwise; one line per check.
 
 ``--wait`` retries the first request for that long: a free host that was asleep needs about a
-minute to start.
+minute to start. ``--max-collection-age HOURS`` fails when the latest collection is older (the
+collection stopped, or the dashboard did not pick it up). A failed check prints what to look at:
+the daily live workflow fails, and GitHub notifies the repository owner (docs/operations.md).
 """
 
 from __future__ import annotations
@@ -17,7 +19,15 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from datetime import UTC, datetime
 from typing import Any
+
+# What to look at when a check fails (docs/operations.md, Incidents)
+HINTS = {
+    "data not stale": "the dashboard cannot reload its data: see last_error in /api/status, then the log",
+    "collection recent": "no collection published lately: open the Collect CI results workflow (failed?)",
+    "no repeated incomplete collections": "pipelines are being recorded incomplete: open the Collection page",
+}
 
 TIMEOUT = 30
 
@@ -51,7 +61,7 @@ def wait_until_up(base: str, seconds: float) -> None:
         time.sleep(5)
 
 
-def checks(base: str, collected: bool) -> list[tuple[str, bool, str]]:
+def checks(base: str, collected: bool, max_age_hours: float | None = None) -> list[tuple[str, bool, str]]:
     """Every check as (name, passed, detail)."""
     results: list[tuple[str, bool, str]] = []
 
@@ -100,6 +110,30 @@ def checks(base: str, collected: bool) -> list[tuple[str, bool, str]]:
         pipelines = json.loads(body) if status == 200 else {}
         rows = pipelines.get("pipelines", []) if isinstance(pipelines, dict) else pipelines
         results.append(("pipelines listed", status == 200 and len(rows) > 0, f"{len(rows)} pipelines"))
+    if max_age_hours is not None:
+        latest = state.get("latest_collection_at")
+        age = (
+            (datetime.now(UTC) - datetime.fromisoformat(latest.replace("Z", "+00:00"))).total_seconds() / 3600
+            if latest
+            else None
+        )
+        results.append(
+            (
+                "collection recent",
+                age is not None and age <= max_age_hours,
+                f"latest {latest or 'never'}, {age:.1f} h ago, limit {max_age_hours:g} h"
+                if age is not None
+                else "no collection recorded",
+            )
+        )
+        incomplete = int(state.get("incomplete_collections_7d") or 0)
+        results.append(
+            (
+                "no repeated incomplete collections",
+                incomplete < 3,
+                f"{incomplete} incomplete in 7 days (3 or more fail)",
+            )
+        )
     return results
 
 
@@ -109,16 +143,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("url", help="base address, e.g. https://quality-intelligence.onrender.com")
     parser.add_argument("--wait", type=float, default=0, help="seconds to wait for the service to wake up")
     parser.add_argument("--collected", action="store_true", help="also require collected pipelines")
+    parser.add_argument(
+        "--max-collection-age", type=float, metavar="HOURS", help="fail when the latest collection is older"
+    )
     args = parser.parse_args(argv)
     base = args.url.rstrip("/")
     wait_until_up(base, args.wait)
     try:
-        results = checks(base, args.collected)
+        results = checks(base, args.collected, args.max_collection_age)
     except (urllib.error.URLError, TimeoutError, OSError, ValueError) as error:
         print(f"FAIL  {base} cannot be checked: {error}")
         return 1
     for name, passed, detail in results:
         print(f"{'ok  ' if passed else 'FAIL'}  {name}{f'  ({detail})' if detail else ''}")
+        if not passed and name in HINTS:
+            print(f"      what to do: {HINTS[name]}")
     return 0 if all(passed for _, passed, _ in results) else 1
 
 

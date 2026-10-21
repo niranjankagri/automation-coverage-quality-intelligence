@@ -60,6 +60,18 @@ heading; no page scrolls sideways at 390, 768 or 1280 px. The browser tests run 
 Firefox and WebKit (`QI_E2E_BROWSER`; in WebKit the skip-link test is skipped, because WebKit
 moves Tab between form controls only, like Safari by default).
 
+**When something is wrong:** the freshness line links the incomplete collections of the last 7
+days to the Pipelines page (filtered to incomplete); a failed refresh says which figures are
+shown, that the dashboard retries on its own, and links the Collection page; every problem on the
+Collection page links its pipeline and the run attempt on GitHub, where the job log says why a
+report is missing. A Compare link to a build the scope does not have (mistyped, pruned, filtered
+out) explains that and keeps the build selectors. While a view loads it is marked busy for
+screen readers.
+
+**Layout tests:** `tests/e2e/test_layout.py` checks geometry at 390, 768 and 1280 px (regions
+stacked without overlap, nothing wider than the window, card values inside their cards, every
+section link on screen) instead of pixels, which differ between operating systems and fonts.
+
 **Filter bar:** quick ranges (24 h, 7 days, 30 days, all dates) set *From*; each active filter is
 a chip under the bar with a remove button; *Copy link to this view* copies the address, which
 holds every filter (a shareable preset); *Clear* removes them all.

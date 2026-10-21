@@ -17,6 +17,15 @@
 - **Release status on the overview** ([docs/readiness.md](docs/readiness.md)): Ready / At risk /
   Blocked / Unknown from the release gate given with `qi dashboard --gate` plus flaky candidates,
   incomplete pipelines and stale data; unknown evidence is never ready; `/api/readiness`.
+- **Actionable problems (UI)**: incomplete collections and failed refreshes link to where to
+  look; collection problems link the pipeline and the GitHub run attempt; a Compare link to an
+  unknown build explains instead of failing; layout regression tests at three widths.
+- **Reliability and performance guards (M11, M14)**: `qi history check` reports a damaged file
+  instead of crashing (found by a restore drill); killed imports, truncated downloads and expired
+  artifacts covered by tests; the daily live check fails when the latest collection is older
+  than 30 hours or collections keep coming in incomplete, and says what to do;
+  `tools/benchmark.py`; performance guards on production-sized data in CI (structural and
+  budgets); trends warmed too ([docs/performance.md](docs/performance.md)).
 - **Production correctness (M9, M10)**, found on the live deployment:
   - the snapshot dropped 3 of 23 repositories and all but one file of multi-file jobs (jobs of
     the same name and context in different repositories replaced each other); it now keeps

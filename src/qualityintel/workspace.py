@@ -146,6 +146,15 @@ class PipelinesView(View):
     workflows: tuple[str, ...] = ()
 
 
+class CollectionIssue(View):
+    """One problem of one collected pipeline attempt, with where to look."""
+
+    pipeline_id: str
+    attempt: int
+    run_url: str | None
+    text: str
+
+
 class RepositoryHealth(View):
     """Collection of one repository over the last 7 days."""
 
@@ -161,6 +170,7 @@ class RepositoryHealth(View):
     results: int
     conclusions: dict[str, int]
     problems: tuple[str, ...]
+    issues: tuple[CollectionIssue, ...] = ()
 
 
 class CollectionHealthView(View):
@@ -561,6 +571,7 @@ class Workspace:
         self.summary()
         self.stability()
         self.tests()
+        self.trends()
 
     @classmethod
     def load(cls, catalog_path: Path, results: Sequence[str | Path]) -> tuple[Workspace, Batch]:
@@ -938,6 +949,17 @@ class Workspace:
                     conclusions=dict(sorted(conclusions.items())),
                     problems=tuple(
                         f"{c.pipeline_id} attempt {c.attempt}: {p}" for c in recent for p in c.problems
+                    ),
+                    issues=tuple(
+                        CollectionIssue(
+                            pipeline_id=c.pipeline_id,
+                            attempt=c.attempt,
+                            # the attempt's own page: GitHub keeps one per re-run
+                            run_url=f"{c.url}/attempts/{c.attempt}" if c.url.startswith("https://") else None,
+                            text=p,
+                        )
+                        for c in recent
+                        for p in c.problems
                     ),
                 )
             )

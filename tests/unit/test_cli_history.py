@@ -194,3 +194,22 @@ def test_prune_keeps_recent_runs(database: Path, capsys: pytest.CaptureFixture[s
 
     assert main(["history", "prune", "--keep-days", "365", "--database", str(database)]) == EXIT_OK
     assert "deleted 0 run(s)" in capsys.readouterr().out
+
+
+def test_check_reports_a_damaged_file_instead_of_crashing(
+    database: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """64 KB overwritten in the middle (found by the restore drill of 2026-10-21): exit 3, no traceback."""
+    broken = tmp_path / "broken.db"
+    data = bytearray(database.read_bytes())
+    middle = len(data) // 2
+    data[middle : middle + 65536] = bytes(65536)
+    broken.write_bytes(bytes(data))
+    capsys.readouterr()
+
+    assert main(["history", "check", "--database", str(broken)]) == EXIT_INPUT
+    assert main(["history", "restore", str(broken), "--database", str(tmp_path / "new.db")]) == EXIT_INPUT
+    err = capsys.readouterr().err
+    assert "damaged" in err or "malformed" in err
+    assert "Traceback" not in err
+    assert not (tmp_path / "new.db").exists()

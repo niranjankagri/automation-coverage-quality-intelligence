@@ -447,9 +447,16 @@ class HistoryStore:
             copy.close()
 
     def check(self) -> list[str]:
-        """Problems SQLite finds in the file (``PRAGMA integrity_check`` and foreign keys)."""
-        problems = [row[0] for row in self._db.execute("PRAGMA integrity_check") if row[0] != "ok"]
-        orphans = self._db.execute("PRAGMA foreign_key_check").fetchall()
+        """Problems SQLite finds in the file (``PRAGMA integrity_check`` and foreign keys).
+
+        A file damaged so badly that the checks themselves fail is a problem too, never an error
+        of the caller: this is what an operator runs when something is wrong.
+        """
+        try:
+            problems = [row[0] for row in self._db.execute("PRAGMA integrity_check") if row[0] != "ok"]
+            orphans = self._db.execute("PRAGMA foreign_key_check").fetchall()
+        except sqlite3.DatabaseError as error:
+            return [f"the file is damaged and cannot be checked ({error})"]
         if orphans:
             problems.append(f"{len(orphans)} result row(s) without their run")
         return problems

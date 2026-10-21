@@ -315,3 +315,21 @@ def test_a_file_without_a_timestamp_takes_the_start_of_its_ci_run(store: History
 
     assert by_job["api"].started_at == run().started_at  # the CI run's start
     assert by_job["ui"].started_at != run().started_at  # a file's own timestamp is kept
+
+
+def test_an_expired_artifact_makes_the_run_incomplete_and_says_so(store: HistoryStore) -> None:
+    """GitHub keeps artifacts 90 days: a run collected too late is incomplete, never complete."""
+
+    class Expiring(FakeSource):
+        def artifacts(self, repository: str, run_id: int) -> list[Artifact]:
+            return [
+                Artifact(id=i, name=name, size=1, expired=name == "report-ui")
+                for i, name in enumerate(self.files)
+            ]
+
+    with store:
+        collect(CONFIG, Expiring([run()], good_artifacts()), store, SINCE, now=NOW)
+        (record,) = store.collections()
+
+    assert record.state == "incomplete"
+    assert "job ui: artifact report-ui has expired" in record.problems

@@ -197,7 +197,7 @@ Development setup: `pip install -e ".[dev,e2e]"`, `playwright install chromium`,
 [Architecture](docs/architecture.md) · [Metric definitions](docs/metrics.md) ·
 [Ingestion](docs/ingestion.md) · [Requirements import](docs/requirements-import.md) · [Traceability](docs/traceability.md) · [History](docs/history.md) ·
 [Quality gates](docs/quality-gates.md) · [Pipelines](docs/pipelines.md) · [Collection](docs/collection.md) · [Dashboard and API](docs/dashboard.md) ·
-[Security](docs/security.md) · [Operations](docs/operations.md) · [Deployment](docs/deployment.md) · [Limitations and future work](docs/limitations.md) · [Decision records](docs/adr/) ·
+[Security](docs/security.md) · [Operations](docs/operations.md) · [Deployment](docs/deployment.md) · [Performance](docs/performance.md) · [Limitations and future work](docs/limitations.md) · [Decision records](docs/adr/) ·
 [Sample data](samples/README.md) · [Clean-checkout validation](docs/validation.md) · [Changelog](CHANGELOG.md)
 
 ## License
