@@ -641,12 +641,14 @@ def verify_history(path: Path) -> tuple[int, int] | None:
         return None
     with store:
         problems = store.check()
+        for problem in problems[:10]:
+            print(f"qi: error: {path}: {problem}", file=sys.stderr)
+        if problems:
+            if len(problems) > 10:
+                print(f"qi: error: {path}: ... and {len(problems) - 10} more", file=sys.stderr)
+            return None
         counts = store.count()
         collections = len(store.collections())
-    for problem in problems:
-        print(f"qi: error: {path}: {problem}", file=sys.stderr)
-    if problems:
-        return None
     print(
         f"{path}: ok, schema {SCHEMA_VERSION}, {counts[0]} runs, {counts[1]} results, "
         f"{collections} collection records"
