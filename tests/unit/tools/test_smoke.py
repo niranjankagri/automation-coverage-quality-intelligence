@@ -31,6 +31,7 @@ def test_smoke_reports_invalid_collection_timestamp_without_traceback(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """A bad timestamp from /api/status must not crash the scheduled monitor."""
+
     def fake_get(url: str) -> tuple[int, dict[str, str], bytes]:
         if url.endswith("/api/health"):
             return 200, {}, b'{"status":"ok","runs":1}'
