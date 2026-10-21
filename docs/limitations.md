@@ -12,7 +12,7 @@ up and what to do about it.
 | Three input formats: JUnit XML, mochawesome (Cypress), Allure results folders | TestNG's own `testng-results.xml`, Robot's `output.xml` and generated `allure-report/` sites cannot be read | use the framework's JUnit reporter (`--reporter junit`, `--xunit`, Surefire `TEST-*.xml`) or its `allure-results` |
 | mochawesome records no browser, build or retries | Cypress runs show no context unless it is given; Cypress retries are invisible | pass `--browser`/`--build` (or record `qi_context`); for retries, use Cypress's JUnit reporter |
 | Data-driven rows are named differently in Allure and in TestNG's JUnit XML | switching format starts a new history for those rows | stay with one format per suite, or link the rows by explicit test ids (`AS_ID`) |
-| Supported producers are those with real sample files: pytest, Robot Framework, Maven Surefire/TestNG, Playwright Test | other producers probably work (same core format) but are not claimed | add a sample and a test before claiming support |
+| Input compatibility is verified per configured producer and report format | a new test framework or reporter may emit different fields or unsupported output, even when it uses JUnit XML | verify against a real CI artifact and add a regression test before claiming support ([collection.md](collection.md), [ingestion.md](ingestion.md)) |
 | `target/surefire-reports/` holds the same results several times | importing the whole folder counts tests twice (the files differ, so duplicate detection cannot help) | point at `TEST-TestSuite.xml` (or `TEST-*.xml` of one reporter) only |
 | Logs, screenshots, traces are not imported | the dashboard shows failure messages and stack traces, nothing else | link to the framework's own report |
 | Files up to 50 MB | larger files are refused | split the run |
@@ -56,7 +56,8 @@ up and what to do about it.
 | Limitation | Effect | What to do |
 |---|---|---|
 | SQLite, one writer at a time | concurrent CI jobs writing one file can block or fail | one import step after the test jobs, or one database per job |
-| The dashboard loads data at start-up; its login is one shared basic-authentication account | new results need a restart; no per-user access, no brute-force protection | for a team: TLS proxy in front, or the organisation's authenticating proxy ([security.md](security.md)) |
+| The dashboard uses one shared basic-authentication account in private mode | no per-user identity, roles or audit attribution; login lock-out is per client address and instance | for a team: put TLS and the organisation's authenticating proxy in front ([security.md](security.md), [operations.md](operations.md)) |
+| Live data reload depends on a valid published history and the refresh process | the hosted dashboard can show the last good snapshot when a download or reload fails; updates are not instantaneous | check `/api/status` for freshness and errors; the hosted service fetches history hourly ([deployment.md](deployment.md), [operations.md](operations.md)) |
 | Secret redaction recognises shapes, not meaning | a secret in an unusual shape in a failure message passes through | keep secrets out of assertion messages; the redaction is a safety net |
 | Requirements live in a TOML file | no link to Jira, TargetProcess, Azure DevOps or Xray | export from the tool into the TOML format (a small script), or add an importer |
 
@@ -66,7 +67,6 @@ Not built, in the order they would add most value. None is claimed anywhere else
 
 1. **Direct requirement sync** with a test-management tool (Jira/Xray, Azure DevOps, TargetProcess);
    today their CSV export is imported ([requirements-import.md](requirements-import.md)).
-2. **Live reload** in the dashboard when the history database changes.
-3. **PostgreSQL** store, only if several writers or a shared server become a real need
+2. **PostgreSQL** store, only if several writers or a shared server become a real need
    ([ADR 0003](adr/0003-sqlite-first.md)).
-4. **Ownership** (team or component per requirement) to route gaps and failures.
+3. **Ownership** (team or component per requirement) to route gaps and failures.
