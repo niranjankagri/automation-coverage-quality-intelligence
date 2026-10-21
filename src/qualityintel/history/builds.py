@@ -94,6 +94,29 @@ def builds_in_order(runs: Iterable[TestRun]) -> list[str]:
     return [*dated, *sorted(undated - first.keys())]
 
 
+def _compare_key(run: TestRun) -> tuple[str | None, ...]:
+    """The suite, and for a pipeline job also the result file inside it.
+
+    A job may write one file per test class; each file is compared with the same file of the
+    other build.
+    """
+    return (*snapshot_key(run), run.source if run.pipeline else None)
+
+
+def _pair_labels(runs: Iterable[TestRun]) -> dict[str, str]:
+    """Label per run id; runs sharing a label (files of one job) also name their file."""
+    chosen = list(runs)
+    counts: dict[str, int] = {}
+    for run in chosen:
+        counts[label(run)] = counts.get(label(run), 0) + 1
+    return {
+        run.run_id: label(run)
+        if counts[label(run)] == 1
+        else f"{label(run)} · {run.source.rsplit('/', 1)[-1]}"
+        for run in chosen
+    }
+
+
 def compare_builds(
     runs: Sequence[TestRun],
     base: str,
@@ -104,16 +127,18 @@ def compare_builds(
     """Compare build ``base`` with build ``head`` over ``runs`` (``KeyError`` if a build has no runs)."""
     base_side = _side(runs, base, snapshots)
     head_side = _side(runs, head, snapshots)
-    base_by_key = {snapshot_key(run): run for run in base_side.runs}
-    head_by_key = {snapshot_key(run): run for run in head_side.runs}
+    base_by_key = {_compare_key(run): run for run in base_side.runs}
+    head_by_key = {_compare_key(run): run for run in head_side.runs}
+    common = base_by_key.keys() & head_by_key.keys()
+    names = _pair_labels(head_by_key[key] for key in common)
     compared = tuple(
         ContextComparison(
-            label(head_by_key[key]),
+            names[head_by_key[key].run_id],
             base_by_key[key],
             head_by_key[key],
             compare_runs(base_by_key[key], head_by_key[key], settings),
         )
-        for key in sorted(base_by_key.keys() & head_by_key.keys(), key=lambda k: label(head_by_key[k]))
+        for key in sorted(common, key=lambda k: (names[head_by_key[k].run_id], str(k)))
     )
     return BuildComparison(
         base=base_side,

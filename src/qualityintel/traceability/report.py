@@ -127,27 +127,38 @@ def context_key(context: RunContext) -> tuple[str | None, ...]:
 
 
 def snapshot_key(run: TestRun) -> tuple[str | None, ...]:
-    """What "the same suite" means for the snapshot: the run context, plus the pipeline job.
+    """What "the same suite" means for the snapshot: run context, pipeline repository and job.
 
-    Two jobs of a pipeline can share a context (component tests and UI tests, both in Chrome);
-    they are different suites, so neither may replace the other.
+    Two jobs of a pipeline can share a context (component tests and UI tests, both in Chrome),
+    and so can jobs of different repositories (two TestNG ``unit`` jobs on Linux): they are
+    different suites, so neither may replace the other.
     """
-    return (*context_key(run.context), run.pipeline.job if run.pipeline else None)
+    if run.pipeline is None:
+        return (*context_key(run.context), None, None)
+    return (*context_key(run.context), run.pipeline.job, run.pipeline.repository)
 
 
 def latest_runs(runs: Iterable[TestRun]) -> tuple[TestRun, ...]:
-    """The newest run per run context (and pipeline job), ordered by start time.
+    """The newest execution per suite (:func:`snapshot_key`), ordered by start time.
 
-    Runs without a start time sort before every dated run, so a dated run always wins; among
-    undated runs the last one given wins (import order).
+    For a pipeline job the execution is its latest attempt with *all* of its result files (a
+    job that writes one file per test class is one suite, not one file). Without a pipeline,
+    the execution is the single newest run. Runs without a start time sort before every dated
+    run, so a dated execution always wins; among undated ones the last one given wins.
     """
-    latest: dict[tuple[str | None, ...], TestRun] = {}
+    chosen: dict[tuple[str | None, ...], tuple[tuple[str, ...], datetime, list[TestRun]]] = {}
     for run in runs:
         key = snapshot_key(run)
-        current = latest.get(key)
-        if current is None or _when(run) >= _when(current):
-            latest[key] = run
-    return tuple(sorted(latest.values(), key=lambda r: (_when(r), r.source)))
+        execution = (run.pipeline.pipeline_id, str(run.pipeline.attempt)) if run.pipeline else (run.run_id,)
+        current = chosen.get(key)
+        if current is not None and current[0] == execution:
+            current[2].append(run)
+            chosen[key] = (execution, max(current[1], _when(run)), current[2])
+        elif current is None or _when(run) >= current[1]:
+            chosen[key] = (execution, _when(run), [run])
+    return tuple(
+        sorted((r for _, _, group in chosen.values() for r in group), key=lambda r: (_when(r), r.source))
+    )
 
 
 def build_report(

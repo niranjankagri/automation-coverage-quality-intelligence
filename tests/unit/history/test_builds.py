@@ -122,3 +122,24 @@ def test_an_unknown_build_is_a_key_error_and_builds_are_ordered_by_time() -> Non
     with pytest.raises(KeyError):
         compare_builds(history, "early", "missing")
     assert builds_in_order(history) == ["early", "late", "undated"]
+
+
+def test_a_job_with_several_files_is_compared_file_by_file() -> None:
+    """Each file of a multi-file job is compared with the same file of the other build."""
+    from qualityintel.models.results import PipelineJob
+
+    def part(name: str, build: str, day: int, outcome: Outcome, pipeline: str) -> TestRun:
+        return run(result(name, outcome), day=day, build=build, source=f"it/TEST-{name}.xml").model_copy(
+            update={"pipeline": PipelineJob(pipeline_id=pipeline, job="it", repository="o/it")}
+        )
+
+    runs = [part("A", "b1", 18, P, "it#1"), part("B", "b1", 18, P, "it#1")]
+    runs += [part("A", "b2", 19, P, "it#2"), part("B", "b2", 19, F, "it#2")]
+    comparison = compare_builds(runs, "b1", "b2")
+
+    assert len(comparison.compared) == 2
+    assert [c.changes.newly_failing for c in comparison.compared] == [[], ["suite::B"]]
+    assert [c.label for c in comparison.compared] == [
+        "-/-/-/- (it) · TEST-A.xml",
+        "-/-/-/- (it) · TEST-B.xml",
+    ]
