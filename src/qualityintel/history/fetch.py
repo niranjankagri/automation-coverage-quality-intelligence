@@ -87,7 +87,8 @@ def fetch_history(url: str, database: Path, opener: Opener | None = None) -> Fet
         raise FetchError(f"the downloaded file is not a usable history ({error})") from None
     if problems:
         partial.unlink(missing_ok=True)
-        raise FetchError(f"the downloaded history is damaged: {'; '.join(problems)}")
+        shown = "; ".join(problems[:3]) + (f" (and {len(problems) - 3} more)" if len(problems) > 3 else "")
+        raise FetchError(f"the downloaded history is damaged: {shown}")
     os.replace(partial, database)  # one rename: readers see the old or the new file, never half
     if etag:
         tag_file.write_text(etag, encoding="utf-8")
