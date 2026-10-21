@@ -17,6 +17,10 @@ Every number is a documented formula with its counts (`90.5 % (38/42)`), every g
 (`SHOP-008: card payment, planned, critical`), and the pipeline blocks a release on rules the team
 wrote down, while broken or missing test results can never slip through as a pass.
 
+**Live:** <https://quality-intelligence-0ur1.onrender.com>: the results the daily collection
+gathers from the 23 test repositories of my portfolio (free hosting: the first visit after a
+quiet spell takes about a minute to wake the service; [deployment](docs/deployment.md)).
+
 It runs no tests and replaces no framework; it complements the automation projects in my
 [portfolio](https://niranjankagri.github.io).
 

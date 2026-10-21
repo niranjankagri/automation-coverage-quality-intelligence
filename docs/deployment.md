@@ -1,5 +1,7 @@
 # Deployment
 
+Live: <https://quality-intelligence-0ur1.onrender.com> (Render, free plan, since 2026-10-21).
+
 The public demonstration runs on Render's free plan from this repository. It shows the results
 the daily collection gathers from the portfolio's public framework repositories, read against
 the sample catalog. Operating it (modes, retention, backups, incidents) is described in
