@@ -668,9 +668,16 @@ async function compareView() {
     h("h1", {}, "Compare builds"),
     h("p", { class: "lead" }, "Builds are compared only where both ran the same suite (context and job). Builds are listed in the order they first ran."),
     h("div", { class: "toolbar" }, h("label", { for: "base-build" }, "Baseline build", pick("base-build", base, "base")), h("label", { for: "head-build" }, "Comparison build", pick("head-build", head, "head"))),
+    // Builds of different repositories never share a suite: say so while all are listed
+    params.get("repository") ? null : h("p", { class: "sub" }, "Tip: choose a Repository above to list only its builds; builds of different repositories have no suite in common."),
   ];
   if (builds.length < 2) return [...header, h("p", { class: "empty" }, "At least two builds are needed in this scope.")];
   if (base === head) return [...header, h("p", { class: "empty" }, "Choose two different builds.")];
+  // A link can name a build this scope does not have (pruned, mistyped, or filtered out)
+  const unknown = [base, head].filter((b) => !builds.includes(b));
+  if (unknown.length) {
+    return [...header, h("p", { class: "notice", role: "note" }, `No runs of build ${unknown.join(" or ")} in this scope (it may be filtered out, mistyped or no longer in the history). Choose builds above.`)];
+  }
   const d = await api(`/api/compare${apiQuery(RUN_FILTERS, { base, head })}`);
   const side = (title, b) =>
     h(
@@ -872,8 +879,26 @@ async function collectionView() {
       ),
       "No collection recorded.",
     ),
-    d.repositories.some((r) => r.problems.length)
-      ? [h("h2", {}, "Missing artifacts and ingestion problems (7 days)"), h("ul", { class: "reasons" }, d.repositories.flatMap((r) => r.problems.map((p) => h("li", {}, `${r.repository}: ${p}`))))]
+    d.repositories.some((r) => r.issues.length)
+      ? [
+          h("h2", {}, "Missing artifacts and ingestion problems (7 days)"),
+          h("p", { class: "sub" }, "Each problem links to the pipeline here and to the run attempt on GitHub, where the job log tells why a report is missing."),
+          h(
+            "ul",
+            { class: "reasons" },
+            d.repositories.flatMap((r) =>
+              r.issues.map((issue) =>
+                h(
+                  "li",
+                  {},
+                  `${r.repository}: ${issue.text} `,
+                  h("a", { href: link("/pipelines", { repository: r.repository, status: "incomplete" }) }, `pipeline ${issue.pipeline_id} attempt ${issue.attempt}`),
+                  issue.run_url ? [" · ", external(issue.run_url, "Open the run on GitHub")] : null,
+                ),
+              ),
+            ),
+          ),
+        ]
       : h("p", {}, "No ingestion problems in the last 7 days."),
   ];
 }
@@ -1161,6 +1186,7 @@ async function render() {
   showActiveFilters();
   const handler = VIEWS[name];
   statusLine.textContent = "Loading…";
+  view.setAttribute("aria-busy", "true");
   try {
     if (!handler) throw new Error("This page does not exist.");
     const content = await handler(parts);
@@ -1168,6 +1194,7 @@ async function render() {
     // Views may leave empty slots (cond ? node : null); they must not show up as "null"
     view.replaceChildren(...[content].flat(3).filter((node) => node != null));
     statusLine.textContent = "";
+    view.removeAttribute("aria-busy");
     document.title = `${document.querySelector("#view h1")?.textContent ?? "Overview"} · Quality Intelligence`;
     const path = parts.join("/");
     if (shownPath !== null && path !== shownPath) {
@@ -1179,6 +1206,7 @@ async function render() {
     shownPath = path;
   } catch (error) {
     if (current !== renderCount) return;
+    view.removeAttribute("aria-busy");
     view.replaceChildren(h("div", { class: "error", role: "alert" }, h("strong", {}, "Could not load this view. "), error.message, " ", h("button", { type: "button", id: "retry" }, "Retry")));
     document.getElementById("retry").addEventListener("click", render);
     statusLine.textContent = "";
@@ -1223,13 +1251,20 @@ async function showDataSize() {
   notice.hidden = !health.catalog_notice;
 }
 
+/** The freshness line as nodes: incomplete collections link to the pipelines they concern. */
 function describe(status) {
   const parts = [`Data loaded ${formatDate(status.loaded_at)}`];
   if (status.latest_run_started_at) parts.push(`latest run ${formatDate(status.latest_run_started_at)}`);
   if (status.latest_collection_at) parts.push(`last collection ${formatDate(status.latest_collection_at)}`);
-  if (status.incomplete_collections_7d) parts.push(`${status.incomplete_collections_7d} incomplete collection(s) in 7 days`);
+  if (status.incomplete_collections_7d) {
+    parts.push(h("a", { href: link("/pipelines", { status: "incomplete" }) }, `${status.incomplete_collections_7d} incomplete collection(s) in 7 days`));
+  }
   if (!status.refresh_seconds) parts.push("this server does not reload");
-  return parts.join(" · ");
+  return parts.flatMap((part, i) => (i ? [" · ", part] : [part]));
+}
+
+function showFreshness(status) {
+  freshLine.replaceChildren(...describe(status));
 }
 
 let checking = false;
@@ -1237,12 +1272,12 @@ let checking = false;
 async function checkStatus(force = false) {
   if (checking) return; // one check at a time; a slow answer is not overtaken by another
   checking = true;
-  const previous = freshLine.textContent;
+  const previous = [...freshLine.childNodes]; // the line may hold a link
   if (force) freshLine.textContent = "Checking for new data…"; // the content below stays
   try {
     await runCheck(force);
   } catch (error) {
-    freshLine.textContent = previous;
+    freshLine.replaceChildren(...previous);
     staleNote.hidden = false;
     staleNote.textContent = `Refresh failed (${error.message}); the page shows the data it loaded last.`;
   } finally {
@@ -1259,10 +1294,15 @@ async function runCheck(force) {
     staleNote.textContent = `Data status unavailable (${error.message}); the page shows the data it loaded last.`;
     return;
   }
-  freshLine.textContent = describe(status);
+  showFreshness(status);
   staleNote.hidden = !status.stale;
   if (status.stale) {
-    staleNote.textContent = `The last refresh failed (${formatDate(status.last_error_at)}): ${status.last_error}. The figures shown are from ${formatDate(status.loaded_at)}.`;
+    staleNote.replaceChildren(
+      `The last refresh failed (${formatDate(status.last_error_at)}): ${status.last_error}. The figures shown are from ${formatDate(status.loaded_at)}; the dashboard keeps them and tries again on its own. `,
+      "If it persists, check the ",
+      h("a", { href: link("/collection") }, "Collection page"),
+      " and the operations guide (docs/operations.md, Incidents).",
+    );
   }
   if (dataVersion !== null && status.version !== dataVersion) {
     dataVersion = status.version;

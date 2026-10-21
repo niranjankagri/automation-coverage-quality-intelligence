@@ -350,6 +350,7 @@ def test_a_failed_refresh_keeps_the_data_and_warns(live_page: Page, live_server:
 
     expect(page.locator("#data-stale")).to_be_visible()
     expect(page.locator("#data-stale")).to_contain_text("The last refresh failed")
+    expect(page.locator("#data-stale").get_by_role("link", name="Collection page")).to_be_visible()
     page.reload()
     expect(rows).to_have_count(3)  # still the last good data
 
@@ -543,3 +544,34 @@ def test_every_page_says_the_requirements_are_synthetic(page: Page) -> None:
         page.goto(f"/{route}")
         expect(page.locator("#view h1")).to_be_visible()
         expect(page.locator("#catalog-notice")).to_contain_text("synthetic sample catalog")
+
+
+def test_collection_problems_lead_to_their_pipeline_and_github_run(collected_page: Page) -> None:
+    """Each problem links its pipeline and its run attempt on GitHub; so does the freshness line."""
+    page = collected_page
+    page.goto("/#/collection")
+    problem = page.locator("ul.reasons li").filter(has_text="report-ui-firefox not found")
+
+    expect(problem.get_by_role("link", name="Open the run on GitHub")).to_have_attribute(
+        "href",
+        "https://github.com/niranjankagri/cypress-typescript-framework/actions/runs/38842296207/attempts/1",
+    )
+    problem.get_by_role("link", name=re.compile("pipeline 38842296207 attempt 1")).click()
+    expect(page).to_have_url(re.compile(r"#/pipelines\?.*status=incomplete"))
+
+    page.goto("/#/")
+    page.locator("#data-fresh").get_by_role("link", name=re.compile("incomplete collection")).click()
+    expect(page).to_have_url(re.compile(r"#/pipelines\?status=incomplete"))
+    expect(page.locator("#view h1")).to_have_text("Pipelines")
+
+
+def test_a_compare_link_to_an_unknown_build_still_offers_the_build_choice(page: Page) -> None:
+    """A mistyped or pruned build in the address: an explanation and the selectors, not an error page."""
+    page.goto("/#/compare?base=f5a40d5&head=0000000")
+
+    expect(page.locator("#view [role=note]")).to_contain_text("No runs of build 0000000 in this scope")
+    expect(page.get_by_label("Baseline build")).to_be_visible()
+    expect(page.locator("#view [role=alert]")).to_have_count(0)
+    page.get_by_label("Comparison build").select_option("1d03232")
+    expect(page).to_have_url(re.compile(r"head=1d03232"))
+    expect(page.locator("#view table")).to_be_visible()

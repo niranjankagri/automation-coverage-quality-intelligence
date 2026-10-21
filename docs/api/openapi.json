@@ -300,6 +300,42 @@
         "title": "CollectionHealthView",
         "type": "object"
       },
+      "CollectionIssue": {
+        "description": "One problem of one collected pipeline attempt, with where to look.",
+        "properties": {
+          "attempt": {
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "pipeline_id": {
+            "title": "Pipeline Id",
+            "type": "string"
+          },
+          "run_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Url"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pipeline_id",
+          "attempt",
+          "run_url",
+          "text"
+        ],
+        "title": "CollectionIssue",
+        "type": "object"
+      },
       "CoverageView": {
         "description": "A recorded coverage snapshot of the catalog.",
         "properties": {
@@ -1420,6 +1456,14 @@
           "incomplete": {
             "title": "Incomplete",
             "type": "integer"
+          },
+          "issues": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CollectionIssue"
+            },
+            "title": "Issues",
+            "type": "array"
           },
           "last_collected_at": {
             "anyOf": [
