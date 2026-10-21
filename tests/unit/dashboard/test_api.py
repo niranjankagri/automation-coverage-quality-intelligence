@@ -145,6 +145,8 @@ def test_openapi_documentation_lists_every_route(client: TestClient) -> None:
         "/api/status",
         "/api/search",
         "/api/attention",
+        "/api/tests/summary",
+        "/api/compare/summary",
         "/api/facets",
         "/api/summary",
         "/api/readiness",

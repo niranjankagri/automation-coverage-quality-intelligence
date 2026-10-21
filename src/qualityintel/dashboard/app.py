@@ -30,6 +30,7 @@ from qualityintel import __version__
 from qualityintel.history.analysis import DEFAULTS, HistorySettings
 from qualityintel.live import LiveData
 from qualityintel.models.enums import Criticality, Outcome, TestType
+from qualityintel.reporting.investigation import summarise_comparison, summarise_test
 from qualityintel.search import MAX_QUERY, QueryError
 from qualityintel.traceability.coverage import UNSPECIFIED, Filters
 from qualityintel.traceability.report import RunFilters
@@ -276,6 +277,13 @@ def deployed_commit() -> str | None:
     return None
 
 
+class InvestigationSummary(View):
+    """A copyable summary (docs/dashboard.md, Summaries)."""
+
+    text: str
+    markdown: str
+
+
 class DataStatus(View):
     """Freshness of the data the dashboard shows (``/api/status``)."""
 
@@ -430,6 +438,47 @@ def create_app(
         except QueryError as error:
             raise HTTPException(status_code=422, detail=str(error)) from None
 
+    def page_link(link: str | None) -> str | None:
+        """The dashboard address the client wants in a summary: http(s) only, bounded, else none."""
+        return link if link and len(link) <= 2000 and link.startswith(("https://", "http://")) else None
+
+    @app.get("/api/tests/summary", tags=["investigation"])
+    def summary_of_test(
+        key: Annotated[str, Query(min_length=1, max_length=2000)],
+        chosen: RunScope,
+        link: Annotated[str | None, Query(max_length=2000)] = None,
+    ) -> InvestigationSummary:
+        """A copyable summary of one test's investigation, as text and Markdown."""
+        try:
+            history = current().test_history(key, chosen)
+        except KeyError:
+            raise HTTPException(
+                status_code=404, detail=f"no results for test {key!r} in this scope"
+            ) from None
+        made = summarise_test(history, live.current().loaded_at, page_link(link), current().catalog.notice)
+        return InvestigationSummary(text=made.text, markdown=made.markdown)
+
+    @app.get("/api/compare/summary", tags=["investigation"])
+    def summary_of_comparison(
+        base: Annotated[str, Query(min_length=1, max_length=200)],
+        head: Annotated[str, Query(min_length=1, max_length=200)],
+        chosen: RunScope,
+        link: Annotated[str | None, Query(max_length=2000)] = None,
+    ) -> InvestigationSummary:
+        """A copyable summary of a build comparison, as text and Markdown (same rules as /api/compare)."""
+        if base == head:
+            raise HTTPException(status_code=422, detail="choose two different builds")
+        try:
+            comparison = current().compare_builds(base, head, chosen)
+        except KeyError as error:
+            raise HTTPException(
+                status_code=404, detail=f"no runs of build {error.args[0]!r} in this scope"
+            ) from None
+        made = summarise_comparison(
+            comparison, live.current().loaded_at, page_link(link), current().catalog.notice
+        )
+        return InvestigationSummary(text=made.text, markdown=made.markdown)
+
     @app.get("/api/attention", tags=["investigation"])
     def attention(chosen: FullScope) -> AttentionView:
         """Findings that need attention, each with its evidence, state and links (docs/attention.md)."""
@@ -511,10 +560,11 @@ def create_app(
             str | None, Query(max_length=40, description="incomplete, success, failure, ...")
         ] = None,
         workflow: Annotated[str | None, Query(max_length=200)] = None,
+        pipeline: Annotated[str | None, Query(max_length=200, description="one pipeline id")] = None,
     ) -> PipelinesView:
         """Pipeline executions, newest first; with ``jobs``, the ones missing a job are incomplete."""
         expected = [job.strip() for job in (jobs or "").split(",") if job.strip()]
-        return current().pipelines(chosen, expected, status=status, workflow=workflow)
+        return current().pipelines(chosen, expected, status=status, workflow=workflow, pipeline=pipeline)
 
     @app.get("/api/collection", tags=["executions"])
     def collection() -> CollectionHealthView:

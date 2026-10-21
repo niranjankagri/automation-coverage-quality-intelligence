@@ -217,6 +217,7 @@ class ExecutionView(View):
     context: RunContext
     pipeline: PipelineJob | None = None
     ci_url: str | None = None
+    workflow: str | None = None
 
 
 class RequirementRow(View):
@@ -313,6 +314,8 @@ class TestHistory(View):
     requirements: tuple[str, ...] = ()
     passed: int = 0
     failed: int = 0
+    # One line per context: its stability class and the reasons (docs/metrics.md, history)
+    stability: tuple[str, ...] = ()
 
 
 class BuildSideView(View):
@@ -325,6 +328,9 @@ class BuildSideView(View):
     last_started_at: datetime | None
     requirement_coverage: RatioView | None
     automated_requirement_coverage: RatioView | None
+    # GitHub runs of the pipelines whose results make up the build, and those collected incomplete
+    ci_runs: tuple[str, ...] = ()
+    incomplete_pipelines: tuple[str, ...] = ()
 
 
 class ChangeRow(View):
@@ -637,6 +643,8 @@ class Workspace:
         self.stability()
         self.tests()
         self.trends()
+        self.attention()
+        self._cached(("search-index",), lambda: build_index(self.catalog, self.runs, self.collections))
 
     @classmethod
     def load(cls, catalog_path: Path, results: Sequence[str | Path]) -> tuple[Workspace, Batch]:
@@ -823,9 +831,19 @@ class Workspace:
         """All executions of one test key, newest first, with its requirements (``KeyError``: never ran)."""
         runs = self._runs(scope)
         urls = {c.pipeline_id: c.url for c in self.collections if c.url.startswith("https://github.com/")}
-        executions = [_execution_view(run, r, urls) for run in runs for r in run.results if r.key == key]
+        workflows = {c.pipeline_id: c.workflow for c in self.collections}
+        executions = [
+            _execution_view(run, r, urls, workflows) for run in runs for r in run.results if r.key == key
+        ]
         if not executions:
             raise KeyError(key)
+        stability = tuple(
+            f"{row.context}: {row.status}"
+            + (" (suspected)" if row.status == "flaky candidate" else "")
+            + (f" - {'; '.join(row.reasons)}" if row.reasons else "")
+            for row in self.stability(scope, include_stable=True).rows
+            if row.key == key
+        )
         cases = self._case_ids_by_key(runs).get(key, ())
         requirements = sorted(
             {rid for case in self.catalog.test_cases if case.id in cases for rid in case.requirements}
@@ -837,6 +855,7 @@ class Workspace:
             requirements=tuple(requirements),
             passed=sum(e.outcome is Outcome.PASSED for e in executions),
             failed=sum(e.outcome in (Outcome.FAILED, Outcome.ERROR) for e in executions),
+            stability=stability,
         )
 
     def builds(self, scope: Scope = EVERYTHING) -> tuple[str, ...]:
@@ -904,8 +923,8 @@ class Workspace:
                 "(qi history import --catalog records them)."
             )
         return BuildComparisonView(
-            base=_side_view(comparison.base),
-            head=_side_view(comparison.head),
+            base=_side_view(comparison.base, self.collections),
+            head=_side_view(comparison.head, self.collections),
             comparable=comparison.comparable,
             compared_contexts=tuple(pair.label for pair in comparison.compared),
             only_in_base=comparison.only_in_base,
@@ -932,6 +951,7 @@ class Workspace:
         expected_jobs: Sequence[str] = (),
         status: str | None = None,
         workflow: str | None = None,
+        pipeline: str | None = None,
     ) -> PipelinesView:
         """Pipeline executions in scope, each assembled from all its runs, with their collection records.
 
@@ -958,6 +978,8 @@ class Workspace:
             for pid in ids
         ]
         workflows = tuple(sorted({v.workflow for v in views if v.workflow}))
+        if pipeline:
+            views = [v for v in views if v.pipeline_id == pipeline]
         if workflow:
             views = [v for v in views if v.workflow == workflow]
         counts: dict[str, int] = {}
@@ -1660,9 +1682,11 @@ def _without_builds(scope: Scope) -> Scope:
     return Scope(filters=scope.filters, run_filters=replace(scope.run_filters, builds=frozenset()))
 
 
-def _side_view(side: BuildSide) -> BuildSideView:
-    """One build of a comparison."""
+def _side_view(side: BuildSide, records: Sequence[PipelineCollection] = ()) -> BuildSideView:
+    """One build of a comparison, with the GitHub runs of its pipelines."""
     coverage = side.coverage
+    ids = {run.pipeline.pipeline_id for run in side.runs if run.pipeline}
+    mine = [c for c in records if c.pipeline_id in ids]
     return BuildSideView(
         build=side.build,
         runs=len(side.runs),
@@ -1673,10 +1697,21 @@ def _side_view(side: BuildSide) -> BuildSideView:
         automated_requirement_coverage=RatioView.of(coverage.automated_requirement_coverage)
         if coverage
         else None,
+        ci_runs=tuple(
+            sorted({f"{c.url}/attempts/{c.attempt}" for c in mine if c.url.startswith("https://github.com/")})
+        ),
+        incomplete_pipelines=tuple(
+            sorted({f"{c.pipeline_id} attempt {c.attempt}" for c in mine if c.state == "incomplete"})
+        ),
     )
 
 
-def _execution_view(run: TestRun, result: TestResult, ci_urls: dict[str, str] | None = None) -> ExecutionView:
+def _execution_view(
+    run: TestRun,
+    result: TestResult,
+    ci_urls: dict[str, str] | None = None,
+    workflows: dict[str, str] | None = None,
+) -> ExecutionView:
     """One execution with its run (and the CI run it came from, when collected)."""
     failure = result.failure
     return ExecutionView(
@@ -1694,6 +1729,7 @@ def _execution_view(run: TestRun, result: TestResult, ci_urls: dict[str, str] | 
         context=run.context,
         pipeline=run.pipeline,
         ci_url=(ci_urls or {}).get(run.pipeline.pipeline_id) if run.pipeline else None,
+        workflow=(workflows or {}).get(run.pipeline.pipeline_id) if run.pipeline else None,
     )
 
 

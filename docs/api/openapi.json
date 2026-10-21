@@ -187,6 +187,14 @@
             "title": "Build",
             "type": "string"
           },
+          "ci_runs": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Ci Runs",
+            "type": "array"
+          },
           "counts": {
             "additionalProperties": {
               "type": "integer"
@@ -196,6 +204,14 @@
             },
             "title": "Counts",
             "type": "object"
+          },
+          "incomplete_pipelines": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Incomplete Pipelines",
+            "type": "array"
           },
           "last_started_at": {
             "anyOf": [
@@ -695,6 +711,17 @@
               }
             ],
             "title": "Started At"
+          },
+          "workflow": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow"
           }
         },
         "required": [
@@ -990,6 +1017,25 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "InvestigationSummary": {
+        "description": "A copyable summary (docs/dashboard.md, Summaries).",
+        "properties": {
+          "markdown": {
+            "title": "Markdown",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "markdown"
+        ],
+        "title": "InvestigationSummary",
         "type": "object"
       },
       "MatrixRow": {
@@ -2550,6 +2596,14 @@
             "title": "Requirements",
             "type": "array"
           },
+          "stability": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Stability",
+            "type": "array"
+          },
           "test_cases": {
             "items": {
               "type": "string"
@@ -3488,6 +3542,227 @@
         ]
       }
     },
+    "/api/compare/summary": {
+      "get": {
+        "description": "A copyable summary of a build comparison, as text and Markdown (same rules as /api/compare).",
+        "operationId": "summary_of_comparison_api_compare_summary_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "base",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Base",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "head",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Head",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "link",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Link"
+            }
+          },
+          {
+            "in": "query",
+            "name": "framework",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Framework"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment"
+            }
+          },
+          {
+            "in": "query",
+            "name": "browser",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Browser"
+            }
+          },
+          {
+            "in": "query",
+            "name": "build",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Build"
+            }
+          },
+          {
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "in": "query",
+            "name": "until",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Until"
+            }
+          },
+          {
+            "in": "query",
+            "name": "repository",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repository"
+            }
+          },
+          {
+            "in": "query",
+            "name": "job",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestigationSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Summary Of Comparison",
+        "tags": [
+          "investigation"
+        ]
+      }
+    },
     "/api/facets": {
       "get": {
         "description": "Filter values that exist in the data.",
@@ -3592,6 +3867,25 @@
                 }
               ],
               "title": "Workflow"
+            }
+          },
+          {
+            "description": "one pipeline id",
+            "in": "query",
+            "name": "pipeline",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "one pipeline id",
+              "title": "Pipeline"
             }
           },
           {
@@ -6162,6 +6456,216 @@
         "summary": "Test History",
         "tags": [
           "executions"
+        ]
+      }
+    },
+    "/api/tests/summary": {
+      "get": {
+        "description": "A copyable summary of one test's investigation, as text and Markdown.",
+        "operationId": "summary_of_test_api_tests_summary_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "maxLength": 2000,
+              "minLength": 1,
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "link",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 2000,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Link"
+            }
+          },
+          {
+            "in": "query",
+            "name": "framework",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Framework"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment"
+            }
+          },
+          {
+            "in": "query",
+            "name": "browser",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Browser"
+            }
+          },
+          {
+            "in": "query",
+            "name": "build",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Build"
+            }
+          },
+          {
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "in": "query",
+            "name": "until",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Until"
+            }
+          },
+          {
+            "in": "query",
+            "name": "repository",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repository"
+            }
+          },
+          {
+            "in": "query",
+            "name": "job",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestigationSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Summary Of Test",
+        "tags": [
+          "investigation"
         ]
       }
     },

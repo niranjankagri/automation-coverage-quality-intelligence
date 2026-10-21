@@ -24,6 +24,7 @@ import pytest
 from qualityintel.ingest.batch import import_results
 from qualityintel.ingest.catalog_file import load_catalog
 from qualityintel.models.results import TestRun
+from qualityintel.search import build_index, search
 from qualityintel.traceability import matching
 from qualityintel.workspace import Workspace
 
@@ -141,3 +142,33 @@ def test_after_the_warm_up_every_default_view_is_immediate(runs: list[TestRun]) 
     for name, view in cached.items():
         took = seconds(view)
         assert took < CACHED_BUDGET, f"{name} after warm-up: {took:.3f} s, budget {CACHED_BUDGET} s"
+
+
+# Measured the same way (2026-10-21): search index 0.063 s (267 entries; 0.07 s for the 2,095 entries
+# of the hosted history), a query about 0.2 ms, Needs Attention 0.35 s uncached and under 1 ms cached.
+SEARCH_INDEX_BUDGET = 0.5
+SEARCH_QUERY_BUDGET = 0.05
+ATTENTION_BUDGET = 2.0
+
+
+def test_search_builds_its_index_once_and_answers_within_budget(runs: list[TestRun]) -> None:
+    """The index per snapshot, then a query that only filters it."""
+    ready = workspace(runs)
+    took = seconds(lambda: build_index(ready.catalog, ready.runs, ready.collections))
+    index = build_index(ready.catalog, ready.runs, ready.collections)
+
+    assert took < SEARCH_INDEX_BUDGET, f"index {took:.2f} s, budget {SEARCH_INDEX_BUDGET} s"
+    for query in ("checkout", "admin customer", "SHOP-006"):
+        answered = seconds(lambda q=query: search(index, q))  # type: ignore[misc]
+        assert answered < SEARCH_QUERY_BUDGET, f"{query!r}: {answered * 1000:.1f} ms"
+
+
+def test_needs_attention_stays_within_budget_and_is_warm_after_the_warm_up(runs: list[TestRun]) -> None:
+    """Uncached within budget; after the warm-up, the page and a search answer from the cache."""
+    took = seconds(lambda: workspace(runs).attention())
+    assert took < ATTENTION_BUDGET, f"attention {took:.2f} s, budget {ATTENTION_BUDGET} s"
+
+    ready = workspace(runs)
+    ready.warm()
+    assert seconds(ready.attention) < CACHED_BUDGET
+    assert seconds(lambda: ready.search("checkout")) < CACHED_BUDGET
