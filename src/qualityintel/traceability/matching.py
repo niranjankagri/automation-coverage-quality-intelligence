@@ -22,7 +22,7 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
-from functools import cache
+from functools import cache, lru_cache
 
 from qualityintel.models.catalog import Catalog
 from qualityintel.models.enums import AutomationStatus
@@ -78,15 +78,19 @@ def pattern_matches(pattern: str, key: str) -> bool:
 def match_results(catalog: Catalog, runs: Iterable[TestRun]) -> Matching:
     """Assign every result of every run to test cases (see the module docstring for the rules)."""
     case_ids = {case.id for case in catalog.test_cases}
-    patterns: list[tuple[str, Sequence[str]]] = [
-        (case.id, case.automated_by) for case in catalog.test_cases if case.automated_by
-    ]
+    patterns = tuple((case.id, tuple(case.automated_by)) for case in catalog.test_cases if case.automated_by)
     matching = Matching(by_case={case.id: [] for case in catalog.test_cases})
+    # The same test runs in many runs: its key is matched against the patterns once
+    by_key: dict[str, tuple[str, ...]] = {}
 
     for run in runs:
         for result in run.results:
             execution = Execution(run=run, result=result)
-            targets = _explicit_targets(result, case_ids, matching) or _pattern_targets(result.key, patterns)
+            targets: Sequence[str] = _explicit_targets(result, case_ids, matching)
+            if not targets:
+                if result.key not in by_key:
+                    by_key[result.key] = _pattern_targets(result.key, patterns)
+                targets = by_key[result.key]
             if not targets:
                 matching.unmatched.append(execution)
             for case_id in targets:
@@ -105,8 +109,13 @@ def _explicit_targets(result: TestResult, case_ids: set[str], matching: Matching
     return targets
 
 
-def _pattern_targets(key: str, patterns: list[tuple[str, Sequence[str]]]) -> list[str]:
-    """Case ids with at least one pattern matching the key, in catalog order."""
-    return [
+@lru_cache(maxsize=100_000)
+def _pattern_targets(key: str, patterns: tuple[tuple[str, tuple[str, ...]], ...]) -> tuple[str, ...]:
+    """Case ids with at least one pattern matching the key, in catalog order.
+
+    Cached across calls (bounded): the answer depends only on the key and the catalog's
+    patterns, which are both part of the cache key, so a changed catalog is matched afresh.
+    """
+    return tuple(
         case_id for case_id, case_patterns in patterns if any(pattern_matches(p, key) for p in case_patterns)
-    ]
+    )
