@@ -117,6 +117,12 @@ Exit codes: 0 when every producer could be read (incomplete pipelines are record
 
 ## Ingestion audit
 
+**Reconciliation.** After every pass, each repository's row shows the completed runs GitHub
+listed (`listed`) and the attempts recorded for them (`recorded`, collected in this pass or
+before); the audit ends with *reconciled* or names each repository with missing runs. A run
+is missing only when collecting it failed, and that error is listed too. Collected files
+without a timestamp (Surefire, JUnit 5, Cucumber, k6, node:test) take the start of their CI run.
+
 Every pass prints, and with `--summary FILE` appends as Markdown, one row per configured
 repository for the period: pipelines collected, complete, incomplete, results, conclusions,
 link to the latest run, then every problem and error. A repository with no completed run in the

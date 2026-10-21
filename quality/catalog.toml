@@ -187,6 +187,12 @@ title = "Requirements name an owner (catalog and CSV); the dashboard filters and
 feature = "Traceability"
 criticality = "medium"
 
+[[requirement]]
+id = "PROD-01"
+title = "Production data is complete and traceable: the snapshot holds every repository and every file of a job's latest attempt, collected runs are dated, synthetic requirements are labelled, the deployed commit is reported, the collection reconciles with GitHub, and views are fast on the full history"
+feature = "Operations"
+criticality = "critical"
+
 # ---- Test cases ----------------------------------------------------------------------------
 
 [[test_case]]
@@ -620,4 +626,25 @@ automated_by = [
   "tests.unit.ingest.test_requirements_csv::test_owner_column_is_imported_and_written_after_the_feature",
   "tests.unit.dashboard.test_api::test_requirements_have_owners_to_filter_and_group_by",
   "tests.e2e.test_dashboard::test_the_owner_filter_narrows_requirements_and_the_matrix_groups_by_owner",
+]
+
+[[test_case]]
+id = "TC-PRODUCTION-CORRECTNESS"
+title = "Snapshot per repository and job attempt, file-by-file comparison, CI start time and backfill, catalog notice, deployed commit, reconciliation, per-snapshot cache and warm-up"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["PROD-01"]
+automated_by = [
+  "tests.unit.traceability.test_report::test_same_job_name_and_context_in_two_repositories_are_two_suites",
+  "tests.unit.traceability.test_report::test_a_job_with_one_file_per_class_counts_all_files_of_its_latest_attempt",
+  "tests.unit.history.test_builds::test_a_job_with_several_files_is_compared_file_by_file",
+  "tests.unit.collect.test_collector::test_a_file_without_a_timestamp_takes_the_start_of_its_ci_run",
+  "tests.unit.history.test_store::test_opening_a_schema_5_file_dates_collected_runs_from_their_pipeline",
+  "tests.unit.ingest.test_catalog_file::test_a_catalog_can_say_what_it_is",
+  "tests.unit.dashboard.test_api::test_health_names_the_deployed_commit_and_the_catalog_notice",
+  "tests.e2e.test_dashboard::test_every_page_says_the_requirements_are_synthetic",
+  "tests.unit.collect.test_config_and_audit::test_audit_reconciles_listed_runs_with_recorded_attempts",
+  "tests.unit.test_workspace::test_time_independent_views_are_computed_once_per_snapshot_and_bounded",
+  "tests.unit.test_workspace::test_readiness_follows_the_clock_while_its_inputs_are_cached",
+  "tests.unit.test_live::test_a_refreshed_snapshot_is_warmed_before_it_goes_live",
 ]

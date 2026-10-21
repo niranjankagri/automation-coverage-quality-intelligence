@@ -35,6 +35,10 @@ producer repositories ──(CI artifacts)──> collect.yml, daily 07:40 UTC
 - **Code deploys.** `render.yaml` deploys `main` only after the commit's CI checks passed
   (`autoDeployTrigger: checksPass`): a commit with a failing check is never deployed.
 - **Health.** Render probes `/api/health`; the image also declares a Docker `HEALTHCHECK`.
+- **Which commit runs.** `/api/health` reports `commit` (Render's `RENDER_GIT_COMMIT`, or
+  `QI_BUILD_COMMIT`) and the footer shows it, so the deployment is traceable to its source.
+- **Fast first page.** The default views are computed before a snapshot goes live, at start
+  and after every refresh; time-independent analyses are kept per snapshot.
 - **Logs.** `QI_ACCESS_LOG=json`: one JSON line per request (time, method, path, status, ms), no
   query strings, client addresses or headers.
 - **Access.** Public mode (`QI_DASHBOARD_PUBLIC=true`): the data are results of public

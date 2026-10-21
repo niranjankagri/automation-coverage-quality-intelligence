@@ -97,5 +97,5 @@ in the integration tests.
 - Matching is by name. A renamed test stops matching its pattern; the report then shows the
   case as "automated test case without results" and the renamed test as an unmatched result.
 - A result that several cases claim counts for each of them; reports do not split it.
-- Status uses only the snapshot (latest run per context). Flakiness and trends need history
+- Status uses only the snapshot (latest execution per suite, [metrics.md](metrics.md#terms)). Flakiness and trends need history
   (Milestone 6).

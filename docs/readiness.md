@@ -27,7 +27,7 @@ the files it is given ([quality-gates.md](quality-gates.md)).
 
 | Number | Meaning |
 |---|---|
-| Test executions | results in the snapshot (latest run per context and job) of the scope |
+| Test executions | results in the snapshot of the scope: the latest execution of every suite, all files of a job's latest attempt ([metrics.md](metrics.md#terms)) |
 | Critical without automation | critical requirements in scope without an automated test case |
 | Flaky candidates | tests the history analysis classifies as flaky candidates, with evidence on the Stability page ([history.md](history.md)) |
 | Incomplete pipelines (7 days) | collection records of the last 7 days that are incomplete, for the chosen repositories ([collection.md](collection.md)) |
