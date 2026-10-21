@@ -4,7 +4,6 @@ import json
 from unittest.mock import patch
 
 import pytest
-
 from tools import smoke
 
 pytestmark = pytest.mark.unit
