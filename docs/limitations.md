@@ -56,7 +56,8 @@ up and what to do about it.
 | Limitation | Effect | What to do |
 |---|---|---|
 | SQLite, one writer at a time | concurrent CI jobs writing one file can block or fail | one import step after the test jobs, or one database per job |
-| The dashboard loads data at start-up; its login is one shared basic-authentication account | new results need a restart; no per-user access, no brute-force protection | for a team: TLS proxy in front, or the organisation's authenticating proxy ([security.md](security.md)) |
+| The dashboard uses one shared basic-authentication account in private mode | no per-user identity, roles or audit attribution; login lock-out is per client address and instance | for a team: put TLS and the organisation's authenticating proxy in front ([security.md](security.md), [operations.md](operations.md)) |
+| Live data reload depends on a valid published history and the refresh process | the hosted dashboard can show the last good snapshot when a download or reload fails; updates are not instantaneous | check `/api/status` for freshness and errors; the hosted service fetches history hourly ([deployment.md](deployment.md), [operations.md](operations.md)) |
 | Secret redaction recognises shapes, not meaning | a secret in an unusual shape in a failure message passes through | keep secrets out of assertion messages; the redaction is a safety net |
 | Requirements live in a TOML file | no link to Jira, TargetProcess, Azure DevOps or Xray | export from the tool into the TOML format (a small script), or add an importer |
 
@@ -66,7 +67,6 @@ Not built, in the order they would add most value. None is claimed anywhere else
 
 1. **Direct requirement sync** with a test-management tool (Jira/Xray, Azure DevOps, TargetProcess);
    today their CSV export is imported ([requirements-import.md](requirements-import.md)).
-2. **Live reload** in the dashboard when the history database changes.
-3. **PostgreSQL** store, only if several writers or a shared server become a real need
+2. **PostgreSQL** store, only if several writers or a shared server become a real need
    ([ADR 0003](adr/0003-sqlite-first.md)).
-4. **Ownership** (team or component per requirement) to route gaps and failures.
+3. **Ownership** (team or component per requirement) to route gaps and failures.
