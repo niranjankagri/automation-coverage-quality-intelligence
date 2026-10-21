@@ -105,6 +105,7 @@ markers = [
     "unit: fast tests of one module, no files or processes outside tmp_path",
     "integration: tests that run the installed package as a separate process",
     "e2e: dashboard tests in a real browser (deselected unless -m e2e is given)",
+    "performance: structural and time guards on production-sized data (docs/performance.md)",
 ]
 
 [tool.coverage.run]

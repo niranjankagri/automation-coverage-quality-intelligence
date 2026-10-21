@@ -561,6 +561,7 @@ class Workspace:
         self.summary()
         self.stability()
         self.tests()
+        self.trends()
 
     @classmethod
     def load(cls, catalog_path: Path, results: Sequence[str | Path]) -> tuple[Workspace, Batch]:

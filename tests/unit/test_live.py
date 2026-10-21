@@ -219,3 +219,19 @@ def test_a_refreshed_snapshot_is_warmed_before_it_goes_live(tmp_path: Path) -> N
     assert live.check() is True
     assert warmed == ["warm"]
     assert live.current() is second
+
+
+def test_cached_views_never_outlive_their_data(sources: Sources) -> None:
+    """Views cached on the old snapshot; after new data, every view answers from the new one."""
+    live = LiveData(load_snapshot(sources), sources)
+    old = live.current().workspace
+    before = (len(old.tests()), len(old.stability(include_stable=True).rows), len(old.summary().snapshot))
+
+    add_run(sources, day=19)
+    assert live.check() is True
+    new = live.current().workspace
+
+    assert new is not old
+    assert {row.key for row in new.tests()} == {row.key for row in old.tests()} | {"suite::B"}
+    assert len(new.stability(include_stable=True).rows) == before[1] + 1
+    assert len(old.tests()) == before[0]  # the old snapshot's cache is untouched, not mixed
