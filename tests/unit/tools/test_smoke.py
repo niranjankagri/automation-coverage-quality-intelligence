@@ -1,6 +1,7 @@
 """Regression tests for fail-closed live smoke monitoring."""
 
 import importlib.util
+import io
 import json
 from pathlib import Path
 from types import ModuleType
@@ -63,3 +64,10 @@ def test_smoke_reports_invalid_collection_timestamp_without_traceback(
     with patch.object(smoke, "get", side_effect=fake_get):
         assert smoke.main(["http://127.0.0.1:8000", "--max-collection-age", "30"]) == 1
     assert "FAIL" in capsys.readouterr().out
+
+
+def test_smoke_rejects_oversized_remote_response() -> None:
+    """The live monitor must not buffer an unbounded response from a remote service."""
+    oversized = io.BytesIO(b"x" * (smoke.MAX_RESPONSE_BYTES + 1))
+    with pytest.raises(ValueError, match="exceeds 2 MiB limit"):
+        smoke._read_bounded(oversized)
