@@ -51,6 +51,20 @@ def test_search_follows_typing_keeps_the_query_in_the_address_and_explains_no_re
     expect(page.locator("#search-results")).to_contain_text("Nothing matches")
 
 
+def test_search_highlight_maps_unicode_lowercase_expansion_to_original_text(page: Page) -> None:
+    """Lowercasing U+0130 adds a code point; the highlight must still cover the original letter."""
+    page.goto("/")
+    highlighted = page.evaluate(
+        """() => {
+          const wrapper = document.createElement('span');
+          wrapper.append(...highlight('İstanbul', ['i\\u0307']));
+          return { text: wrapper.textContent, mark: wrapper.querySelector('mark')?.textContent };
+        }"""
+    )
+
+    assert highlighted == {"text": "İstanbul", "mark": "İ"}
+
+
 def test_search_results_keep_the_repository_filter(collected_page: Page) -> None:
     """With a repository chosen, results and their links stay in that repository."""
     page = collected_page

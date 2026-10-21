@@ -14,7 +14,9 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
+from urllib.parse import quote
 
+from qualityintel.links import dashboard_path, github_run_url
 from qualityintel.models.enums import Outcome
 from qualityintel.reporting.markdown import md
 from qualityintel.workspace import BuildComparisonView, ExecutionView, TestHistory
@@ -60,7 +62,7 @@ def summarise_test(
         first_line = (latest.failure.message or latest.failure.type or "").splitlines()
         rows.append(("Latest failure", first_line[0][:300] if first_line else "(no message)"))
     rows.append(("Requirements", ", ".join(history.requirements) if history.requirements else "none linked"))
-    evidence = [url for url in (latest.ci_url,) if url]
+    evidence = [url for url in (github_run_url(latest.ci_url),) if url]
     return _render(f"Investigation: {history.key}", rows, evidence, data_as_of, link, notice)
 
 
@@ -149,6 +151,7 @@ def _render(
     link: str | None,
     notice: str | None,
 ) -> Summary:
+    link = dashboard_path(link)
     as_of = f"{data_as_of:%Y-%m-%d %H:%M} UTC" if data_as_of else "unknown"
     limits = [*LIMITATIONS, *((notice,) if notice else ())]
     text_lines = [title, "", *(f"{name}: {value}" for name, value in rows)]
@@ -164,7 +167,8 @@ def _render(
         md_lines += ["", "**Evidence**", "", *(f"- <{url}>" for url in evidence)]
     if link:
         text_lines.append(f"Dashboard: {link}")
-        md_lines += ["", f"[Open in the dashboard]({link})"]
+        md_link = quote(link, safe="/?#&=%:+@!$,';")
+        md_lines += ["", f"[Open in the dashboard]({md_link})"]
     text_lines += ["", f"Data as of: {as_of}", "Limitations:", *(f"- {item}" for item in limits)]
     md_lines += ["", f"Data as of {as_of}.", "", "**Limitations**", "", *(f"- {md(item)}" for item in limits)]
     return Summary(text="\n".join(text_lines) + "\n", markdown="\n".join(md_lines) + "\n")

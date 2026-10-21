@@ -73,6 +73,11 @@ GitHub to the repository owner (for a scheduled run, the user who last changed i
 according to the owner's notification settings for Actions. To test that the alert arrives, run
 the workflow by hand with `max_collection_age` 0.01: it fails on purpose.
 
+The live smoke checker limits each HTTP response body to 2 MiB. Oversized responses fail
+closed with a diagnostic rather than consuming unbounded monitor memory. If this limit is
+reached unexpectedly, check the API response and data volume before increasing it; the
+monitor is intended to validate health and summary endpoints, not download bulk reports.
+
 ## Recovery drills (2026-10-21)
 
 Run on the real history and the live site; the commands and tests are in the repository.

@@ -96,13 +96,25 @@ def test_identifier_matches_rank_first(index: tuple[Entry, ...]) -> None:
 
 
 def test_a_github_run_id_finds_its_pipeline_with_its_link(index: tuple[Entry, ...]) -> None:
-    """Run ids are part of pipeline ids; only https links are kept."""
+    """Run ids are part of pipeline ids; only real GitHub Actions links are kept."""
     (pipeline,) = search(index, "111").groups["pipeline"]
     (other,) = search(index, "222").groups["pipeline"]
 
     assert pipeline.url == "https://github.com/o/r/actions/runs/1"
     assert other.url is None  # not https: never offered as a link
     assert dict(pipeline.params) == {"pipeline": "shop#111", "repository": "o/shop"}
+
+
+def test_search_drops_lookalike_github_urls(index: tuple[Entry, ...]) -> None:
+    """A crafted host prefix must not become an external GitHub evidence link."""
+    forged = build_index(
+        catalog([req("SHOP-006")], [case("TC-1", "SHOP-006")]),
+        [],
+        [collected("shop#111", "o/shop", 18, url="https://github.com.evil.example/o/r/actions/runs/1")],
+    )
+
+    (pipeline,) = search(forged, "111").groups["pipeline"]
+    assert pipeline.url is None
 
 
 def test_repository_and_date_filters_narrow_dated_entries_only(index: tuple[Entry, ...]) -> None:

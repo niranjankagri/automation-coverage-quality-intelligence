@@ -76,6 +76,8 @@ def collect(
                 outcome.collected.append(_collect_run(producer, run, source, store, now or datetime.now(UTC)))
             except (CollectError, HistoryError) as error:
                 outcome.errors.append(f"run {run.id}: {error}")
+            except OSError as error:
+                outcome.errors.append(f"run {run.id}: local collection I/O failed ({type(error).__name__})")
     return outcomes
 
 
@@ -85,12 +87,22 @@ def _collect_run(
     """Download, import and store one run attempt; problems become part of the record."""
     pid = pipeline_id(producer, run)
     problems: list[str] = []
-    workdir = Path(tempfile.mkdtemp(prefix="qi-collect-"))
+    workdir: Path | None = None
     try:
-        artifacts = {a.name: a for a in source.artifacts(producer.repository, run.id)}
+        workdir = Path(tempfile.mkdtemp(prefix="qi-collect-"))
+        artifacts: dict[str, list[Artifact]] = {}
+        for artifact in source.artifacts(producer.repository, run.id):
+            artifacts.setdefault(artifact.name, []).append(artifact)
         inputs: dict[str, list[str]] = {}
         for job in producer.job:
-            found = _job_input(producer, job, artifacts.get(job.artifact), source, workdir, problems)
+            choices = artifacts.get(job.artifact, [])
+            if len(choices) > 1:
+                problems.append(
+                    f"job {job.name}: artifact {job.artifact} is ambiguous "
+                    f"({len(choices)} matching artifacts)"
+                )
+                continue
+            found = _job_input(producer, job, choices[0] if choices else None, source, workdir, problems)
             if found is not None:
                 inputs[job.name] = [str(found)]
         contexts: dict[str, RunContext] = {}
@@ -108,6 +120,8 @@ def _collect_run(
             repository=producer.repository,
         )
         problems += [str(error) for error in batch.errors]
+        problems += [f"duplicate report: {note}" for note in batch.duplicates]
+        problems += [f"report warning: {warning}" for warning in batch.warnings]
         # Files without a timestamp (Surefire, JUnit 5, Cucumber, k6, node:test) take the start
         # of the CI run, so they sort, filter by date and count as latest correctly
         runs = [
@@ -144,7 +158,8 @@ def _collect_run(
         store.add_collection(record, runs)
         return record
     finally:
-        shutil.rmtree(workdir, ignore_errors=True)
+        if workdir is not None:
+            shutil.rmtree(workdir, ignore_errors=True)
 
 
 def _job_input(

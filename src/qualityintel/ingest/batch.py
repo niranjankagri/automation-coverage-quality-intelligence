@@ -152,7 +152,7 @@ def import_pipeline(
             repository=repository,
         )
         part = import_results(inputs, context=(job_contexts or {}).get(job, context), id_pattern=id_pattern)
-        batch.errors.extend(part.errors)
+        batch.errors.extend(IngestError(f"{job}/{error.source}", error.reason) for error in part.errors)
         batch.duplicates.extend(f"{job}: {note}" for note in part.duplicates)
         batch.warnings.extend(f"{job}/{warning}" for warning in part.warnings)
         for run in part.runs:

@@ -17,6 +17,7 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from datetime import date, datetime
 
+from qualityintel.links import github_run_url
 from qualityintel.models.catalog import Catalog
 from qualityintel.models.collection import PipelineCollection
 from qualityintel.models.enums import Outcome
@@ -145,7 +146,7 @@ def build_index(
         where: tuple[tuple[str, str], ...] = (("pipeline", pipeline_id),)
         if repository:
             where = (*where, ("repository", repository))
-        url = latest_record.url if latest_record and latest_record.url.startswith("https://") else None
+        url = github_run_url(latest_record.url) if latest_record else None
         entries.append(_entry("pipeline", pipeline_id, title, "/pipelines", where, span, url))
     for key, (span, name) in tests.items():
         entries.append(_entry("test", key, name, "/test", (("key", key), *_repository_param(span)), span))

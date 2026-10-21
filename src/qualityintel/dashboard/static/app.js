@@ -35,6 +35,7 @@ function badge(text) {
 function formatDate(iso) {
   if (!iso) return "–";
   const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "Invalid date";
   return d.toISOString().slice(0, 16).replace("T", " ") + " UTC";
 }
 
@@ -1187,12 +1188,26 @@ const KIND_TITLES = { repository: "Repositories", workflow: "Workflows", pipelin
 
 /** The text with every query word marked, built from text nodes only (never HTML). */
 function highlight(text, words) {
-  const lower = text.toLowerCase();
+  let lower = "";
+  const originalStarts = [];
+  const originalEnds = [];
+  let offset = 0;
+  for (const character of text) {
+    const folded = character.toLowerCase();
+    lower += folded;
+    for (let i = 0; i < folded.length; i += 1) {
+      originalStarts.push(offset);
+      originalEnds.push(offset + character.length);
+    }
+    offset += character.length;
+  }
   const marks = [];
   for (const word of words) {
     let from = 0;
     while (word && (from = lower.indexOf(word, from)) !== -1) {
-      marks.push([from, from + word.length]);
+      const start = originalStarts[from];
+      const end = originalEnds[from + word.length - 1];
+      if (start !== undefined && end !== undefined) marks.push([start, end]);
       from += word.length;
     }
   }
@@ -1241,7 +1256,7 @@ function summaryButtons(endpoint, extra) {
   const make = (label, field) => {
     const button = h("button", { type: "button", class: "ghost copy" }, label);
     button.addEventListener("click", async () => {
-      const shareLink = `${location.origin}${location.pathname}${location.hash}`;
+      const shareLink = `${location.pathname}${location.search}${location.hash}`;
       try {
         const summary = await api(`${endpoint}${apiQuery(RUN_FILTERS, { ...extra, link: shareLink })}`);
         await navigator.clipboard.writeText(summary[field]);

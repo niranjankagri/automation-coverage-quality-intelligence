@@ -28,6 +28,7 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 
 from qualityintel import __version__
 from qualityintel.history.analysis import DEFAULTS, HistorySettings
+from qualityintel.links import dashboard_path
 from qualityintel.live import LiveData
 from qualityintel.models.enums import Criticality, Outcome, TestType
 from qualityintel.reporting.investigation import summarise_comparison, summarise_test
@@ -439,8 +440,8 @@ def create_app(
             raise HTTPException(status_code=422, detail=str(error)) from None
 
     def page_link(link: str | None) -> str | None:
-        """The dashboard address the client wants in a summary: http(s) only, bounded, else none."""
-        return link if link and len(link) <= 2000 and link.startswith(("https://", "http://")) else None
+        """A same-site path for a copied summary; external or malformed destinations are omitted."""
+        return dashboard_path(link)
 
     @app.get("/api/tests/summary", tags=["investigation"])
     def summary_of_test(
