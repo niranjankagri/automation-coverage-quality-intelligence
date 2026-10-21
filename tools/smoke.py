@@ -151,7 +151,9 @@ def main(argv: list[str] | None = None) -> int:
     wait_until_up(base, args.wait)
     try:
         results = checks(base, args.collected, args.max_collection_age)
-    except (urllib.error.URLError, TimeoutError, OSError, ValueError) as error:
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError, TypeError, AttributeError, KeyError, OverflowError) as error:
+        # A malformed or schema-incompatible live API response is a failed health check,
+        # not an uncaught traceback that hides the incident from the operator.
         print(f"FAIL  {base} cannot be checked: {error}")
         return 1
     for name, passed, detail in results:
