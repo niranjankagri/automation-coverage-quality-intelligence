@@ -66,6 +66,25 @@ A failed reload keeps the last good data and marks it stale (the bar says so); t
 shows a half-loaded state. The collection workflow fails when a producer cannot be read, so its
 own run history is the alert.
 
+**Alerts.** The daily *Live dashboard* workflow (08:30 UTC) fails when the site is down, cannot
+reload, its latest collection is older than 30 hours, or 3 or more collections in 7 days were
+incomplete; every failed check prints what to look at. A failed workflow run is e-mailed by
+GitHub to the repository owner (for a scheduled run, the user who last changed its schedule),
+according to the owner's notification settings for Actions. To test that the alert arrives, run
+the workflow by hand with `max_collection_age` 0.01: it fails on purpose.
+
+## Recovery drills (2026-10-21)
+
+Run on the real history and the live site; the commands and tests are in the repository.
+
+| Drill | Result |
+|---|---|
+| New data while the site runs (publication 03:09 UTC, site kept busy) | swapped in by the hourly fetch at 04:07:45 UTC without a restart: 72 → 74 pipelines |
+| Site left alone 17 and 35 minutes (free plan) | no spin-down observed: same instance, first request 0.4 s; a cold start could not be measured |
+| Import killed at 2, 3, 4, 5 and 6 s | integrity ok, no orphan results, no half-written run (also `tests/integration/test_interrupted_import.py`) |
+| Download cut at 50 %, 90 %, 99.9 % | refused; the old database stayed |
+| Backup, 64 KB of the original overwritten, restore | damage detected (exit 3, after a fix: it used to crash), restore refused without `--replace`, restored with it; 250 runs, 29,898 results before and after |
+
 ## Incidents
 
 1. **The page shows stale data.** Look at `/api/status` (`last_error`), then the latest
