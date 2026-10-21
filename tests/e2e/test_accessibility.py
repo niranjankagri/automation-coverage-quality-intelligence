@@ -24,6 +24,9 @@ PAGES = [
     "#/compare?framework=testng&base=f5a40d5&head=1d03232",
     "#/pipelines",
     "#/collection",
+    "#/search?q=checkout",
+    "#/attention",
+    "#/test?key=com.enterprise.automation.tests.ui.CustomerManagementTest%3A%3AadminEditsACustomer",
 ]
 
 

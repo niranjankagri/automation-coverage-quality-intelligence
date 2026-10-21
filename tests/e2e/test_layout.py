@@ -16,7 +16,7 @@ from playwright.sync_api import Page, expect
 pytestmark = pytest.mark.e2e
 
 WIDTHS = [390, 768, 1280]
-PAGES = ["#/", "#/requirements", "#/tests", "#/stability", "#/trends"]
+PAGES = ["#/", "#/requirements", "#/tests", "#/stability", "#/trends", "#/attention", "#/search?q=checkout"]
 REGIONS = ["header.top", "#filters", ".databar", "#catalog-notice", "main"]
 
 

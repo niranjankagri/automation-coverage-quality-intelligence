@@ -175,7 +175,11 @@ function link(path, extra = {}) {
   const params = new URLSearchParams();
   const current = route().params;
   for (const name of FILTERS) if (current.get(name)) params.set(name, current.get(name));
-  for (const [name, value] of Object.entries(extra)) if (value) params.set(name, value);
+  // A value sets the parameter, null removes a kept filter (breadcrumbs going up), empty is ignored
+  for (const [name, value] of Object.entries(extra)) {
+    if (value === null) params.delete(name);
+    else if (value) params.set(name, value);
+  }
   const query = params.toString();
   return `#${path}${query ? `?${query}` : ""}`;
 }
@@ -227,6 +231,12 @@ function applyFilter(field) {
   const query = params.toString();
   location.hash = `#/${parts.map(encodeURIComponent).join("/")}${query ? `?${query}` : ""}`;
 }
+
+// The search box in the header opens the Search page (with the filters of the current view)
+document.getElementById("global-search").addEventListener("submit", (event) => {
+  event.preventDefault();
+  location.hash = link("/search", { q: document.getElementById("global-q").value.trim() });
+});
 
 const filterForm = document.getElementById("filters");
 filterForm.addEventListener("change", (event) => applyFilter(event.target));
@@ -593,7 +603,7 @@ async function testsView() {
     h("h1", {}, "Tests"),
     h("p", { class: "lead" }, `${rows.length} test(s) across all loaded runs; tests with failures first.`),
     h("div", { class: "toolbar" }, h("label", { for: "outcome-filter" }, "Latest outcome", outcomeSelect)),
-    table(["Test", "Framework", { label: "Runs", num: true }, { label: "Passed", num: true }, { label: "Failed", num: true }, { label: "Errors", num: true }, { label: "Skipped", num: true }, "Latest", "Test case"], body, "No tests in the loaded runs match these filters.", { tools: true, searchLabel: "Search", searchId: "test-search", searchPlaceholder: "part of the name", name: "tests" }),
+    table(["Test", "Framework", { label: "Runs", num: true }, { label: "Passed", num: true }, { label: "Failed", num: true }, { label: "Errors", num: true }, { label: "Skipped", num: true }, "Latest", "Test case"], body, "No tests in the loaded runs match these filters.", { tools: true, searchLabel: "Filter tests by name", searchId: "test-search", searchPlaceholder: "part of the name", name: "tests" }),
   ];
 }
 
@@ -620,17 +630,24 @@ async function testHistory() {
   const labels = oldestFirst.map((e) => `${formatDate(e.started_at)} · ${e.context.build ?? "–"}`);
   const durations = oldestFirst.map((e) => e.duration_seconds);
   const shareLink = `${location.origin}${location.pathname}${link("/test", { key })}`;
+  const previous = d.executions[1];
   return [
-    h("p", {}, h("a", { href: link("/tests") }, "← Tests")),
+    crumbs([["Tests", link("/tests")], ...pipelineCrumbs(latest.pipeline, latest.workflow, latest.run_id, latest.source), [d.key, null]]),
     h("h1", { class: "key" }, d.key),
-    h("div", { class: "toolbar" }, copyButton("Copy test identifier", d.key), copyButton("Copy investigation link", shareLink)),
+    h("div", { class: "toolbar" }, copyButton("Copy test identifier", d.key), copyButton("Copy investigation link", shareLink), summaryButtons("/api/tests/summary", { key })),
     h(
       "dl",
       { class: "meta" },
       h("dt", {}, "Latest result"),
       h("dd", {}, badge(latest.outcome), " ", formatDate(latest.started_at), latest.retries ? ` after ${latest.retries} retr${latest.retries === 1 ? "y" : "ies"}` : ""),
+      h("dt", {}, "Previous result"),
+      h("dd", {}, previous ? [badge(previous.outcome), " ", formatDate(previous.started_at), ` · build ${previous.context.build ?? "not recorded"}`] : "none in this scope"),
       h("dt", {}, "Context"),
       h("dd", {}, [latest.context.framework, latest.context.environment, latest.context.browser, latest.context.platform].map((v) => v ?? "–").join(" / "), ` · build ${latest.context.build ?? "–"}`),
+      h("dt", {}, "Repository / workflow"),
+      h("dd", {}, latest.pipeline ? `${latest.pipeline.repository ?? "not recorded"} · ${latest.workflow ?? "workflow not recorded"}` : "not collected from a pipeline"),
+      h("dt", {}, "Stability"),
+      h("dd", {}, d.stability.length ? h("ul", { class: "reasons" }, d.stability.map((line) => h("li", {}, line))) : "not classified (too few verdicts in the scope)"),
       h("dt", {}, "Source"),
       h("dd", {}, h("a", { href: link(`/run/${latest.run_id}`) }, latest.source), latest.pipeline ? ` · pipeline ${pipelineLabel(latest.pipeline)}` : "", latest.ci_url ? [" · ", external(latest.ci_url, "CI run on GitHub")] : null),
       h("dt", {}, "Requirements"),
@@ -641,6 +658,7 @@ async function testHistory() {
       h("dd", {}, h("ol", { class: "pattern", "aria-label": `${d.passed} passed, ${d.failed} failed or errored, oldest first` }, oldestFirst.map((e) => h("li", { class: `dot ${e.outcome}`, title: `${formatDate(e.started_at)}: ${e.outcome}` }, e.outcome[0].toUpperCase()))), h("span", { class: "sub" }, `${d.passed} passed, ${d.failed} failed or errored of ${d.executions.length}, oldest first`)),
     ),
     latest.failure ? [h("h2", {}, "Latest failure"), failureDetails(latest.failure)] : null,
+    executionComparison(d.executions),
     durations.some((v) => v !== null)
       ? chartFigure("Duration per execution", lineChart(labels, [{ name: "duration", cls: "s-rate", values: durations }], { unit: "s" }), [{ name: "duration", cls: "s-rate", values: durations }], labels, "oldest first", (v) => formatSeconds(v))
       : null,
@@ -689,12 +707,20 @@ async function compareView() {
       h("div", { class: "detail" }, `${b.counts.passed} passed, ${b.counts.failed} failed, ${b.counts.error} errors, ${b.counts.skipped} skipped`),
       h("div", { class: "detail" }, b.requirement_coverage ? `requirement coverage ${b.requirement_coverage.text}` : "no coverage snapshot before this build"),
       h("div", { class: "detail" }, `last run ${formatDate(b.last_started_at)}`),
+      b.incomplete_pipelines.length ? h("div", { class: "detail" }, badge("incomplete"), ` ${b.incomplete_pipelines.join(", ")}`) : null,
+      b.ci_runs.length ? h("div", { class: "detail" }, b.ci_runs.map((url, i) => [i ? " · " : "", external(url, `GitHub run ${i + 1}`)])) : h("div", { class: "detail" }, "no GitHub run recorded"),
     );
+  const delta = (o) => {
+    const change = (d.head.counts[o] ?? 0) - (d.base.counts[o] ?? 0);
+    return `${o} ${change > 0 ? "+" : ""}${change}`;
+  };
   const category = params.get("change") ?? "";
   const shown = d.changes.filter((c) => !category || c.category === category);
   return [
     ...header,
+    h("div", { class: "toolbar" }, summaryButtons("/api/compare/summary", { base, head })),
     h("div", { class: "cards" }, side("Baseline", d.base), side("Comparison", d.head)),
+    h("p", { class: "sub" }, `Result counts, comparison minus baseline (all runs of each build): ${OUTCOMES.map(delta).join(", ")}.`),
     d.notes.length ? h("div", { class: "notice", role: "note" }, d.notes.map((n) => h("p", {}, n))) : null,
     h("p", { class: "sub" }, `Compared suites: ${d.compared_contexts.join(", ") || "none"}`, d.only_in_base.length ? ` · only in the baseline: ${d.only_in_base.join(", ")}` : "", d.only_in_head.length ? ` · only in the comparison: ${d.only_in_head.join(", ")}` : ""),
     h(
@@ -739,7 +765,7 @@ async function runDetail(runId) {
   const d = await api(`/api/runs/${encodeURIComponent(runId)}`);
   const r = d.run;
   return [
-    h("p", {}, h("a", { href: link("/runs") }, "← Runs")),
+    crumbs([["Runs", link("/runs")], ...pipelineCrumbs(r.pipeline, null, null), [r.source, null]]),
     h("h1", {}, r.source),
     h("dl", { class: "meta" }, h("dt", {}, "Framework"), h("dd", {}, r.context.framework ?? "–"), h("dt", {}, "Environment"), h("dd", {}, r.context.environment ?? "–"), h("dt", {}, "Browser / platform"), h("dd", {}, `${r.context.browser ?? "–"} / ${r.context.platform ?? "–"}`), h("dt", {}, "Build"), h("dd", {}, r.context.build ?? "–"), h("dt", {}, "Pipeline / job"), h("dd", {}, pipelineLabel(r.pipeline)), h("dt", {}, "Started"), h("dd", {}, formatDate(r.started_at)), h("dt", {}, "Pass rate"), h("dd", {}, r.pass_rate.text)),
     table(EXECUTION_HEADERS, executionRows(d.executions), "This run has no results."),
@@ -823,7 +849,8 @@ async function pipelinesView() {
   const jobs = params.get("jobs") ?? "";
   const status = params.get("status") ?? "";
   const workflow = params.get("workflow") ?? "";
-  const d = await api(`/api/pipelines${apiQuery(RUN_FILTERS, { jobs, status, workflow })}`);
+  const focus = params.get("pipeline") ?? "";
+  const d = await api(`/api/pipelines${apiQuery(RUN_FILTERS, { jobs, status, workflow, pipeline: focus })}`);
   const jobsInput = h("input", { id: "expected-jobs", type: "text", value: jobs, placeholder: "api, ui-chrome, ui-firefox", size: "40" });
   jobsInput.addEventListener("change", () => (location.hash = link("/pipelines", { jobs: jobsInput.value.trim(), status, workflow })));
   const workflowSelect = h("select", { id: "workflow" }, h("option", { value: "" }, "All"), d.workflows.map((w) => h("option", { value: w }, w)));
@@ -831,8 +858,11 @@ async function pipelinesView() {
   workflowSelect.addEventListener("change", () => (location.hash = link("/pipelines", { jobs, status, workflow: workflowSelect.value })));
   const statuses = [...STATUS_ORDER.filter((s) => s in d.status_counts), ...Object.keys(d.status_counts).filter((s) => !STATUS_ORDER.includes(s))];
   const total = Object.values(d.status_counts).reduce((a, b) => a + b, 0);
+  const repository = params.get("repository") ?? "";
   return [
+    focus || workflow ? crumbs([["Pipelines", link("/pipelines", { repository: null })], repository ? [repository, link("/pipelines", { pipeline: null, workflow: null })] : null, workflow ? [workflow, focus ? link("/pipelines", { pipeline: null }) : null] : null, focus ? [focus, null] : null]) : null,
     h("h1", {}, "Pipelines"),
+    focus ? h("p", { class: "notice", role: "note" }, `Showing pipeline ${focus} only. `, h("a", { href: link("/pipelines", { workflow }) }, "Show every pipeline")) : null,
     h("p", { class: "lead" }, "Pipeline executions, newest first. Incomplete means jobs or reports are missing, whatever CI concluded; success, failure and cancelled are the CI's own conclusion of complete pipelines."),
     h(
       "div",
@@ -849,7 +879,7 @@ async function pipelinesView() {
     d.notes.length ? h("div", { class: "notice", role: "note" }, d.notes.map((n) => h("p", {}, n))) : null,
     d.pipelines.length === 0
       ? h("p", { class: "empty" }, status || workflow ? "No pipeline matches this status or workflow; choose All to see every pipeline." : "No runs in scope belong to a pipeline (collect them with qi collect, or import with --pipeline and --job).")
-      : d.pipelines.map((p, i) => pipelineDetails(p, i === 0)),
+      : d.pipelines.map((p, i) => pipelineDetails(p, i === 0 || Boolean(focus))),
   ];
 }
 
@@ -1150,8 +1180,241 @@ async function trendsView() {
 
 // ---- main loop -------------------------------------------------------------------------
 
+
+// ---- M12: search, needs attention, breadcrumbs, summaries ----------------------------------------
+
+const KIND_TITLES = { repository: "Repositories", workflow: "Workflows", pipeline: "Pipelines", test: "Tests", requirement: "Requirements", failure: "Failure messages" };
+
+/** The text with every query word marked, built from text nodes only (never HTML). */
+function highlight(text, words) {
+  const lower = text.toLowerCase();
+  const marks = [];
+  for (const word of words) {
+    let from = 0;
+    while (word && (from = lower.indexOf(word, from)) !== -1) {
+      marks.push([from, from + word.length]);
+      from += word.length;
+    }
+  }
+  marks.sort((a, b) => a[0] - b[0]);
+  const parts = [];
+  let at = 0;
+  for (const [start, end] of marks) {
+    if (start < at) continue; // overlapping words: the first one wins
+    if (start > at) parts.push(text.slice(at, start));
+    parts.push(h("mark", {}, text.slice(start, end)));
+    at = end;
+  }
+  if (at < text.length) parts.push(text.slice(at));
+  return parts;
+}
+
+/** Breadcrumb navigation: [label, href] pairs, the last one is the current page (no link). */
+function crumbs(items) {
+  const shown = items.filter(Boolean);
+  return h(
+    "nav",
+    { class: "crumbs", "aria-label": "Breadcrumb" },
+    h(
+      "ol",
+      {},
+      shown.map(([label, href], i) =>
+        h("li", {}, i === shown.length - 1 || !href ? h("span", { "aria-current": i === shown.length - 1 ? "page" : null }, label) : h("a", { href }, label)),
+      ),
+    ),
+  );
+}
+
+/** The repository › workflow › pipeline › run chain of a run that came from a pipeline. */
+function pipelineCrumbs(pipeline, workflow, runId, runLabel) {
+  if (!pipeline) return [];
+  return [
+    pipeline.repository ? [pipeline.repository, link("/pipelines", { repository: pipeline.repository })] : null,
+    workflow ? [workflow, link("/pipelines", { repository: pipeline.repository, workflow })] : null,
+    [`${pipeline.pipeline_id} attempt ${pipeline.attempt}`, link("/pipelines", { repository: pipeline.repository, pipeline: pipeline.pipeline_id })],
+    runId ? [runLabel ?? `job ${pipeline.job}`, link(`/run/${runId}`)] : null,
+  ];
+}
+
+/** Two buttons that copy the summary the server builds (text and Markdown) for this view. */
+function summaryButtons(endpoint, extra) {
+  const make = (label, field) => {
+    const button = h("button", { type: "button", class: "ghost copy" }, label);
+    button.addEventListener("click", async () => {
+      const shareLink = `${location.origin}${location.pathname}${location.hash}`;
+      try {
+        const summary = await api(`${endpoint}${apiQuery(RUN_FILTERS, { ...extra, link: shareLink })}`);
+        await navigator.clipboard.writeText(summary[field]);
+        button.textContent = "Copied";
+      } catch (error) {
+        button.textContent = `Copy failed (${error.message})`;
+      }
+      setTimeout(() => (button.textContent = label), 2500);
+    });
+    return button;
+  };
+  return [make("Copy summary (text)", "text"), make("Copy summary (Markdown)", "markdown")];
+}
+
+let searchCount = 0;
+
+async function searchView() {
+  const q = route().params.get("q") ?? "";
+  const input = h("input", { type: "search", id: "search-q", value: q, maxlength: "100", autocomplete: "off", "aria-describedby": "search-help" });
+  const results = h("div", { id: "search-results", "aria-live": "polite" });
+  const show = async (query) => {
+    const current = ++searchCount;
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
+      results.replaceChildren(h("p", { class: "empty" }, "Type at least two characters: a test name, a requirement id, a pipeline or GitHub run id, a repository, or words from a failure message."));
+      return;
+    }
+    results.setAttribute("aria-busy", "true");
+    let d;
+    try {
+      d = await api(`/api/search${apiQuery(RUN_FILTERS, { q: trimmed })}`);
+    } catch (error) {
+      if (current === searchCount) results.replaceChildren(h("p", { class: "error", role: "alert" }, `Search failed: ${error.message}`));
+      return;
+    } finally {
+      if (current === searchCount) results.removeAttribute("aria-busy");
+    }
+    if (current !== searchCount) return; // an older answer arrived after a newer question
+    const words = d.query.toLowerCase().split(/\s+/).filter(Boolean);
+    const groups = Object.entries(d.groups).filter(([, hits]) => hits.length);
+    results.replaceChildren(
+      h("p", { class: "sub" }, `${d.total} match(es) for "${d.query}"${RUN_FILTERS.some((f) => route().params.get(f)) ? " in the filtered scope" : ""}.`),
+      ...(groups.length === 0
+        ? [h("p", { class: "empty" }, `Nothing matches "${d.query}". Every word must occur; try fewer words, part of a name, or remove filters above.`)]
+        : groups.map(([kind, hits]) =>
+            h(
+              "section",
+              { "aria-labelledby": `results-${kind}` },
+              h("h2", { id: `results-${kind}` }, `${KIND_TITLES[kind] ?? kind} (${d.counts[kind]}${d.counts[kind] > hits.length ? `, showing ${hits.length}` : ""})`),
+              h(
+                "ul",
+                { class: "hits" },
+                hits.map((hit) =>
+                  h(
+                    "li",
+                    {},
+                    h("a", { href: link(hit.route, hit.params), class: "key" }, highlight(hit.identifier, words)),
+                    hit.title && hit.title !== hit.identifier ? h("span", { class: "sub" }, highlight(hit.title, words)) : null,
+                    h("span", { class: "sub" }, [hit.repositories.length ? hit.repositories.join(", ") : null, hit.last_seen ? `last seen ${formatDate(hit.last_seen)}` : null].filter(Boolean).join(" · ")),
+                    hit.url ? external(hit.url, "Open the run on GitHub") : null,
+                  ),
+                ),
+              ),
+            ),
+          )),
+    );
+  };
+  let timer = null;
+  input.addEventListener("input", () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      // The address follows the query (shareable, back button), without re-rendering the page
+      history.replaceState(null, "", link("/search", { q: input.value.trim() }));
+      show(input.value);
+    }, 250);
+  });
+  show(q);
+  return [
+    h("h1", {}, "Search"),
+    h("p", { class: "lead", id: "search-help" }, "Tests, failure messages, requirements, pipelines and GitHub run ids, workflows and repositories. Every word must occur; the repository and date filters above apply."),
+    h("div", { class: "toolbar" }, h("label", { for: "search-q" }, "Search for", input)),
+    results,
+  ];
+}
+
+const STATE_ORDER = ["open", "suspected", "unknown", "resolved"];
+
+async function attentionView() {
+  const params = route().params;
+  const state = params.get("state") ?? "";
+  const d = await api(`/api/attention${apiQuery(FILTERS)}`);
+  const shown = d.findings.filter((f) => !state || f.state === state);
+  return [
+    h("h1", {}, "Needs attention"),
+    h("p", { class: "lead" }, "What the evidence shows in the scope above, most urgent first: open problems, then suspected ones, then unknowns, then resolved ones kept as history. Each line says why it is listed and links to its records."),
+    h(
+      "nav",
+      { class: "status-filter", "aria-label": "Finding state" },
+      h("a", { href: link("/attention"), "aria-current": state ? null : "true" }, `All (${d.total})`),
+      STATE_ORDER.filter((s) => d.states[s]).map((s) => h("a", { href: link("/attention", { state: s }), "aria-current": state === s ? "true" : null }, badge(s), ` ${d.states[s]}`)),
+    ),
+    h("div", { class: "notice", role: "note" }, d.notes.map((n) => h("p", {}, n))),
+    d.total === 0
+      ? h("p", { class: "empty" }, "Nothing needs attention in this scope: no newly failing or recurring failures, no incomplete pipelines, no overdue collections, no critical gaps, no confirmed slowdowns or flaky candidates.")
+      : table(
+          ["State", "Kind", "Finding", "Why it is listed", { label: "Evidence", num: true }, "First seen", "Last seen", "Source"],
+          shown.map((f) =>
+            h(
+              "tr",
+              {},
+              h("td", {}, badge(f.state)),
+              h("td", {}, f.kind),
+              h("td", {}, h("a", { class: "key", href: link(f.route, f.params) }, f.title), f.repository ? h("span", { class: "sub" }, f.repository) : null),
+              h("td", {}, f.why),
+              h("td", { class: "num" }, String(f.evidence), h("span", { class: "sub" }, f.evidence_label)),
+              h("td", { class: "nowrap" }, f.first_seen ? formatDate(f.first_seen) : "–"),
+              h("td", { class: "nowrap" }, f.last_seen ? formatDate(f.last_seen) : "–"),
+              h("td", {}, f.url ? external(f.url, "GitHub run") : "–"),
+            ),
+          ),
+          state ? `No ${state} findings in this scope.` : "No findings.",
+          { tools: true, name: "needs-attention" },
+        ),
+    d.shown < d.total ? h("p", { class: "sub" }, `Showing the first ${d.shown} of ${d.total} findings; narrow the scope with the filters above.`) : null,
+  ];
+}
+
+/** Two executions of a test side by side: outcome, build, duration, retries, failure, evidence. */
+function executionComparison(executions) {
+  if (executions.length < 2) return null;
+  const label = (e, i) => `${i === 0 ? "latest · " : ""}${formatDate(e.started_at)} · build ${e.context.build ?? "–"} · ${e.outcome}`;
+  const pick = (id, chosen) => {
+    const select = h("select", { id }, executions.map((e, i) => h("option", { value: String(i) }, label(e, i))));
+    select.value = String(chosen);
+    return select;
+  };
+  const left = pick("execution-a", 1);
+  const right = pick("execution-b", 0);
+  const body = h("tbody");
+  const row = (name, a, b) => h("tr", {}, h("th", { scope: "row" }, name), h("td", {}, a), h("td", {}, b));
+  const draw = () => {
+    const a = executions[Number(left.value)];
+    const b = executions[Number(right.value)];
+    const failure = (e) => (e.failure ? (e.failure.message || e.failure.type || "").split("\n")[0].slice(0, 200) : "none recorded");
+    const where = (e) => (e.pipeline ? `${e.pipeline.pipeline_id} attempt ${e.pipeline.attempt} / ${e.pipeline.job}` : "not part of a pipeline");
+    body.replaceChildren(
+      row("Outcome", badge(a.outcome), badge(b.outcome)),
+      row("Started", formatDate(a.started_at), formatDate(b.started_at)),
+      row("Build", a.context.build ?? "not recorded", b.context.build ?? "not recorded"),
+      row("Context", [a.context.framework, a.context.environment, a.context.browser, a.context.platform].map((v) => v ?? "–").join(" / "), [b.context.framework, b.context.environment, b.context.browser, b.context.platform].map((v) => v ?? "–").join(" / ")),
+      row("Duration", a.duration_seconds === null ? "not recorded" : formatSeconds(a.duration_seconds), b.duration_seconds === null ? "not recorded" : formatSeconds(b.duration_seconds)),
+      row("Retries", String(a.retries), String(b.retries)),
+      row("Failure", failure(a), failure(b)),
+      row("Pipeline", where(a), where(b)),
+      row("Evidence", a.ci_url ? external(a.ci_url, "GitHub run") : h("a", { href: link(`/run/${a.run_id}`) }, "run"), b.ci_url ? external(b.ci_url, "GitHub run") : h("a", { href: link(`/run/${b.run_id}`) }, "run")),
+    );
+  };
+  left.addEventListener("change", draw);
+  right.addEventListener("change", draw);
+  draw();
+  return h(
+    "section",
+    { "aria-labelledby": "compare-executions-title" },
+    h("h2", { id: "compare-executions-title" }, "Compare two executions"),
+    h("div", { class: "toolbar" }, h("label", { for: "execution-a" }, "Execution A", left), h("label", { for: "execution-b" }, "Execution B", right)),
+    h("div", { class: "table-wrap" }, h("table", { class: "pair" }, h("thead", {}, h("tr", {}, h("th", { scope: "col" }, ""), h("th", { scope: "col" }, "A"), h("th", { scope: "col" }, "B"))), body)),
+  );
+}
+
 const VIEWS = {
   "": overview,
+  search: searchView,
+  attention: attentionView,
   requirements: requirementsView,
   requirement: (parts) => requirementDetail(parts[1]),
   tests: testsView,
