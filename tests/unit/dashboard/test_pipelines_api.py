@@ -226,3 +226,16 @@ def test_status_counts_the_collection_records_of_fixed_data(collected: TestClien
     assert status["collections"] > 0
     assert status["latest_collection_at"] is not None
     assert status["collections"] == sum(len(p["attempts"]) for p in pipelines["pipelines"] if p["attempts"])
+
+
+def test_collection_problems_point_to_their_run_attempt(collected: TestClient) -> None:
+    """Each problem names its pipeline and attempt and links that attempt's page on GitHub."""
+    rows = collected.get("/api/collection").json()["repositories"]
+    issues = [issue for row in rows for issue in row["issues"]]
+
+    assert issues
+    assert len(issues) == sum(len(row["problems"]) for row in rows)
+    for issue in issues:
+        assert issue["run_url"].startswith(f"https://github.com/{REPO}/actions/runs/")
+        assert issue["run_url"].endswith(f"/attempts/{issue['attempt']}")
+        assert issue["text"]
