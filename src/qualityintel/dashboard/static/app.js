@@ -35,6 +35,7 @@ function badge(text) {
 function formatDate(iso) {
   if (!iso) return "–";
   const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "Invalid date";
   return d.toISOString().slice(0, 16).replace("T", " ") + " UTC";
 }
 
