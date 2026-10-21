@@ -22,4 +22,5 @@ jobs:
         with:
           python-version: "3.13"
       # The free service may be asleep: up to three minutes to wake up
-      - run: python tools/smoke.py "${{ vars.QI_LIVE_URL }}" --wait 180 --collected
+      # The daily collection runs at 07:40 UTC: 30 hours allow one late or failed run
+      - run: python tools/smoke.py "${{ vars.QI_LIVE_URL }}" --wait 180 --collected --max-collection-age 30
