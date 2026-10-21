@@ -55,6 +55,13 @@ every refresh, while the previous snapshot still answers. The memory price is ab
 - **Freshness:** a refresh produces a new snapshot with its own cache; views on it show the new
   data (`tests/unit/test_live.py::test_cached_views_never_outlive_their_data`).
 
+## Search and Needs Attention (M12, 2026-10-21)
+
+Same stand-in and machine: search index 0.063 s (0.07 s for the 2,095 entries of the hosted
+history), a query about 0.2 ms; Needs Attention 0.35 s uncached, under 1 ms cached; both
+computed by the warm-up; the extra memory about 0.2 MB. Budgets: index 0.5 s, query 0.05 s,
+Needs Attention 2 s uncached.
+
 ## Not needed (yet)
 
 - **SQLite stays.** Building the snapshot from the database takes 0.36 s for 23,000 results; the

@@ -38,8 +38,18 @@ for: what exists, where, and what M12 adds. Only the gaps are built.
 
 ## Data volume
 
-Measured on the live site after the cold-start test (filled in below by the M12 commit that
-records the baseline).
+Live site, 2026-10-21 07:08 UTC: 258 runs, 1,943 distinct tests, 74 collected pipeline attempts
+from 23 repositories, latest collection 03:09 UTC. Warm response times measured from India:
+summary 0.25 s, readiness 0.45 s, stability 0.35 s, tests 0.58 s, pipelines 0.75 s, trends 0.91 s.
+The search index of that history has 2,095 entries.
+
+## Built in M12
+
+All gaps above except issue-tracker links (left out on purpose: no external issue is created;
+a copied summary can be pasted into one). Tests: `tests/unit/test_search.py`,
+`tests/unit/test_attention.py`, `tests/unit/test_investigation_summary.py`, API tests in
+`tests/unit/dashboard`, `tests/e2e/test_investigation.py`, new pages in the accessibility, layout
+and phone-width checks, budgets in `tests/performance`.
 
 ## Decisions
 

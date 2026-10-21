@@ -17,6 +17,14 @@
 - **Release status on the overview** ([docs/readiness.md](docs/readiness.md)): Ready / At risk /
   Blocked / Unknown from the release gate given with `qi dashboard --gate` plus flaky candidates,
   incomplete pipelines and stale data; unknown evidence is never ready; `/api/readiness`.
+- **Interactive investigation (M12)**: global search (header and Search page: tests, failure
+  messages, requirements, pipelines and GitHub run ids, workflows, repositories; grouped, counted,
+  bounded, filters apply); Needs Attention (newly failing, incomplete pipelines, critical gaps,
+  recurring failures, slowdowns, flaky candidates, overdue collections; open, suspected, unknown,
+  resolved; [docs/attention.md](docs/attention.md)); breadcrumbs and pipeline focus; the test
+  investigation shows previous result, workflow, stability and two executions side by side;
+  comparisons show count differences and their GitHub runs; copyable summaries in text and
+  Markdown built by the server ([docs/m12-gap-analysis.md](docs/m12-gap-analysis.md)).
 - **Actionable problems (UI)**: incomplete collections and failed refreshes link to where to
   look; collection problems link the pipeline and the GitHub run attempt; a Compare link to an
   unknown build explains instead of failing; layout regression tests at three widths.
