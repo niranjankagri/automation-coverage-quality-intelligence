@@ -13,6 +13,8 @@ import contextlib
 import hmac
 import json
 import math
+import os
+import re
 import time
 from collections.abc import AsyncIterator
 from datetime import UTC, date, datetime, timedelta
@@ -258,6 +260,19 @@ class BasicAuth(BaseHTTPMiddleware):
         )
 
 
+def deployed_commit() -> str | None:
+    """The source commit of this deployment (docs/deployment.md), ``None`` when not known.
+
+    ``QI_BUILD_COMMIT`` wins; Render sets ``RENDER_GIT_COMMIT`` for every deploy. Only a hex
+    commit id is reported, so a misconfigured value never reaches the page.
+    """
+    for name in ("QI_BUILD_COMMIT", "RENDER_GIT_COMMIT"):
+        value = os.environ.get(name, "").strip().lower()
+        if re.fullmatch(r"[0-9a-f]{7,40}", value):
+            return value
+    return None
+
+
 class DataStatus(View):
     """Freshness of the data the dashboard shows (``/api/status``)."""
 
@@ -332,13 +347,15 @@ def create_app(
 
     @app.get("/api/health", tags=["meta"])
     def health() -> dict[str, object]:
-        """Liveness check with the size of the loaded data."""
+        """Liveness check with the size of the loaded data, the deployed commit and the catalog notice."""
         workspace = current()
         return {
             "status": "ok",
             "version": __version__,
+            "commit": deployed_commit(),
             "requirements": len(workspace.catalog.requirements),
             "runs": len(workspace.runs),
+            "catalog_notice": workspace.catalog.notice,
         }
 
     @app.get("/api/status", tags=["meta"])

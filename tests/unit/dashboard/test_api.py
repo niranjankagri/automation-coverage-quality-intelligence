@@ -480,3 +480,16 @@ def test_requirements_have_owners_to_filter_and_group_by(client: TestClient) -> 
     assert {r["owner"] for r in admin} == {"Admin team"}
     assert summary["requirements_total"] == 12
     assert client.get("/api/requirements/SHOP-006").json()["requirement"]["owner"] == "Toolshop team"
+
+
+def test_health_names_the_deployed_commit_and_the_catalog_notice(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Render's RENDER_GIT_COMMIT (or QI_BUILD_COMMIT) is reported; anything not a commit id is not."""
+    workspace, _ = Workspace.load(SAMPLES / "catalog.toml", [])
+    client = TestClient(create_app(workspace))
+    monkeypatch.setenv("RENDER_GIT_COMMIT", "7A429BB0123456789abcdef0123456789abcdef0")
+
+    body = client.get("/api/health").json()
+    assert body["commit"] == "7a429bb0123456789abcdef0123456789abcdef0"
+    assert "synthetic sample catalog" in body["catalog_notice"]
+    monkeypatch.setenv("RENDER_GIT_COMMIT", "<script>")
+    assert client.get("/api/health").json()["commit"] is None

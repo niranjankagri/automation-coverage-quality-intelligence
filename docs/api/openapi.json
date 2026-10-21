@@ -2907,7 +2907,7 @@
     },
     "/api/health": {
       "get": {
-        "description": "Liveness check with the size of the loaded data.",
+        "description": "Liveness check with the size of the loaded data, the deployed commit and the catalog notice.",
         "operationId": "health_api_health_get",
         "responses": {
           "200": {

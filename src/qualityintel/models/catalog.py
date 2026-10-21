@@ -98,6 +98,8 @@ class Catalog(_Frozen):
     test_cases: tuple[TestCase, ...]
     links: tuple[TraceLink, ...]
     warnings: tuple[str, ...] = ()
+    # What the catalog is, shown with every page (e.g. "the requirements are synthetic")
+    notice: LongText | None = None
 
     @classmethod
     def build(cls, requirements: Iterable[Requirement], test_cases: Iterable[TestCase]) -> Catalog:

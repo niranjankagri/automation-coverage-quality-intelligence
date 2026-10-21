@@ -1216,7 +1216,11 @@ function writePreference(on) {
 
 async function showDataSize() {
   const health = await api("/api/health");
-  document.getElementById("data-size").textContent = `${health.requirements} requirements · ${health.runs} runs · qi ${health.version}`;
+  const commit = health.commit ? ` · commit ${health.commit.slice(0, 7)}` : "";
+  document.getElementById("data-size").textContent = `${health.requirements} requirements · ${health.runs} runs · qi ${health.version}${commit}`;
+  const notice = document.getElementById("catalog-notice");
+  notice.textContent = health.catalog_notice ?? "";
+  notice.hidden = !health.catalog_notice;
 }
 
 function describe(status) {
