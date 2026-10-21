@@ -1681,6 +1681,18 @@
             ],
             "title": "Last Collected At"
           },
+          "last_complete_collection_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Complete Collection At"
+          },
           "latest_run_started_at": {
             "anyOf": [
               {
@@ -1737,6 +1749,38 @@
         "title": "RepositoryHealth",
         "type": "object"
       },
+      "RepositoryMatrixRow": {
+        "description": "Requirement execution evidence observed in one repository.",
+        "properties": {
+          "execution": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Execution",
+            "type": "object"
+          },
+          "observed_requirements": {
+            "title": "Observed Requirements",
+            "type": "integer"
+          },
+          "repository": {
+            "title": "Repository",
+            "type": "string"
+          },
+          "stale": {
+            "title": "Stale",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "repository",
+          "observed_requirements",
+          "execution",
+          "stale"
+        ],
+        "title": "RepositoryMatrixRow",
+        "type": "object"
+      },
       "RequirementDetail": {
         "description": "One requirement, its test cases and their latest executions.",
         "properties": {
@@ -1759,7 +1803,7 @@
         "type": "object"
       },
       "RequirementMatrix": {
-        "description": "Requirements by criticality, feature and owner (docs/dashboard.md, Requirements).",
+        "description": "Requirements by criticality, feature, owner and observed repository evidence.",
         "properties": {
           "by_criticality": {
             "items": {
@@ -1781,6 +1825,14 @@
               "$ref": "#/components/schemas/MatrixRow"
             },
             "title": "By Owner",
+            "type": "array"
+          },
+          "by_repository": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RepositoryMatrixRow"
+            },
+            "title": "By Repository",
             "type": "array"
           },
           "stale_days": {
@@ -1845,6 +1897,11 @@
               }
             ],
             "title": "Last Executed At"
+          },
+          "observed": {
+            "default": false,
+            "title": "Observed",
+            "type": "boolean"
           },
           "owner": {
             "default": "unspecified",
@@ -2858,6 +2915,22 @@
         "description": "Findings that need attention, each with its evidence, state and links (docs/attention.md).",
         "operationId": "attention_api_attention_get",
         "parameters": [
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
           {
             "in": "query",
             "name": "feature",
@@ -4344,7 +4417,7 @@
     },
     "/api/requirements": {
       "get": {
-        "description": "In-scope requirements; ``status`` drills down to one coverage or execution status.",
+        "description": "In-scope requirements, optionally filtered by status, linked result evidence, or staleness.",
         "operationId": "requirements_api_requirements_get",
         "parameters": [
           {
@@ -4361,6 +4434,70 @@
                 }
               ],
               "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "observed",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Observed"
+            }
+          },
+          {
+            "in": "query",
+            "name": "stale",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Stale"
+            }
+          },
+          {
+            "in": "query",
+            "name": "coverage_status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Coverage Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "execution_status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Execution Status"
             }
           },
           {

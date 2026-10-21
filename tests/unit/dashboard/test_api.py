@@ -56,6 +56,22 @@ def test_requirement_status_drill_down(client: TestClient) -> None:
     assert [r["id"] for r in rows] == ["NOTES-012", "SHOP-010", "ADMIN-010", "ADMIN-012"]
 
 
+def test_requirement_evidence_filters_are_additive_and_exact(client: TestClient) -> None:
+    """Observed, coverage and execution filters describe separate fields in the requirement rows."""
+    all_rows = client.get("/api/requirements").json()
+    observed = client.get("/api/requirements", params={"observed": "true"}).json()
+    unobserved = client.get("/api/requirements", params={"observed": "false"}).json()
+    uncovered = client.get("/api/requirements", params={"coverage_status": "no tests"}).json()
+    passing = client.get("/api/requirements", params={"execution_status": "passing"}).json()
+
+    assert len(observed) + len(unobserved) == len(all_rows) == 42
+    assert all(row["observed"] for row in observed)
+    assert all(not row["observed"] for row in unobserved)
+    assert all(row["coverage_status"] == "no tests" for row in uncovered)
+    assert all(row["execution_status"] == "passing" for row in passing)
+    assert client.get("/api/requirements?coverage_status=passing").status_code == 422
+
+
 def test_requirement_detail_and_404(client: TestClient) -> None:
     """A known id gives its test cases; an unknown id gives 404 with a message."""
     detail = client.get("/api/requirements/SHOP-006").json()
@@ -546,3 +562,15 @@ def test_attention_agrees_with_the_pages_it_summarises(client: TestClient) -> No
     )
     states = [f["state"] for f in body["findings"]]
     assert states == sorted(states, key=["open", "suspected", "unknown", "resolved"].index)
+
+
+def test_attention_kind_filter_preserves_backend_order_and_counts(client: TestClient) -> None:
+    """Finding type filtering happens before the API limit and retains its evidence fields."""
+    all_findings = client.get("/api/attention").json()
+    critical_gaps = client.get("/api/attention", params={"kind": "critical gap"}).json()
+
+    assert critical_gaps["total"] == all_findings["counts"]["critical gap"] == 2
+    assert critical_gaps["counts"] == {"critical gap": 2}
+    assert critical_gaps["states"] == {"open": 2}
+    assert all(finding["kind"] == "critical gap" for finding in critical_gaps["findings"])
+    assert client.get("/api/attention?kind=severity-high").status_code == 422

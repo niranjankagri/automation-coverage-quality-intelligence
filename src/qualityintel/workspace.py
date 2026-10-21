@@ -175,6 +175,7 @@ class RepositoryHealth(View):
     workflows: tuple[str, ...]
     last_collected_at: datetime | None
     latest_run_started_at: datetime | None
+    last_complete_collection_at: datetime | None = None
     fresh: bool
     freshness: str
     pipelines: int
@@ -239,6 +240,7 @@ class RequirementRow(View):
     execution_status: str
     last_executed_at: datetime | None = None
     stale: bool = False
+    observed: bool = False
 
 
 class TestCaseView(View):
@@ -396,12 +398,22 @@ class MatrixRow(View):
     stale: int
 
 
+class RepositoryMatrixRow(View):
+    """Requirement execution evidence observed in one repository."""
+
+    repository: str
+    observed_requirements: int
+    execution: dict[str, int]
+    stale: int
+
+
 class RequirementMatrix(View):
-    """Requirements by criticality, feature and owner (docs/dashboard.md, Requirements)."""
+    """Requirements by criticality, feature, owner and observed repository evidence."""
 
     by_criticality: tuple[MatrixRow, ...]
     by_feature: tuple[MatrixRow, ...]
     by_owner: tuple[MatrixRow, ...] = ()
+    by_repository: tuple[RepositoryMatrixRow, ...] = ()
     stale_days: int
 
 
@@ -752,13 +764,27 @@ class Workspace:
         )
 
     def requirements(
-        self, scope: Scope = EVERYTHING, status: str | None = None
+        self,
+        scope: Scope = EVERYTHING,
+        status: str | None = None,
+        observed: bool | None = None,
+        stale: bool | None = None,
+        coverage_status: str | None = None,
+        execution_status: str | None = None,
     ) -> tuple[RequirementRow, ...]:
-        """In-scope requirements; ``status`` keeps rows whose coverage or execution status matches."""
+        """In-scope requirements, optionally filtered by status, observed results, or stale evidence."""
         report = self._report(scope)
         rows = tuple(self._row(row.requirement, report) for row in report.coverage.requirements)
         if status:
             rows = tuple(r for r in rows if status in (r.coverage_status, r.execution_status))
+        if coverage_status:
+            rows = tuple(r for r in rows if r.coverage_status == coverage_status)
+        if execution_status:
+            rows = tuple(r for r in rows if r.execution_status == execution_status)
+        if observed is not None:
+            rows = tuple(r for r in rows if r.observed is observed)
+        if stale is not None:
+            rows = tuple(r for r in rows if r.stale is stale)
         return rows
 
     def requirement(self, requirement_id: str, scope: Scope = EVERYTHING) -> RequirementDetail:
@@ -1015,6 +1041,7 @@ class Workspace:
             records = [c for c in self.collections if c.repository == repository]
             recent = [c for c in records if c.collected_at >= week_ago]
             last = max(c.collected_at for c in records)
+            complete_records = [c for c in records if c.state == "complete"]
             age_hours = (now - last).total_seconds() / 3600
             fresh = age_hours <= expected_hours
             conclusions: dict[str, int] = {}
@@ -1026,6 +1053,7 @@ class Workspace:
                     repository=repository,
                     workflows=tuple(sorted({c.workflow for c in records})),
                     last_collected_at=last,
+                    last_complete_collection_at=max((c.collected_at for c in complete_records), default=None),
                     latest_run_started_at=max(starts, default=None),
                     fresh=fresh,
                     freshness=f"collected {age_hours:.0f} h ago"
@@ -1256,16 +1284,20 @@ class Workspace:
         )
 
     def attention(
-        self, scope: Scope = EVERYTHING, now: datetime | None = None, limit: int = 200
+        self,
+        scope: Scope = EVERYTHING,
+        now: datetime | None = None,
+        limit: int = 200,
+        kind: str | None = None,
     ) -> AttentionView:
         """Everything that needs attention in the scope, with its evidence (docs/attention.md)."""
-        findings = [
+        all_findings = [
             *self._cached(("attention-runs", scope), lambda: tuple(self._run_findings(scope))),
             *self._collection_findings(scope, now),
             *self._gap_findings(scope),
         ]
         order = {OPEN: 0, SUSPECTED: 1, UNKNOWN: 2, RESOLVED: 3}
-        findings.sort(
+        all_findings.sort(
             key=lambda f: (
                 order[f.state],
                 f.severity,
@@ -1273,6 +1305,7 @@ class Workspace:
                 f.title,
             )
         )
+        findings = [finding for finding in all_findings if kind is None or finding.kind == kind]
         counts: dict[str, int] = {}
         states: dict[str, int] = {}
         for finding in findings:
@@ -1496,7 +1529,7 @@ class Workspace:
         return {key: tuple(sorted(ids)) for key, ids in found.items()}
 
     def requirement_matrix(self, scope: Scope = EVERYTHING, now: datetime | None = None) -> RequirementMatrix:
-        """Requirements in scope counted by criticality, feature and owner, with coverage and execution."""
+        """Break down catalog coverage and execution evidence by its recorded dimensions."""
         report = self._report(scope)
         rows = [self._row(row.requirement, report, now) for row in report.coverage.requirements]
 
@@ -1523,10 +1556,44 @@ class Workspace:
                 )
             return tuple(result)
 
+        repositories = {
+            run.pipeline.repository for run in self.runs if run.pipeline and run.pipeline.repository
+        }
+        if scope.run_filters.repositories:
+            repositories &= set(scope.run_filters.repositories)
+        by_repository: list[RepositoryMatrixRow] = []
+        for repository in sorted(repositories):
+            repository_scope = replace(
+                scope,
+                run_filters=replace(scope.run_filters, repositories=frozenset({repository})),
+            )
+            repository_report = self._report(repository_scope)
+            observed = [
+                self._row(item.requirement, repository_report, now)
+                for item in repository_report.coverage.requirements
+                if any(
+                    repository_report.cases[case.id].executions
+                    for case in item.test_cases
+                    if case.id in repository_report.cases
+                )
+            ]
+            execution: dict[str, int] = {}
+            for member in observed:
+                execution[member.execution_status] = execution.get(member.execution_status, 0) + 1
+            by_repository.append(
+                RepositoryMatrixRow(
+                    repository=repository,
+                    observed_requirements=len(observed),
+                    execution=dict(sorted(execution.items())),
+                    stale=sum(member.stale for member in observed),
+                )
+            )
+
         return RequirementMatrix(
             by_criticality=group("criticality"),
             by_feature=group("feature"),
             by_owner=group("owner"),
+            by_repository=tuple(by_repository),
             stale_days=self.stale_days,
         )
 
@@ -1539,6 +1606,7 @@ class Workspace:
         )
         cases = in_scope.test_cases if in_scope else self.catalog.test_cases_for(requirement.id)
         automated = sum(1 for c in cases if c.automation_status is AutomationStatus.AUTOMATED)
+        observed = any(report.cases[c.id].executions for c in cases if c.id in report.cases)
         coverage_status = "no tests" if not cases else "automated" if automated else "not automated"
         starts = [
             e.run.started_at
@@ -1564,6 +1632,7 @@ class Workspace:
             execution_status=report.requirement_status.get(requirement.id, "not automated"),
             last_executed_at=last,
             stale=last is not None and (now or datetime.now(UTC)) - last > timedelta(days=self.stale_days),
+            observed=observed,
         )
 
 
