@@ -12,7 +12,8 @@ import pytest
 def _load_smoke() -> ModuleType:
     path = Path(__file__).parents[3] / "tools" / "smoke.py"
     spec = importlib.util.spec_from_file_location("live_smoke_under_test", path)
-    assert spec is not None and spec.loader is not None
+    assert spec is not None
+    assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
