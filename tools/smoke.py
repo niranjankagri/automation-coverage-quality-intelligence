@@ -30,6 +30,15 @@ HINTS = {
 }
 
 TIMEOUT = 30
+MAX_RESPONSE_BYTES = 2 * 1024 * 1024
+
+
+def _read_bounded(response: Any) -> bytes:
+    """Reject oversized responses rather than buffering an unbounded remote payload."""
+    body: bytes = response.read(MAX_RESPONSE_BYTES + 1)
+    if len(body) > MAX_RESPONSE_BYTES:
+        raise ValueError("smoke response exceeds 2 MiB limit")
+    return body
 
 
 def get(url: str) -> tuple[int, dict[str, str], bytes]:
@@ -37,9 +46,9 @@ def get(url: str) -> tuple[int, dict[str, str], bytes]:
     request = urllib.request.Request(url, headers={"User-Agent": "qualityintel-smoke"})
     try:
         with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
-            return response.status, _lower(response.headers.items()), response.read()
+            return response.status, _lower(response.headers.items()), _read_bounded(response)
     except urllib.error.HTTPError as error:
-        return error.code, _lower(error.headers.items()), error.read()
+        return error.code, _lower(error.headers.items()), _read_bounded(error)
 
 
 def _lower(items: Any) -> dict[str, str]:
