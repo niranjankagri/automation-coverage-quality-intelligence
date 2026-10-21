@@ -2,7 +2,7 @@ import pytest
 
 from qualityintel.models.enums import Outcome
 from qualityintel.models.metrics import Ratio
-from qualityintel.models.results import PipelineJob
+from qualityintel.models.results import PipelineJob, TestRun
 from qualityintel.traceability.report import (
     FAILING,
     NOT_AUTOMATED,
@@ -180,3 +180,29 @@ def test_runs_can_be_chosen_by_repository() -> None:
 
     assert [r.run_id for r in (pytest_run, cypress_run, plain) if chosen.keeps(r)] == [pytest_run.run_id]
     assert all(RunFilters().keeps(r) for r in (pytest_run, cypress_run, plain))
+
+
+def _job(r: TestRun, pipeline: str, job: str, repository: str, attempt: int = 1) -> TestRun:
+    """The run as part of a collected pipeline job."""
+    return r.model_copy(
+        update={
+            "pipeline": PipelineJob(pipeline_id=pipeline, job=job, attempt=attempt, repository=repository)
+        }
+    )
+
+
+def test_same_job_name_and_context_in_two_repositories_are_two_suites() -> None:
+    """Two TestNG ``unit`` jobs on Linux (llm-feature-testing, ai-assisted, 2026-10-21): both count."""
+    llm = _job(run(result("L"), hour=9), "llm#1", "unit", "o/llm-feature-testing")
+    ai = _job(run(result("A"), hour=10), "ai#1", "unit", "o/ai-assisted-test-automation")
+
+    assert latest_runs([llm, ai]) == (llm, ai)
+
+
+def test_a_job_with_one_file_per_class_counts_all_files_of_its_latest_attempt() -> None:
+    """Five Surefire files of one job are one suite; a newer attempt replaces all of them."""
+    old = [_job(run(result(c), hour=9, source=f"it/TEST-{c}.xml"), "it#1", "it", "o/it") for c in "ABCDE"]
+    new = [_job(run(result(c), day=20, source=f"it/TEST-{c}.xml"), "it#2", "it", "o/it") for c in "ABCD"]
+
+    assert set(latest_runs(old)) == set(old)
+    assert set(latest_runs([*old, *new])) == set(new)

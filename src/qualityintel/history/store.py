@@ -33,9 +33,9 @@ from qualityintel.models.metrics import Ratio
 from qualityintel.models.results import FailureDetails, PipelineJob, RunContext, TestResult, TestRun
 
 # 1: runs and results. 2: coverage snapshots. 3: pipeline columns on runs. 4: collections.
-# 5: repository of a pipeline run.
+# 5: repository of a pipeline run. 6: collected runs without a start time take their pipeline's.
 # Older files are upgraded when opened.
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 PIPELINE_COLUMNS = {
     "pipeline_id": "TEXT",
     "job": "TEXT",
@@ -525,6 +525,12 @@ class HistoryStore:
                     "UPDATE runs SET repository = (SELECT c.repository FROM collections c "
                     "WHERE c.pipeline_id = runs.pipeline_id LIMIT 1) "
                     "WHERE repository IS NULL AND pipeline_id IS NOT NULL"
+                )
+                # Collected runs from files without a timestamp take the start of their CI run
+                db.execute(
+                    "UPDATE runs SET started_at = (SELECT c.started_at FROM collections c "
+                    "WHERE c.pipeline_id = runs.pipeline_id AND c.attempt = runs.attempt) "
+                    "WHERE started_at IS NULL AND pipeline_id IS NOT NULL"
                 )
                 db.execute("UPDATE schema_version SET version = ?", (SCHEMA_VERSION,))
         self._db.execute("CREATE INDEX IF NOT EXISTS runs_by_pipeline ON runs (pipeline_id, job, attempt)")

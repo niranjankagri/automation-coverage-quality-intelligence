@@ -9,6 +9,8 @@ from qualityintel.workspace import Scope, Workspace
 
 from .traceability.helpers import case, catalog, req, result, run
 
+SAMPLES = Path(__file__).parents[2] / "samples"
+
 pytestmark = pytest.mark.unit
 
 
@@ -191,3 +193,59 @@ def test_load_reads_catalog_and_results(tmp_path: Path) -> None:
 
     assert batch.complete
     assert len(loaded.runs) == 1
+
+
+def test_time_independent_views_are_computed_once_per_snapshot_and_bounded(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The second request of a view reuses the first's result; at most MAX_CACHED_VIEWS are kept."""
+    import qualityintel.workspace as module
+
+    workspace, _ = Workspace.load(SAMPLES / "catalog.toml", [SAMPLES / "results"])
+    calls: list[object] = []
+    original = Workspace._compute_stability
+
+    def counting(self: Workspace, **kwargs: object) -> object:
+        calls.append(kwargs["scope"])
+        return original(self, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(Workspace, "_compute_stability", counting)
+    first = workspace.stability()
+    assert workspace.stability() is first
+    assert len(calls) == 1
+
+    monkeypatch.setattr(module, "MAX_CACHED_VIEWS", 2)
+    for browser in ("chrome", "firefox", "webkit"):
+        workspace.tests(Scope(run_filters=RunFilters(browsers=frozenset({browser}))))
+    assert len(workspace._cache) <= 2
+
+
+def test_readiness_follows_the_clock_while_its_inputs_are_cached() -> None:
+    """The 7-day window of incomplete collections moves with now, although the report is cached."""
+    from datetime import UTC, datetime
+
+    from qualityintel.models.collection import PipelineCollection
+
+    record = PipelineCollection(
+        pipeline_id="p#1",
+        attempt=1,
+        repository="o/p",
+        workflow="ci.yml",
+        run_number=1,
+        event="push",
+        branch="main",
+        commit="abc1234",
+        conclusion="cancelled",
+        url="https://github.com/o/p/actions/runs/1",
+        started_at=datetime(2026, 10, 20, tzinfo=UTC),
+        collected_at=datetime(2026, 10, 20, 1, tzinfo=UTC),
+        state="incomplete",
+        runs=0,
+        results=0,
+        problems=("job ui: artifact missing",),
+    )
+    workspace, _ = Workspace.load(SAMPLES / "catalog.toml", [SAMPLES / "results"])
+    workspace = Workspace(workspace.catalog, workspace.runs, collections=[record])
+
+    assert workspace.readiness(now=datetime(2026, 10, 21, tzinfo=UTC)).incomplete_pipelines == 1
+    assert workspace.readiness(now=datetime(2026, 11, 30, tzinfo=UTC)).incomplete_pipelines == 0

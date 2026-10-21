@@ -299,3 +299,19 @@ def test_since_must_carry_its_offset() -> None:
 
     with pytest.raises(ValueError, match="timezone"):
         ProducersConfig.model_validate(data)
+
+
+def test_a_file_without_a_timestamp_takes_the_start_of_its_ci_run(store: HistoryStore) -> None:
+    """Surefire, JUnit 5, k6 ... write no timestamp: the run must still sort and filter by date."""
+    undated = b'<testsuite name="S" tests="1"><testcase classname="C" name="t"/></testsuite>'
+    files: dict[str, dict[str, bytes] | bytes] = {
+        "report-api": {"junit.xml": undated},
+        "report-ui": {"reports/junit.xml": UI_XML.read_bytes()},
+    }
+
+    with store:
+        collect(CONFIG, FakeSource([run()], files), store, SINCE, now=NOW)
+        by_job = {r.pipeline.job: r for r in store.runs() if r.pipeline}
+
+    assert by_job["api"].started_at == run().started_at  # the CI run's start
+    assert by_job["ui"].started_at != run().started_at  # a file's own timestamp is kept

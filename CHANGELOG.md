@@ -17,6 +17,15 @@
 - **Release status on the overview** ([docs/readiness.md](docs/readiness.md)): Ready / At risk /
   Blocked / Unknown from the release gate given with `qi dashboard --gate` plus flaky candidates,
   incomplete pipelines and stale data; unknown evidence is never ready; `/api/readiness`.
+- **Production correctness (M9, M10)**, found on the live deployment:
+  - the snapshot dropped 3 of 23 repositories and all but one file of multi-file jobs (jobs of
+    the same name and context in different repositories replaced each other); it now keeps
+    every repository and every file of a job's latest attempt (checked against SQL);
+  - collected files without a timestamp take their CI run's start (schema 6 backfills);
+  - a catalog `notice` says on every page that the sample requirements are synthetic;
+  - `/api/health` and the footer name the deployed commit;
+  - analyses are cached per snapshot and warmed before it goes live (overview 6.5 s live);
+  - the collection audit reconciles the runs GitHub listed with the recorded attempts.
 - **Requirement ownership (M6)**: `owner` on requirements (catalog TOML, CSV column), an Owner
   filter and facet, an owner column and matrix grouping; the sample requirements have synthetic
   team owners.

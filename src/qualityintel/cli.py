@@ -856,6 +856,7 @@ def _cmd_dashboard(args: argparse.Namespace) -> int:
         print(f"qi: error: {error}", file=sys.stderr)
         return EXIT_INPUT
     runs = first.workspace.runs
+    first.workspace.warm()  # the first visitor does not wait for the analyses
     # Imported here so the other commands start without loading the web stack
     import uvicorn
 

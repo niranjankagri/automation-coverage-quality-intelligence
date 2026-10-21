@@ -23,6 +23,7 @@ General rules:
 | Result | One `<testcase>` element of an imported result file. Its **key** is `classname::name` (or `name` when there is no classname). |
 | Matched result | A result that belongs to a test case: its explicit test id equals the case id, or its key matches one of the case's `automated_by` patterns. |
 | Verdict | A result whose outcome is `passed`, `failed` or `error`. `skipped` is not a verdict. |
+| Snapshot | The latest execution of every suite. A suite is a run context (framework, environment, browser, platform) plus, for collected or pipeline runs, the repository and the job; for those the latest execution is the job's latest attempt with **all** its result files (a job that writes one file per test class is one suite). Without a pipeline it is the single newest run of the context. Runs without a start time count as oldest; collected files without one take their CI run's start. |
 
 ## 1. Requirement coverage
 

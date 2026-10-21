@@ -535,3 +535,11 @@ def test_a_table_that_fits_on_one_page_shows_no_pager(page: Page) -> None:
 
     expect(page.locator(".pagerbox").first).to_be_hidden()
     assert all(not box.is_visible() for box in page.locator(".pagerbox").all())
+
+
+def test_every_page_says_the_requirements_are_synthetic(page: Page) -> None:
+    """The sample catalog's notice is visible above every page, not only on the overview."""
+    for route in ("#/", "#/requirements", "#/pipelines"):
+        page.goto(f"/{route}")
+        expect(page.locator("#view h1")).to_be_visible()
+        expect(page.locator("#catalog-notice")).to_contain_text("synthetic sample catalog")

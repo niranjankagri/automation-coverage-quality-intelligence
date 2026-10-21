@@ -160,3 +160,17 @@ def test_bad_includes_are_reported(tmp_path: Path, include: str, included: str |
 
     with pytest.raises(CatalogFileError, match=message):
         load_catalog(_write(tmp_path, include + "\n" + VALID))
+
+
+def test_a_catalog_can_say_what_it_is(tmp_path: Path) -> None:
+    """notice: kept trimmed on the catalog; a wrong type or an empty text is refused."""
+    good = tmp_path / "good.toml"
+    good.write_text(
+        'notice = " Synthetic requirements "\n[[requirement]]\nid = "R-1"\ntitle = "T"\n', encoding="utf-8"
+    )
+    bad = tmp_path / "bad.toml"
+    bad.write_text('notice = 3\n[[requirement]]\nid = "R-1"\ntitle = "T"\n', encoding="utf-8")
+
+    assert load_catalog(good).notice == "Synthetic requirements"
+    with pytest.raises(CatalogFileError, match="notice"):
+        load_catalog(bad)

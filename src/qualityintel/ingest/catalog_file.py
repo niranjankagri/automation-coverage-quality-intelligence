@@ -37,7 +37,8 @@ from qualityintel.models.catalog import Catalog, CatalogError, Requirement, Test
 # file, a database) from being read into memory whole
 MAX_TOML_BYTES = 10 * 1024 * 1024
 
-TOP_LEVEL_KEYS = frozenset({"requirement", "test_case"})
+# notice: a text about the catalog itself, read by load_catalog
+TOP_LEVEL_KEYS = frozenset({"requirement", "test_case", "notice"})
 
 
 class CatalogFileError(IngestError):
@@ -51,6 +52,8 @@ def load_catalog(path: Path) -> Catalog:
     folder whose ``[[requirement]]`` and ``[[test_case]]`` entries are added to its own. This lets
     a tool-generated requirements file (``qi requirements import``) sit next to hand-written test
     cases without either overwriting the other. Included files cannot include further files.
+    ``notice = "..."`` says what the catalog is (for example that its requirements are
+    synthetic); the dashboard shows it on every page.
 
     Raises:
         CatalogFileError: Unreadable file, TOML syntax error, unknown sections, invalid values,
@@ -62,6 +65,9 @@ def load_catalog(path: Path) -> Catalog:
         raise CatalogFileError(
             path.name, 'include must be a list of file names, e.g. include = ["requirements.toml"]'
         )
+    notice = data.get("notice")
+    if notice is not None and (not isinstance(notice, str) or not notice.strip() or len(notice) > 1000):
+        raise CatalogFileError(path.name, "notice must be a text of 1 to 1000 characters")
 
     requirements, test_cases = _entries(data, path.name)
     origin = {requirement.id: path.name for requirement in requirements}
@@ -79,7 +85,8 @@ def load_catalog(path: Path) -> Catalog:
             origin[requirement.id] = included.name
         requirements += more_requirements
         test_cases += more_cases
-    return _build(requirements, test_cases, path.name)
+    catalog = _build(requirements, test_cases, path.name)
+    return catalog.model_copy(update={"notice": notice.strip()}) if notice else catalog
 
 
 def read_toml(path: Path) -> dict[str, Any]:

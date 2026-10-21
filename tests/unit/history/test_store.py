@@ -169,7 +169,7 @@ def test_version_2_database_gains_the_pipeline_columns(tmp_path: Path) -> None:
     assert old.pipeline is None
     assert old.context.build == "1.0"
     with closing(sqlite3.connect(path)) as db:
-        assert db.execute("SELECT version FROM schema_version").fetchone()[0] == SCHEMA_VERSION == 5
+        assert db.execute("SELECT version FROM schema_version").fetchone()[0] == SCHEMA_VERSION == 6
 
 
 # The runs table and version row as schema 2 wrote them (before pipeline columns existed)
@@ -271,3 +271,27 @@ def test_prune_deletes_old_runs_results_and_records_but_keeps_the_latest_snapsho
         assert store.check() == []
         assert pruned.snapshots == 1
         assert [snapshot.catalog_sha256 for snapshot in store.snapshots()] == ["b"]
+
+
+def test_opening_a_schema_5_file_dates_collected_runs_from_their_pipeline(tmp_path: Path) -> None:
+    """Runs collected before schema 6 without a start time get their CI run's start."""
+    path = tmp_path / "old.db"
+    with HistoryStore(path):
+        pass
+    with closing(sqlite3.connect(path)) as db, db:
+        db.execute(
+            "INSERT INTO runs (run_id, source, imported_at, pipeline_id, job, attempt) "
+            "VALUES ('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'it/TEST-A.xml', '2026-10-20T21:00:00+00:00', 'it#1', 'it', 1)"
+        )
+        db.execute(
+            "INSERT INTO collections VALUES ('it#1', 1, 'o/it', 'ci.yml', 1, 'push', 'main', 'abc', "
+            "'success', 'https://x', '2026-10-20T20:06:18+00:00', '2026-10-20T21:00:00+00:00', "
+            "'complete', 1, 0, '[]')"
+        )
+        db.execute("UPDATE schema_version SET version = 5")
+
+    with HistoryStore(path) as store:
+        (stored,) = store.runs()
+
+    assert stored.started_at is not None
+    assert stored.started_at.isoformat() == "2026-10-20T20:06:18+00:00"

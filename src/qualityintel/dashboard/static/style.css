@@ -271,4 +271,5 @@ h1[tabindex="-1"]:focus { outline: none; }
 .prefs { display: flex; gap: 12px; align-items: center; font-size: 13px; color: var(--muted); }
 .prefs select { min-width: 0; padding: 2px 6px; }
 @media (max-width: 640px) { .prefs { order: 3; width: 100%; } }
+.catalog-notice { margin: 0; padding: 6px 24px; font-size: 13px; color: var(--warn); background: var(--warn-bg); border-bottom: 1px solid var(--border); }
 

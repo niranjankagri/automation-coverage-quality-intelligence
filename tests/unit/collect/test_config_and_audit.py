@@ -174,3 +174,22 @@ def test_audit_markdown_escapes_what_comes_from_outside() -> None:
 
     assert "\\[x\\]\\(https://evil.example\\)" in summary
     assert "javascript:" not in summary
+
+
+def test_audit_reconciles_listed_runs_with_recorded_attempts() -> None:
+    """Listed by GitHub = recorded: reconciled; a run that failed to collect is named as missing."""
+    since = datetime(2026, 10, 18, tzinfo=UTC)
+    complete = ProducerOutcome(
+        "o/r", seen=3, already_collected=2, collected=[record("r#1", "complete", "success", 19)]
+    )
+    gap = ProducerOutcome("o/gap", seen=2, already_collected=1, errors=["run 7: HTTP 502"])
+
+    rows = audit([], ["o/r", "o/gap", "o/silent"], since, [complete, gap])
+    text = render_text(rows, since)
+    summary = render_markdown(rows, since)
+
+    assert [(r.listed, r.recorded, r.missing) for r in rows] == [(3, 3, 0), (2, 1, 1), (None, 0, 0)]
+    assert "NOT reconciled: o/gap 1 missing" in text
+    assert "**Not reconciled**: o/gap 1 missing" in summary
+    reconciled = audit([], ["o/r"], since, [complete])
+    assert "reconciled: every run the CI system listed is recorded" in render_text(reconciled, since)

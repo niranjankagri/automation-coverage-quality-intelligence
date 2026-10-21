@@ -19,6 +19,9 @@
 
 include = ["requirements.toml"]
 
+# Shown on every dashboard page, so nobody takes the coverage figures for a real product's
+notice = "The 42 requirements and 44 test cases are a synthetic sample catalog for the demo applications; the test executions and pipelines are real CI results."
+
 # ============================================================================================
 # Test cases
 # ============================================================================================

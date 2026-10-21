@@ -220,6 +220,9 @@ class LiveData:
                 if version == self.snapshot.version and self.last_error is None:
                     return False
                 fresh = self.loader(self.sources)
+                # The views every visitor starts with are computed while the old snapshot still
+                # answers, so the first request after a refresh is as fast as the others
+                fresh.workspace.warm()
             except (LoadError, OSError) as error:
                 self.last_error = str(error)
                 self.last_error_at = self.last_check
