@@ -266,6 +266,8 @@ details.matrix > summary { cursor: pointer; font-weight: 600; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 a.bar-link:focus-visible rect, a.bar-link:hover rect { stroke: var(--text); stroke-width: 2; }
 a.bar-link:focus { outline: none; }
+/* The page heading takes the focus after navigation (for screen readers); it is not a control */
+h1[tabindex="-1"]:focus { outline: none; }
 .prefs { display: flex; gap: 12px; align-items: center; font-size: 13px; color: var(--muted); }
 .prefs select { min-width: 0; padding: 2px 6px; }
 @media (max-width: 640px) { .prefs { order: 3; width: 100%; } }
