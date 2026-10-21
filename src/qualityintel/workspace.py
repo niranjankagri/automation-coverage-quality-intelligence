@@ -15,6 +15,17 @@ from typing import TypeVar, cast
 
 from pydantic import BaseModel, ConfigDict
 
+from qualityintel.attention import (
+    OPEN,
+    RESOLVED,
+    SEVERITY,
+    SUSPECTED,
+    UNKNOWN,
+    latest_outcomes,
+    newly_failing,
+    pipeline_states,
+    recurring_state,
+)
 from qualityintel.gates.config import GateConfig
 from qualityintel.history.analysis import (
     DEFAULTS,
@@ -27,7 +38,7 @@ from qualityintel.history.analysis import (
     trend,
 )
 from qualityintel.history.analysis import Execution as HistoryExecution
-from qualityintel.history.builds import BuildSide, builds_in_order, compare_builds
+from qualityintel.history.builds import BuildSide, builds_in_order, compare_builds, label
 from qualityintel.history.trends import CoverageSnapshot, coverage_changes, daily_trend
 from qualityintel.ingest.batch import Batch, import_results
 from qualityintel.ingest.catalog_file import load_catalog
@@ -37,6 +48,7 @@ from qualityintel.models.enums import AutomationStatus, Outcome
 from qualityintel.models.metrics import Ratio, execution_pass_rate
 from qualityintel.models.results import PipelineJob, RunContext, TestResult, TestRun
 from qualityintel.readiness import readiness
+from qualityintel.search import build_index, search
 from qualityintel.traceability.coverage import UNSPECIFIED, Filters
 from qualityintel.traceability.matching import match_results
 from qualityintel.traceability.pipelines import PipelineExecution, pipeline_execution, pipeline_ids
@@ -514,6 +526,59 @@ class Facets(View):
     builds: tuple[str, ...]
     repositories: tuple[str, ...] = ()
     jobs: tuple[str, ...] = ()
+
+
+class SearchHit(View):
+    """One search result and where it leads (docs/dashboard.md, Search)."""
+
+    kind: str
+    identifier: str
+    title: str
+    route: str
+    params: dict[str, str]
+    repositories: tuple[str, ...]
+    first_seen: datetime | None
+    last_seen: datetime | None
+    url: str | None
+
+
+class SearchView(View):
+    """Search results grouped by kind, at most ``limit`` per group, with full counts."""
+
+    query: str
+    total: int
+    counts: dict[str, int]
+    groups: dict[str, tuple[SearchHit, ...]]
+    limit: int
+
+
+class FindingView(View):
+    """One *Needs attention* finding with the evidence behind it (docs/attention.md)."""
+
+    kind: str
+    severity: int
+    state: str
+    title: str
+    why: str
+    evidence: int
+    evidence_label: str
+    first_seen: datetime | None
+    last_seen: datetime | None
+    repository: str | None
+    route: str
+    params: dict[str, str]
+    url: str | None
+
+
+class AttentionView(View):
+    """Findings, open ones first, then by documented severity and recency."""
+
+    findings: tuple[FindingView, ...]
+    counts: dict[str, int]
+    states: dict[str, int]
+    shown: int
+    total: int
+    notes: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -1124,6 +1189,270 @@ class Workspace:
 
     # ---- helpers -------------------------------------------------------------------------
 
+    def search(self, query: str, scope: Scope = EVERYTHING, limit: int = 20) -> SearchView:
+        """Everything whose text contains every word of ``query`` (docs/dashboard.md, Search).
+
+        Searched: repositories, workflows, pipelines, tests, requirements and failure messages.
+
+        Raises:
+            QueryError: The query is too short or too long.
+        """
+        index = self._cached(
+            ("search-index",), lambda: build_index(self.catalog, self.runs, self.collections)
+        )
+        found = search(
+            index,
+            query,
+            scope.run_filters.repositories,
+            scope.run_filters.since,
+            scope.run_filters.until,
+            limit,
+        )
+        return SearchView(
+            query=found.query,
+            total=found.total,
+            counts=found.counts,
+            groups={
+                kind: tuple(
+                    SearchHit(
+                        kind=e.kind,
+                        identifier=e.identifier,
+                        title=e.title,
+                        route=e.route,
+                        params=dict(e.params),
+                        repositories=tuple(sorted(e.repositories)),
+                        first_seen=e.first_seen,
+                        last_seen=e.last_seen,
+                        url=e.url if e.url and e.url.startswith("https://github.com/") else None,
+                    )
+                    for e in entries
+                )
+                for kind, entries in found.groups.items()
+            },
+            limit=limit,
+        )
+
+    def attention(
+        self, scope: Scope = EVERYTHING, now: datetime | None = None, limit: int = 200
+    ) -> AttentionView:
+        """Everything that needs attention in the scope, with its evidence (docs/attention.md)."""
+        findings = [
+            *self._cached(("attention-runs", scope), lambda: tuple(self._run_findings(scope))),
+            *self._collection_findings(scope, now),
+            *self._gap_findings(scope),
+        ]
+        order = {OPEN: 0, SUSPECTED: 1, UNKNOWN: 2, RESOLVED: 3}
+        findings.sort(
+            key=lambda f: (
+                order[f.state],
+                f.severity,
+                -(f.last_seen.timestamp() if f.last_seen else 0.0),
+                f.title,
+            )
+        )
+        counts: dict[str, int] = {}
+        states: dict[str, int] = {}
+        for finding in findings:
+            counts[finding.kind] = counts.get(finding.kind, 0) + 1
+            states[finding.state] = states.get(finding.state, 0) + 1
+        notes = [
+            "Open: the latest evidence still shows the problem. Resolved: later evidence shows it gone. "
+            "Suspected: a flaky candidate, never a proven cause. Unknown: not enough evidence."
+        ]
+        if self.catalog.notice:
+            notes.append(f"Coverage gaps come from the catalog: {self.catalog.notice}")
+        return AttentionView(
+            findings=tuple(findings[:limit]),
+            counts=counts,
+            states=states,
+            shown=min(limit, len(findings)),
+            total=len(findings),
+            notes=tuple(notes),
+        )
+
+    def _run_findings(self, scope: Scope) -> list[FindingView]:
+        """Findings from the runs: newly failing, recurring, slower, flaky (all time-independent)."""
+        runs = self._runs(scope)
+        urls = {c.pipeline_id: c.url for c in self.collections if c.url.startswith("https://github.com/")}
+        latest = latest_outcomes(runs)
+        found: list[FindingView] = []
+        for item in newly_failing(runs):
+            repository = item.latest_run.pipeline.repository if item.latest_run.pipeline else None
+            message = item.latest.failure.message if item.latest.failure else ""
+            found.append(
+                FindingView(
+                    kind="newly failing",
+                    severity=SEVERITY["newly failing"],
+                    state=OPEN,
+                    title=item.key,
+                    why=(
+                        f"{item.latest.outcome.value} in the latest execution of {label(item.latest_run)}"
+                        f" (build {item.latest_run.context.build or '-'}), passed in the one before"
+                        f" (build {item.previous_run.context.build or '-'})"
+                        + (f": {message.splitlines()[0][:200]}" if message else "")
+                    ),
+                    evidence=2,
+                    evidence_label="executions compared",
+                    first_seen=item.latest_run.started_at,
+                    last_seen=item.latest_run.started_at,
+                    repository=repository,
+                    route="/test",
+                    params=_with_repository({"key": item.key}, repository),
+                    url=urls.get(item.latest_run.pipeline.pipeline_id) if item.latest_run.pipeline else None,
+                )
+            )
+        for failure in recurring_failures(runs):
+            found.append(
+                FindingView(
+                    kind="recurring failure",
+                    severity=SEVERITY["recurring failure"],
+                    state=recurring_state(failure.tests, latest),
+                    title=failure.signature[:200],
+                    why=(
+                        f"the same failure in {failure.runs} runs ({failure.occurrences} occurrences) of "
+                        f"{len(failure.tests)} test(s): {', '.join(failure.tests[:3])}"
+                        + (" ..." if len(failure.tests) > 3 else "")
+                    ),
+                    evidence=failure.occurrences,
+                    evidence_label="occurrences",
+                    first_seen=failure.first_seen,
+                    last_seen=failure.last_seen,
+                    repository=None,
+                    route="/test",
+                    params={"key": failure.tests[0]},
+                    url=None,
+                )
+            )
+        for slower in duration_regressions(runs, DEFAULTS):
+            found.append(
+                FindingView(
+                    kind="duration regression",
+                    severity=SEVERITY["duration regression"],
+                    state=OPEN,
+                    title=slower.key,
+                    why=(
+                        f"{slower.latest_seconds:.1f} s in the latest runs against a median of "
+                        f"{slower.baseline_seconds:.1f} s over {slower.baseline_runs} earlier runs "
+                        f"({_context_label(slower.context)}), confirmed over consecutive runs"
+                    ),
+                    evidence=slower.baseline_runs + DEFAULTS.slow_confirm_runs,
+                    evidence_label="runs",
+                    first_seen=None,
+                    last_seen=latest.get(slower.key, (Outcome.PASSED, None))[1],
+                    repository=None,
+                    route="/test",
+                    params={"key": slower.key},
+                    url=None,
+                )
+            )
+        for row in self.stability(scope).rows:
+            if row.status != "flaky candidate":
+                continue
+            found.append(
+                FindingView(
+                    kind="flaky candidate",
+                    severity=SEVERITY["flaky candidate"],
+                    state=SUSPECTED,
+                    title=row.key,
+                    why="; ".join(row.reasons) or "passed and failed in the same context",
+                    evidence=row.verdicts,
+                    evidence_label="verdicts",
+                    first_seen=None,
+                    last_seen=row.last_failed_at,
+                    repository=None,
+                    route="/test",
+                    params={"key": row.key},
+                    url=None,
+                )
+            )
+        return found
+
+    def _collection_findings(self, scope: Scope, now: datetime | None) -> list[FindingView]:
+        """Incomplete pipelines (open or resolved by a later complete run) and overdue repositories."""
+        records = [c for c in self.collections if _record_in_scope(c, scope.run_filters)]
+        found: list[FindingView] = []
+        for item in pipeline_states(records):
+            record = item.record
+            later = item.resolved_by
+            found.append(
+                FindingView(
+                    kind="incomplete pipeline",
+                    severity=SEVERITY["incomplete pipeline"],
+                    state=item.state,
+                    title=f"{record.pipeline_id} attempt {record.attempt}",
+                    why=(
+                        "; ".join(record.problems[:3])
+                        + f" (the CI concluded {record.conclusion})"
+                        + (
+                            f"; later run #{later.run_number} of {later.workflow} is complete"
+                            if later
+                            else ""
+                        )
+                    ),
+                    evidence=len(record.problems),
+                    evidence_label="problems",
+                    first_seen=record.started_at or record.collected_at,
+                    last_seen=record.collected_at,
+                    repository=record.repository,
+                    route="/pipelines",
+                    params={"repository": record.repository, "pipeline": record.pipeline_id},
+                    url=f"{record.url}/attempts/{record.attempt}"
+                    if record.url.startswith("https://github.com/")
+                    else None,
+                )
+            )
+        chosen = scope.run_filters.repositories
+        for row in self.collection_health(now=now).repositories:
+            if row.fresh or (chosen and row.repository not in chosen):
+                continue
+            found.append(
+                FindingView(
+                    kind="overdue collection",
+                    severity=SEVERITY["overdue collection"],
+                    state=OPEN,
+                    title=row.repository,
+                    why=f"{row.freshness}: its newest results may be missing",
+                    evidence=row.pipelines,
+                    evidence_label="pipelines in 7 days",
+                    first_seen=None,
+                    last_seen=row.last_collected_at,
+                    repository=row.repository,
+                    route="/collection",
+                    params={},
+                    url=None,
+                )
+            )
+        return found
+
+    def _gap_findings(self, scope: Scope) -> list[FindingView]:
+        """Critical requirements in scope without an automated test case."""
+        rows = {r.id: r for r in self.requirements(scope)}
+        return [
+            FindingView(
+                kind="critical gap",
+                severity=SEVERITY["critical gap"],
+                state=OPEN,
+                title=f"{requirement.id}: {requirement.title}",
+                why=(
+                    "critical requirement without an automated test case"
+                    + (
+                        f" ({rows[requirement.id].test_cases} test case(s), none automated)"
+                        if requirement.id in rows
+                        else ""
+                    )
+                ),
+                evidence=rows[requirement.id].test_cases if requirement.id in rows else 0,
+                evidence_label="test cases",
+                first_seen=None,
+                last_seen=None,
+                repository=None,
+                route=f"/requirement/{requirement.id}",
+                params={},
+                url=None,
+            )
+            for requirement in self._report(scope).coverage.uncovered_critical
+        ]
+
     def _runs(self, scope: Scope) -> tuple[TestRun, ...]:
         """Runs kept by the run filters, oldest first."""
         return tuple(run for run in self.runs if scope.run_filters.keeps(run))
@@ -1366,6 +1695,11 @@ def _execution_view(run: TestRun, result: TestResult, ci_urls: dict[str, str] | 
         pipeline=run.pipeline,
         ci_url=(ci_urls or {}).get(run.pipeline.pipeline_id) if run.pipeline else None,
     )
+
+
+def _with_repository(params: dict[str, str], repository: str | None) -> dict[str, str]:
+    """Link parameters that keep the repository context when there is one."""
+    return {**params, "repository": repository} if repository else params
 
 
 def _context_label(context: tuple[str | None, ...]) -> str:

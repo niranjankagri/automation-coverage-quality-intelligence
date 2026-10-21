@@ -143,6 +143,8 @@ def test_openapi_documentation_lists_every_route(client: TestClient) -> None:
     assert paths == {
         "/api/health",
         "/api/status",
+        "/api/search",
+        "/api/attention",
         "/api/facets",
         "/api/summary",
         "/api/readiness",
@@ -493,3 +495,52 @@ def test_health_names_the_deployed_commit_and_the_catalog_notice(monkeypatch: py
     assert "synthetic sample catalog" in body["catalog_notice"]
     monkeypatch.setenv("RENDER_GIT_COMMIT", "<script>")
     assert client.get("/api/health").json()["commit"] is None
+
+
+def test_search_groups_results_links_them_and_validates_input(client: TestClient) -> None:
+    """Grouped with counts; every hit leads to a page; too short, too long and bad limits are 422."""
+    body = client.get("/api/search", params={"q": "checkout"}).json()
+
+    assert body["query"] == "checkout"
+    assert body["total"] == sum(body["counts"].values()) > 0
+    for kind, hits in body["groups"].items():
+        assert len(hits) <= body["limit"]
+        assert all(hit["kind"] == kind and hit["route"].startswith("/") for hit in hits)
+    refused: list[dict[str, str | int]] = [
+        {"q": "x"},
+        {"q": "y" * 101},
+        {"q": "ab", "limit": 0},
+        {"q": "ab", "limit": 51},
+    ]
+    for params in refused:
+        assert client.get("/api/search", params=params).status_code == 422
+
+
+def test_search_finds_a_requirement_by_id_and_a_test_by_its_name(client: TestClient) -> None:
+    """The requirement and the test pages exist for what search returns."""
+    requirement = client.get("/api/search", params={"q": "SHOP-006"}).json()["groups"]["requirement"][0]
+    assert requirement["route"] == "/requirement/SHOP-006"
+    assert client.get("/api/requirements/SHOP-006").status_code == 200
+
+    test = client.get("/api/search", params={"q": "adminEditsACustomer"}).json()["groups"]["test"][0]
+    history = client.get("/api/tests/history", params={"key": test["params"]["key"]})
+    assert history.status_code == 200
+
+
+def test_attention_agrees_with_the_pages_it_summarises(client: TestClient) -> None:
+    """Flaky candidates = Stability's; critical gaps = the overview's; every finding links somewhere."""
+    body = client.get("/api/attention").json()
+    stability = client.get("/api/stability").json()
+    summary = client.get("/api/summary").json()
+
+    assert (
+        body["counts"].get("flaky candidate", 0) == stability["status_counts"].get("flaky candidate", 0) == 4
+    )
+    assert body["counts"]["critical gap"] == len(summary["uncovered_critical"]) == 2
+    assert body["total"] == sum(body["counts"].values()) == sum(body["states"].values())
+    assert all(
+        f["route"].startswith("/") and f["why"] and f["state"] in {"open", "resolved", "suspected", "unknown"}
+        for f in body["findings"]
+    )
+    states = [f["state"] for f in body["findings"]]
+    assert states == sorted(states, key=["open", "suspected", "unknown", "resolved"].index)

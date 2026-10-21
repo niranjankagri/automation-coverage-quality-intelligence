@@ -30,9 +30,11 @@ from qualityintel import __version__
 from qualityintel.history.analysis import DEFAULTS, HistorySettings
 from qualityintel.live import LiveData
 from qualityintel.models.enums import Criticality, Outcome, TestType
+from qualityintel.search import MAX_QUERY, QueryError
 from qualityintel.traceability.coverage import UNSPECIFIED, Filters
 from qualityintel.traceability.report import RunFilters
 from qualityintel.workspace import (
+    AttentionView,
     BuildComparisonView,
     CollectionHealthView,
     Facets,
@@ -44,6 +46,7 @@ from qualityintel.workspace import (
     RunDetail,
     RunView,
     Scope,
+    SearchView,
     StabilityView,
     Summary,
     TestHistory,
@@ -410,6 +413,27 @@ def create_app(
         if status is not None:
             _check("status", [status], REQUIREMENT_STATUSES)
         return current().requirements(chosen, status=status)
+
+    @app.get("/api/search", tags=["investigation"])
+    def search(
+        chosen: RunScope,
+        q: Annotated[str, Query(max_length=MAX_QUERY * 2)],
+        limit: Annotated[int, Query(ge=1, le=50)] = 20,
+    ) -> SearchView:
+        """Everything whose text contains every word of ``q`` (2-100 characters), grouped by kind.
+
+        Searched: repositories, workflows, pipelines, tests, requirements and failure messages. Each
+        group shows at most ``limit`` results and its full count; repository and date filters apply.
+        """
+        try:
+            return current().search(q, chosen, limit)
+        except QueryError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from None
+
+    @app.get("/api/attention", tags=["investigation"])
+    def attention(chosen: FullScope) -> AttentionView:
+        """Findings that need attention, each with its evidence, state and links (docs/attention.md)."""
+        return current().attention(chosen)
 
     @app.get("/api/requirements/matrix", tags=["coverage"])
     def requirement_matrix(chosen: FullScope) -> RequirementMatrix:
