@@ -6,6 +6,7 @@
 const FILTERS = ["repository", "feature", "owner", "criticality", "test_type", "framework", "environment", "browser", "build", "job", "since", "until"];
 const RUN_FILTERS = ["repository", "framework", "environment", "browser", "build", "job", "since", "until"];
 const FILTER_NAMES = { repository: "Repository", feature: "Feature", owner: "Owner", criticality: "Criticality", test_type: "Test type", framework: "Framework", environment: "Environment", browser: "Browser", build: "Build", job: "Job", since: "From", until: "To" };
+const VIEW_FILTER_NAMES = { status: "Status", coverage_status: "Coverage", execution_status: "Execution", observed: "Observed evidence", stale: "Stale evidence", outcome: "Latest outcome", state: "Finding state", kind: "Finding type" };
 const OUTCOMES = ["passed", "failed", "error", "skipped"];
 const view = document.getElementById("view");
 const statusLine = document.getElementById("status");
@@ -185,6 +186,15 @@ function link(path, extra = {}) {
   return `#${path}${query ? `?${query}` : ""}`;
 }
 
+/** Link into an entity investigation and keep the current filtered result view available as Back. */
+function drillLink(path, extra = {}) {
+  const { parts, params } = route();
+  params.delete("from"); // Avoid nesting prior return URLs into every deeper investigation.
+  const query = params.toString();
+  const from = `#/${parts.map(encodeURIComponent).join("/")}${query ? `?${query}` : ""}`;
+  return link(path, { ...extra, from: from || "#/" });
+}
+
 /** API query string from the route's filters (only the names the endpoint understands). */
 function apiQuery(names, extra = {}) {
   const params = new URLSearchParams();
@@ -289,6 +299,26 @@ compactChoice.addEventListener("change", () => {
   remember("qi-compact", compactChoice.checked ? "on" : "");
 });
 
+const guideDialog = document.getElementById("guide-dialog");
+document.getElementById("guide-open").addEventListener("click", () => guideDialog.showModal());
+document.getElementById("guide-close").addEventListener("click", () => guideDialog.close());
+guideDialog.addEventListener("click", (event) => {
+  if (event.target === guideDialog) guideDialog.close();
+});
+const mobileNavigation = document.querySelector(".mobile-nav");
+const filterPanel = document.getElementById("filter-panel");
+const smallScreen = window.matchMedia("(max-width: 720px)");
+function adaptNavigationToScreen(isSmall) {
+  if (isSmall) {
+    mobileNavigation.open = false;
+    if (!FILTERS.some((name) => route().params.get(name))) filterPanel.open = false;
+  } else {
+    mobileNavigation.open = true;
+  }
+}
+adaptNavigationToScreen(smallScreen.matches);
+smallScreen.addEventListener("change", (event) => adaptNavigationToScreen(event.matches));
+
 /** Set (or remove, with an empty value) filters in the address; the view follows the address. */
 function setFilters(values) {
   const { parts, params } = route();
@@ -304,15 +334,20 @@ function setFilters(values) {
 function showActiveFilters() {
   const params = route().params;
   const list = document.getElementById("active-filters");
-  const active = FILTERS.filter((name) => params.get(name));
+  const names = [...FILTERS, ...Object.keys(VIEW_FILTER_NAMES)];
+  const active = names.filter((name) => params.get(name));
   list.replaceChildren(
     ...active.map((name) => {
-      const remove = h("button", { type: "button", class: "chip-remove", "aria-label": `Remove filter ${FILTER_NAMES[name]}: ${params.get(name)}` }, "×");
+      const label = FILTER_NAMES[name] ?? VIEW_FILTER_NAMES[name];
+      const value = params.get(name);
+      const display = name === "observed" || name === "stale" ? (value === "true" ? "yes" : "no") : value;
+      const remove = h("button", { type: "button", class: "chip-remove", "aria-label": `Remove filter ${label}: ${display}` }, "×");
       remove.addEventListener("click", () => setFilters({ [name]: "" }));
-      return h("li", {}, h("span", { class: "chip" }, `${FILTER_NAMES[name]}: ${params.get(name)}`, remove));
+      return h("li", {}, h("span", { class: "chip" }, `${label}: ${display}`, remove));
     }),
   );
   list.hidden = active.length === 0;
+  document.getElementById("filter-summary").textContent = active.length ? `${active.length} active` : "All data";
 }
 
 for (const button of document.querySelectorAll(".quick-dates button")) {
@@ -337,16 +372,36 @@ document.getElementById("copy-view").addEventListener("click", async (event) => 
 
 document.getElementById("clear-filters").addEventListener("click", () => {
   const { parts, params } = route();
-  for (const name of FILTERS) params.delete(name);
+  for (const name of [...FILTERS, ...Object.keys(VIEW_FILTER_NAMES)]) params.delete(name);
   const query = params.toString();
   location.hash = `#/${parts.map(encodeURIComponent).join("/")}${query ? `?${query}` : ""}`;
 });
 
+document.querySelector(".preset-bar").addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-preset]");
+  if (!button) return;
+  const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+  const presets = {
+    "critical-gaps": () => (location.hash = link("/attention", { kind: "critical gap" })),
+    "recent-failures": () => (location.hash = link("/tests", { outcome: "failed", since: sevenDaysAgo, until: "" })),
+    "incomplete-pipelines": () => (location.hash = link("/pipelines", { status: "incomplete" })),
+    "stale-evidence": () => (location.hash = link("/requirements", { stale: "true", status: "", coverage_status: "", execution_status: "" })),
+  };
+  presets[button.dataset.preset]?.();
+});
+
 // ---- views -----------------------------------------------------------------------------
 
-function metricCard(label, ratio, href, detail) {
+function helpTip(label, explanation) {
+  return h("details", { class: "help-tip" },
+    h("summary", { "aria-label": `Definition of ${label}` }, "?"),
+    h("div", { class: "help-popover" }, h("strong", {}, label), h("p", {}, explanation)),
+  );
+}
+
+function metricCard(label, ratio, href, detail, definition = "") {
   const percent = ratio.percent;
-  return h(
+  const card = h(
     href ? "a" : "div",
     { class: "card", href },
     h("div", { class: "label" }, label),
@@ -354,6 +409,7 @@ function metricCard(label, ratio, href, detail) {
     h("div", { class: "detail" }, `${ratio.numerator} of ${ratio.denominator}${detail ? ` · ${detail}` : ""}`),
     meter(percent ?? 0),
   );
+  return definition ? h("div", { class: "card-shell" }, card, helpTip(label, definition)) : card;
 }
 
 /** Bar for a percentage. The width is set through the CSSOM: the CSP forbids style attributes. */
@@ -363,25 +419,46 @@ function meter(percent) {
   return h("div", { class: "meter", "aria-hidden": "true" }, bar);
 }
 
-function countCard(label, value, href, detail) {
-  return h(href ? "a" : "div", { class: "card", href }, h("div", { class: "label" }, label), h("div", { class: "value" }, value), detail ? h("div", { class: "detail" }, detail) : null);
+function countCard(label, value, href, detail, definition = "") {
+  const card = h(href ? "a" : "div", { class: "card", href }, h("div", { class: "label" }, label), h("div", { class: "value" }, value), detail ? h("div", { class: "detail" }, detail) : null);
+  return definition ? h("div", { class: "card-shell" }, card, helpTip(label, definition)) : card;
 }
 
 /** Requirement ids as links; ``tone`` colours them (e.g. "critical", "failing"). */
 function idChips(ids, tone) {
   if (!ids.length) return h("p", { class: "lead" }, "None.");
-  return h("ul", { class: "chips" }, ids.map((id) => h("li", {}, h("a", { href: link(`/requirement/${encodeURIComponent(id)}`) }, h("span", { class: `badge ${tone}` }, id)))));
+  return h("ul", { class: "chips" }, ids.map((id) => h("li", {}, h("a", { href: drillLink(`/requirement/${encodeURIComponent(id)}`) }, h("span", { class: `badge ${tone}` }, id)))));
 }
 
 const STATE_TEXT = { ready: "Ready", "at risk": "At risk", blocked: "Blocked", unknown: "Unknown" };
+
+function readinessEvidence(reason) {
+  const text = reason.toLowerCase();
+  if (text.includes("flaky candidate")) return h("a", { href: link("/stability") }, "View stability evidence");
+  if (text.includes("incomplete pipeline")) return h("a", { href: link("/pipelines", { status: "incomplete" }) }, "View incomplete pipelines");
+  if (text.includes("critical") && (text.includes("automation") || text.includes("gap"))) return h("a", { href: link("/attention", { kind: "critical gap" }) }, "View critical gap evidence");
+  if (text.includes("refresh") || text.includes("stale")) return h("a", { href: link("/collection") }, "Review collection and refresh status");
+  if (text.includes("fail") || text.includes("error")) return h("a", { href: link("/tests", { outcome: "failed" }) }, "Review failed test results");
+  return null;
+}
+
+function gateRuleEvidence(name) {
+  const text = name.toLowerCase();
+  if (text.includes("critical") && text.includes("fail")) return link("/requirements", { criticality: "critical", execution_status: "failing" });
+  if (text.includes("critical") && (text.includes("automation") || text.includes("gap"))) return link("/attention", { kind: "critical gap" });
+  if (text.includes("coverage")) return link("/requirements", { coverage_status: "no tests" });
+  if (text.includes("pass rate") || text.includes("execution")) return link("/tests", { outcome: "failed" });
+  if (text.includes("pipeline") || text.includes("collection")) return link("/pipelines", { status: "incomplete" });
+  return null;
+}
 
 function readinessPanel(r) {
   return h(
     "section",
     { class: `readiness ${r.state.replaceAll(" ", "-")}`, "aria-labelledby": "readiness-title" },
     h("h2", { id: "readiness-title" }, "Release status: ", badge(STATE_TEXT[r.state] ?? r.state)),
-    h("p", { class: "sub" }, r.gate_name ? `Decided by the gate "${r.gate_name}" on the scope chosen above, plus the warnings it does not measure (docs/readiness.md).` : "No release gate is configured for this dashboard."),
-    h("ul", { class: "reasons" }, r.reasons.map((reason) => h("li", {}, reason))),
+    h("p", { class: "sub" }, r.gate_name ? `Readiness engine result from the "${r.gate_name}" gate and the documented warnings it does not measure (docs/readiness.md).` : "No release gate is configured for this dashboard; readiness is unknown without a gate."),
+    h("ul", { class: "reasons" }, r.reasons.map((reason) => h("li", {}, reason, readinessEvidence(reason) ? [" ", readinessEvidence(reason)] : null))),
     r.rules.length
       ? h(
           "details",
@@ -389,7 +466,7 @@ function readinessPanel(r) {
           h("summary", {}, `Gate rules (${r.rules.filter((x) => x.fails_gate).length} failing of ${r.rules.length})`),
           table(
             ["Rule", "Actual", "Expected", "Result"],
-            r.rules.map((x) => h("tr", { class: x.fails_gate ? "failing-rule" : null }, h("td", {}, x.name, h("span", { class: "sub" }, x.explanation)), h("td", {}, x.actual), h("td", {}, x.expected), h("td", {}, x.fails_gate ? "fail" : x.status))),
+            r.rules.map((x) => h("tr", { class: x.fails_gate ? "failing-rule" : null }, h("td", {}, x.name, h("span", { class: "sub" }, x.explanation), x.fails_gate && gateRuleEvidence(x.name) ? h("a", { class: "sub", href: gateRuleEvidence(x.name) }, "View supporting evidence") : null), h("td", {}, x.actual), h("td", {}, x.expected), h("td", {}, x.fails_gate ? "fail" : x.status))),
             "",
           ),
         )
@@ -399,49 +476,110 @@ function readinessPanel(r) {
       { class: "cards" },
       // Coverage and pass rate have their own cards below; these are the figures only shown here
       countCard("Test executions", r.executions, link("/tests"), "latest run per context, in scope"),
-      countCard("Critical without automation", r.critical_without_automation, link("/requirements", { criticality: "critical" })),
-      countCard("Flaky candidates", r.flaky_candidates, link("/stability")),
-      countCard("Incomplete pipelines (7 days)", r.incomplete_pipelines, link("/pipelines")),
-      countCard("Latest collection", r.latest_collection_at ? formatDate(r.latest_collection_at) : "–", null, r.latest_collection_at ? "results collected from CI" : "no collection recorded"),
+      countCard("Critical without automation", r.critical_without_automation, link("/attention", { kind: "critical gap" }), "catalog requirements without a linked automated case", "Critical requirements in scope that have no automated linked test case; it is a catalog gap, not an execution failure."),
+      countCard("Flaky candidates", r.flaky_candidates, link("/stability"), "suspected mixed-outcome patterns", "Tests classified as flaky candidates by the history rules. A candidate is not a proven cause."),
+      countCard("Incomplete pipelines (7 days)", r.incomplete_pipelines, link("/pipelines", { status: "incomplete" }), "collection records in the last 7 days", "Collection attempts with missing jobs or reports in the last seven days; this is collection completeness, separate from test outcome."),
+      countCard("Latest collection record", r.latest_collection_at ? formatDate(r.latest_collection_at) : "–", link("/collection"), r.latest_collection_at ? "per-repository freshness is shown in Operations" : "no collection recorded", "Timestamp of the newest collection record, which may be incomplete. See Operations for per-repository freshness and the last complete collection."),
     ),
   );
 }
 
 async function overview() {
-  const [s, r] = await Promise.all([api(`/api/summary${apiQuery(FILTERS)}`), api(`/api/readiness${apiQuery(FILTERS)}`)]);
+  const [s, r, collection, builds] = await Promise.all([
+    api(`/api/summary${apiQuery(FILTERS)}`),
+    api(`/api/readiness${apiQuery(FILTERS)}`),
+    api("/api/collection"),
+    api(`/api/builds${apiQuery(RUN_FILTERS)}`),
+  ]);
+  const comparison = builds.length > 1
+    ? await api(`/api/compare${apiQuery(RUN_FILTERS, { base: builds[builds.length - 2], head: builds[builds.length - 1] })}`)
+    : null;
   const c = s.outcome_counts;
+  const freshRepositories = collection.repositories.filter((repository) => repository.fresh).length;
+  const collectionRatio = collection.repositories.length ? `${freshRepositories} of ${collection.repositories.length}` : "n/a";
+  const releaseSummary = [
+    `Release readiness: ${STATE_TEXT[r.state] ?? r.state}`,
+    `Gate: ${r.gate_name ?? "not configured"}`,
+    `Observed reasons: ${r.reasons.join("; ") || "none recorded"}`,
+    `Requirement coverage: ${s.requirement_coverage.text}`,
+    `Automation coverage: ${s.automation_coverage.text}`,
+    `Automated requirement coverage: ${s.automated_requirement_coverage.text}`,
+    `Execution pass rate: ${s.pass_rate.text}`,
+    `Failed results in the latest snapshot: ${c.failed}; errors: ${c.error}; skipped: ${c.skipped}`,
+    `Critical requirements without automation: ${s.uncovered_critical.length}`,
+    `Repositories within the ${collection.expected_hours} hour collection window: ${collectionRatio}`,
+    `Scope follows the filters in this dashboard URL. The catalog notice and data freshness bar apply.`,
+  ].join("\n");
   return [
     h("h1", {}, "Overview"),
+    h("details", { class: "onboarding", open: "" },
+      h("summary", {}, "Start here: how to read this dashboard"),
+      h("ol", {},
+        h("li", {}, "Choose a scope with the filters or open a quick view."),
+        h("li", {}, "Read release readiness with its reasons, then check each metric's denominator and limitation."),
+        h("li", {}, "Open a finding or chart count to follow its evidence into a test, requirement, run or pipeline."),
+        h("li", {}, "Use Operations to check collection freshness separately from test execution quality."),
+        h("li", {}, "Filters stay in the URL; use Copy link to this view to share the current scope."),
+      ),
+    ),
     readinessPanel(r),
     h("p", { class: "lead" }, "Coverage comes from the requirement catalog; the pass rate comes from the latest run of each framework, environment and browser. They are separate numbers on purpose."),
+    h("div", { class: "toolbar executive-actions" },
+      copyButton("Copy release summary", releaseSummary),
+      h("a", { href: link("/attention") }, "Open action center"),
+      h("a", { href: link("/collection") }, "Review operations"),
+    ),
+    h("h2", {}, "Quick actions"),
+    h("div", { class: "quick-actions" },
+      h("a", { href: link("/attention", { state: "open" }) }, h("strong", {}, "Investigate open findings"), h("span", { class: "sub" }, "Tests, coverage gaps, pipelines and overdue collections")),
+      h("a", { href: link("/requirements", { criticality: "critical" }) }, h("strong", {}, "Review critical requirements"), h("span", { class: "sub" }, `${s.uncovered_critical.length} critical requirement(s) without automation`)),
+      h("a", { href: link("/tests", { outcome: "failed" }) }, h("strong", {}, "Review failed results"), h("span", { class: "sub" }, "Latest results in the current run scope")),
+      h("a", { href: link("/pipelines", { status: "incomplete" }) }, h("strong", {}, "Review incomplete pipelines"), h("span", { class: "sub" }, `${r.incomplete_pipelines} incomplete collection(s) in the last 7 days`)),
+    ),
     h("h2", {}, "Coverage"),
     h(
       "div",
       { class: "cards" },
-      countCard("Requirements in scope", s.requirements_total, link("/requirements"), `${s.requirements_with_tests} with tests`),
-      metricCard("Requirement coverage", s.requirement_coverage, link("/requirements", { status: "no tests" }), "with at least one test case"),
-      metricCard("Automation coverage", s.automation_coverage, link("/requirements", { status: "not automated" }), "linked test cases automated"),
-      metricCard("Automated requirement coverage", s.automated_requirement_coverage, link("/requirements", { status: "automated" }), "with an automated test"),
+      countCard("Requirements in scope", s.requirements_total, link("/requirements"), `${s.requirements_with_tests} with linked test cases`, "Unique requirements in the active catalog scope; this is the denominator for requirement coverage."),
+      metricCard("Requirement coverage", s.requirement_coverage, link("/requirements", { coverage_status: "no tests" }), "with at least one test case", "Requirements with one or more linked test cases divided by requirements in scope. A linked manual or planned case counts."),
+      metricCard("Automation coverage", s.automation_coverage, link("/requirements", { coverage_status: "not automated" }), "linked test cases automated", "Automated linked test cases divided by all linked test cases. Unlinked cases are excluded."),
+      metricCard("Automated requirement coverage", s.automated_requirement_coverage, link("/requirements", { coverage_status: "not automated" }), "with an automated test", "Requirements with at least one linked automated test case divided by requirements in scope."),
+      countCard("Collection freshness", collectionRatio, link("/collection"), `${collection.expected_hours} hour window across all collected repositories`, "This global Operations measure counts each repository whose latest collection record is within the server's expected window. It does not follow run filters and is separate from test pass rate."),
     ),
     h("h2", {}, "Execution (latest runs)"),
     h(
       "div",
       { class: "cards" },
-      metricCard("Execution pass rate", s.pass_rate, link("/tests"), "skipped tests not counted"),
-      countCard("Passed", c.passed, link("/tests", { outcome: "passed" })),
-      countCard("Failed", c.failed, link("/tests", { outcome: "failed" })),
-      countCard("Errors", c.error, link("/tests", { outcome: "error" })),
-      countCard("Skipped", c.skipped, link("/tests", { outcome: "skipped" })),
+      metricCard("Execution pass rate", s.pass_rate, link("/tests"), "skipped results are not counted", "Passed results divided by passed, failed and error results in the latest snapshot. Skips are excluded; this measures executions, not requirement coverage."),
+      countCard("Passed", c.passed, link("/tests", { outcome: "passed" }), "latest snapshot results", "Count of passed result records in the latest snapshot, not unique test identifiers."),
+      countCard("Failed", c.failed, link("/tests", { outcome: "failed" }), "latest snapshot results", "Count of failed result records in the latest snapshot, not unique test identifiers."),
+      countCard("Errors", c.error, link("/tests", { outcome: "error" }), "latest snapshot results", "Count of error result records in the latest snapshot, not unique test identifiers."),
+      countCard("Skipped", c.skipped, link("/tests", { outcome: "skipped" }), "latest snapshot results", "Count of skipped result records in the latest snapshot; skips do not enter the pass-rate denominator."),
     ),
     s.snapshot.length
       ? table(
           ["Run", "Framework", "Browser", "Build", "Started", { label: "Pass rate", num: true }],
           s.snapshot.map((r) =>
-            h("tr", {}, h("td", {}, h("a", { href: link(`/run/${r.run_id}`) }, r.source)), h("td", {}, r.context.framework ?? "–"), h("td", {}, r.context.browser ?? "–"), h("td", {}, r.context.build ?? "–"), h("td", { class: "nowrap" }, formatDate(r.started_at)), h("td", { class: "num" }, r.pass_rate.text)),
+            h("tr", {}, h("td", {}, h("a", { href: drillLink(`/run/${r.run_id}`) }, r.source)), h("td", {}, r.context.framework ?? "–"), h("td", {}, r.context.browser ?? "–"), h("td", {}, r.context.build ?? "–"), h("td", { class: "nowrap" }, formatDate(r.started_at)), h("td", { class: "num" }, r.pass_rate.text)),
           ),
           "",
         )
       : h("p", { class: "empty" }, "No runs in this scope (or no result files were loaded), so there is no execution status."),
+    h("h2", {}, "Build comparison"),
+    !comparison
+      ? h("p", { class: "empty" }, "At least two builds are needed in this run scope; no change summary is available.")
+      : !comparison.comparable
+        ? h("p", { class: "empty" }, `No change summary shown for ${comparison.base.build} to ${comparison.head.build}: these builds share no suite in this scope. `, h("a", { href: link("/compare", { base: comparison.base.build, head: comparison.head.build }) }, "Review build comparability"))
+        : [
+            h("p", { class: "sub" }, `Observed changes from ${comparison.base.build} to ${comparison.head.build} across ${comparison.compared_contexts.length} shared suite(s). Counts include tests from shared suites only.`),
+            table(
+              ["Change in shared suites", { label: "Tests", num: true }],
+              Object.entries(comparison.category_counts).map(([category, count]) => h("tr", {}, h("td", {}, h("a", { href: link("/compare", { base: comparison.base.build, head: comparison.head.build, change: category }) }, category)), h("td", { class: "num" }, count))),
+              "The builds share suites, and no test changes were recorded.",
+              { tools: false },
+            ),
+            h("p", { class: "sub" }, h("a", { href: link("/compare", { base: comparison.base.build, head: comparison.head.build }) }, "Open the full build comparison")),
+          ],
     h("h2", {}, `Critical requirements without automation (${s.uncovered_critical.length})`),
     idChips(s.uncovered_critical.map((r) => r.id), "critical"),
     h("h2", {}, `Failing requirements (${s.failing_requirements.length})`),
@@ -459,10 +597,11 @@ async function overview() {
   ];
 }
 
-/** One matrix table; ``param`` is the filter a coverage count's link sets to the row's group. */
+/** One matrix table; every nonzero cell links to the exact requirement field it counts. */
 function matrixTable(title, rows, param) {
   const coverage = ["no tests", "not automated", "automated"];
-  const execution = ["failing", "not run", "skipped", "passing"];
+  const execution = ["failing", "not run", "skipped", "passing", "not automated"];
+  const drill = (query, count) => count ? h("a", { href: link("/requirements", { ...query, from: location.hash }) }, String(count)) : "0";
   return [
     h("h3", {}, title),
     table(
@@ -473,9 +612,9 @@ function matrixTable(title, rows, param) {
           {},
           h("td", {}, r.group),
           h("td", { class: "num" }, String(r.total)),
-          coverage.map((c) => h("td", { class: "num" }, r.coverage[c] ? h("a", { href: link("/requirements", { status: c, [param]: r.group }) }, String(r.coverage[c])) : "0")),
-          execution.map((e) => h("td", { class: "num" }, String(r.execution[e] ?? 0))),
-          h("td", { class: "num" }, String(r.stale)),
+          coverage.map((c) => h("td", { class: "num" }, drill({ coverage_status: c, [param]: r.group }, r.coverage[c] ?? 0))),
+          execution.map((e) => h("td", { class: "num" }, drill({ execution_status: e, [param]: r.group }, r.execution[e] ?? 0))),
+          h("td", { class: "num" }, drill({ stale: "true", [param]: r.group }, r.stale)),
         ),
       ),
       "No requirements in scope.",
@@ -484,44 +623,74 @@ function matrixTable(title, rows, param) {
   ];
 }
 
+function repositoryMatrixTable(rows) {
+  const execution = ["failing", "not run", "skipped", "passing", "not automated"];
+  const drill = (repository, query, count) => count
+    ? h("a", { href: link("/requirements", { repository, observed: "true", ...query, from: location.hash }) }, String(count))
+    : "0";
+  return [
+    h("h3", {}, "By repository (observed test evidence)"),
+    h("p", { class: "sub" }, "Requirements are catalog-wide. This view counts only requirements with a linked result observed in that repository; it does not imply that repository is expected to cover every catalog requirement."),
+    table(
+      ["Repository", { label: "Observed requirements", num: true }, ...execution.map((value) => ({ label: value, num: true })), { label: "Stale evidence", num: true }],
+      rows.map((row) => h("tr", {},
+        h("td", {}, h("a", { href: link("/requirements", { repository: row.repository, observed: "true", from: location.hash }) }, row.repository)),
+        h("td", { class: "num" }, drill(row.repository, {}, row.observed_requirements)),
+        ...execution.map((status) => h("td", { class: "num" }, drill(row.repository, { execution_status: status }, row.execution[status] ?? 0))),
+        h("td", { class: "num" }, drill(row.repository, { stale: "true" }, row.stale)),
+      )),
+      "No linked requirement results include a repository. Repository-level requirement evidence is unavailable in this scope.",
+      { tools: false },
+    ),
+  ];
+}
+
 async function requirementsView() {
-  const status = route().params.get("status") ?? "";
-  const [rows, matrix] = await Promise.all([api(`/api/requirements${apiQuery(FILTERS, { status })}`), api(`/api/requirements/matrix${apiQuery(FILTERS)}`)]);
+  const params = route().params;
+  const status = params.get("status") ?? "";
+  const coverageStatus = params.get("coverage_status") ?? "";
+  const executionStatus = params.get("execution_status") ?? "";
+  const observed = params.get("observed") ?? "";
+  const stale = params.get("stale") ?? "";
+  const query = { status, coverage_status: coverageStatus, execution_status: executionStatus, observed, stale };
+  const [rows, matrix] = await Promise.all([api(`/api/requirements${apiQuery(FILTERS, query)}`), api(`/api/requirements/matrix${apiQuery(FILTERS)}`)]);
   const statusSelect = h("select", { id: "status-filter" }, ["", "no tests", "not automated", "automated", "passing", "failing", "not run", "skipped"].map((v) => h("option", { value: v }, v || "Any")));
-  statusSelect.value = status;
-  statusSelect.addEventListener("change", () => (location.hash = link("/requirements", { status: statusSelect.value })));
+  statusSelect.value = status || coverageStatus || executionStatus;
+  statusSelect.addEventListener("change", () => (location.hash = link("/requirements", { status: statusSelect.value, coverage_status: null, execution_status: null, observed: null, stale: null })));
   return [
     h("h1", {}, "Requirements"),
     h("p", { class: "lead" }, `${rows.length} requirement(s) in scope.`),
     h(
       "details",
-      { class: "matrix", open: status ? null : "" },
-      h("summary", {}, "Coverage by criticality, feature and owner"),
-      h("p", { class: "sub" }, `Counts come from the API for the scope above. Evidence is stale when the latest execution of a requirement's tests is older than ${matrix.stale_days} days. Click a coverage count to list those requirements.`),
+      { class: "matrix", open: status || coverageStatus || executionStatus || observed || stale ? null : "" },
+      h("summary", {}, "Coverage and execution breakdowns"),
+      h("p", { class: "sub" }, `Catalog coverage distinguishes requirements with linked cases from automated cases; execution status comes from the latest run snapshot. Evidence is stale when the latest execution is older than ${matrix.stale_days} days. Each nonzero count opens the matching requirements.`),
       matrixTable("By criticality", matrix.by_criticality, "criticality"),
       matrixTable("By feature", matrix.by_feature, "feature"),
       matrixTable("By owner", matrix.by_owner, "owner"),
+      repositoryMatrixTable(matrix.by_repository),
     ),
     h(
       "div",
       { class: "toolbar" },
       h("label", { for: "status-filter" }, "Status", statusSelect),
-      h("a", { href: link("/requirements", { status: "no tests", criticality: "critical" }) }, "Uncovered critical requirements"),
+      h("a", { href: link("/attention", { kind: "critical gap" }) }, "Critical gaps"),
     ),
     h("h2", { id: "requirement-list", class: "visually-hidden" }, "Requirement list"),
     h("section", { "aria-labelledby": "requirement-list" }, table(
-      ["Requirement", "Feature", "Owner", "Criticality", { label: "Automated / cases", num: true }, "Coverage", "Execution", "Latest evidence"],
+      ["Requirement", "Feature", "Owner", "Criticality", { label: "Automated / cases", num: true }, "Coverage", "Execution", "Matched result evidence", "Latest evidence"],
       rows.map((r) =>
         h(
           "tr",
           {},
-          h("td", {}, h("a", { href: link(`/requirement/${encodeURIComponent(r.id)}`) }, r.id), h("span", { class: "sub" }, r.title)),
+          h("td", {}, h("a", { href: drillLink(`/requirement/${encodeURIComponent(r.id)}`) }, r.id), h("span", { class: "sub" }, r.title)),
           h("td", {}, r.feature),
           h("td", {}, r.owner),
           h("td", {}, r.criticality === "critical" ? badge("critical") : r.criticality),
           h("td", { class: "num" }, `${r.automated_test_cases} / ${r.test_cases}`),
           h("td", {}, badge(r.coverage_status)),
           h("td", {}, badge(r.execution_status)),
+          h("td", {}, badge(r.observed ? "observed" : "not observed")),
           h("td", { class: "nowrap" }, r.last_executed_at ? formatDate(r.last_executed_at) : "none", r.stale ? [" ", badge("stale")] : null),
         ),
       ),
@@ -538,7 +707,7 @@ function executionRows(executions, withTest = true) {
     h(
       "tr",
       {},
-      withTest ? h("td", {}, h("a", { class: "key", href: link("/test", { key: e.key }) }, e.key)) : null,
+      withTest ? h("td", {}, h("a", { class: "key", href: drillLink("/test", { key: e.key }) }, e.key)) : null,
       h("td", {}, `${e.context.framework ?? "–"} / ${e.context.browser ?? "–"}`),
       h("td", { class: "nowrap" }, e.context.build ?? "–", h("span", { class: "sub" }, formatDate(e.started_at))),
       h("td", {}, badge(e.outcome), e.retries ? h("span", { class: "sub" }, `${e.retries} retr${e.retries === 1 ? "y" : "ies"}`) : null),
@@ -559,11 +728,17 @@ function failureDetails(failure) {
 
 const EXECUTION_HEADERS = ["Test", "Framework / browser", "Build", "Outcome", { label: "Duration", num: true }, "Failure"];
 
+function backToResults(defaultLabel, defaultPath) {
+  const from = route().params.get("from");
+  const safeFrom = from === "#/" || /^#\/(search|attention|requirements|requirement|tests|test|runs|run|pipelines|collection|compare|stability|trends)(\?|$)/.test(from ?? "");
+  return h("p", { class: "detail-back" }, h("a", { href: safeFrom ? from : link(defaultPath) }, safeFrom ? "Back to filtered results" : `Back to ${defaultLabel}`));
+}
+
 async function requirementDetail(id) {
   const d = await api(`/api/requirements/${encodeURIComponent(id)}${apiQuery(RUN_FILTERS)}`);
   const r = d.requirement;
   return [
-    h("p", {}, h("a", { href: link("/requirements") }, "← Requirements")),
+    backToResults("Requirements", "/requirements"),
     h("h1", {}, `${r.id}: ${r.title}`),
     r.description ? h("p", { class: "lead" }, r.description) : null,
     h("dl", { class: "meta" }, h("dt", {}, "Feature"), h("dd", {}, r.feature), h("dt", {}, "Owner"), h("dd", {}, r.owner), h("dt", {}, "Criticality"), h("dd", {}, r.criticality), h("dt", {}, "Priority / risk"), h("dd", {}, `${r.priority} / ${r.risk}`), h("dt", {}, "Platforms"), h("dd", {}, r.platforms.join(", ") || "unspecified"), h("dt", {}, "Coverage"), h("dd", {}, badge(r.coverage_status)), h("dt", {}, "Execution"), h("dd", {}, badge(r.execution_status))),
@@ -588,7 +763,7 @@ async function testsView() {
     const tr = h(
       "tr",
       { "data-key": r.key.toLowerCase() },
-      h("td", {}, h("a", { class: "key", href: link("/test", { key: r.key }) }, r.key), r.last_failure ? h("span", { class: "sub" }, `last failure: ${r.last_failure}`) : null),
+      h("td", {}, h("a", { class: "key", href: drillLink("/test", { key: r.key }) }, r.key), r.last_failure ? h("span", { class: "sub" }, `last failure: ${r.last_failure}`) : null),
       h("td", {}, r.frameworks.join(", ")),
       h("td", { class: "num" }, r.executions),
       h("td", { class: "num" }, r.passed),
@@ -633,6 +808,7 @@ async function testHistory() {
   const shareLink = `${location.origin}${location.pathname}${link("/test", { key })}`;
   const previous = d.executions[1];
   return [
+    backToResults("Tests", "/tests"),
     crumbs([["Tests", link("/tests")], ...pipelineCrumbs(latest.pipeline, latest.workflow, latest.run_id, latest.source), [d.key, null]]),
     h("h1", { class: "key" }, d.key),
     h("div", { class: "toolbar" }, copyButton("Copy test identifier", d.key), copyButton("Copy investigation link", shareLink), summaryButtons("/api/tests/summary", { key })),
@@ -650,9 +826,9 @@ async function testHistory() {
       h("dt", {}, "Stability"),
       h("dd", {}, d.stability.length ? h("ul", { class: "reasons" }, d.stability.map((line) => h("li", {}, line))) : "not classified (too few verdicts in the scope)"),
       h("dt", {}, "Source"),
-      h("dd", {}, h("a", { href: link(`/run/${latest.run_id}`) }, latest.source), latest.pipeline ? ` · pipeline ${pipelineLabel(latest.pipeline)}` : "", latest.ci_url ? [" · ", external(latest.ci_url, "CI run on GitHub")] : null),
+      h("dd", {}, h("a", { href: drillLink(`/run/${latest.run_id}`) }, latest.source), latest.pipeline ? ` · pipeline ${pipelineLabel(latest.pipeline)}` : "", latest.ci_url ? [" · ", external(latest.ci_url, "CI run on GitHub")] : null),
       h("dt", {}, "Requirements"),
-      h("dd", {}, d.requirements.length ? d.requirements.map((rid, i) => [i ? ", " : "", h("a", { href: link(`/requirement/${encodeURIComponent(rid)}`) }, rid)]) : "none linked"),
+      h("dd", {}, d.requirements.length ? d.requirements.map((rid, i) => [i ? ", " : "", h("a", { href: drillLink(`/requirement/${encodeURIComponent(rid)}`) }, rid)]) : "none linked"),
       h("dt", {}, "Test cases"),
       h("dd", {}, d.test_cases.join(", ") || "none (unmatched)"),
       h("dt", {}, "Pattern"),
@@ -737,7 +913,7 @@ async function compareView() {
           "tr",
           {},
           h("td", {}, badge(c.category)),
-          h("td", {}, h("a", { class: "key", href: link("/test", { key: c.key }) }, c.key)),
+          h("td", {}, h("a", { class: "key", href: drillLink("/test", { key: c.key }) }, c.key)),
           h("td", {}, c.context),
           h("td", {}, c.base_outcome ? badge(c.base_outcome) : "–"),
           h("td", {}, c.head_outcome ? badge(c.head_outcome) : "–"),
@@ -756,7 +932,7 @@ async function runsView() {
     h("p", { class: "lead" }, `${rows.length} imported run(s), newest first.`),
     table(
       ["Run", "Pipeline / job", "Framework", "Browser", "Build", "Started", ...OUTCOMES.map((o) => ({ label: o, num: true })), { label: "Pass rate", num: true }],
-      rows.map((r) => h("tr", {}, h("td", {}, h("a", { href: link(`/run/${r.run_id}`) }, r.source)), h("td", {}, pipelineLabel(r.pipeline)), h("td", {}, r.context.framework ?? "–"), h("td", {}, r.context.browser ?? "–"), h("td", {}, r.context.build ?? "–"), h("td", { class: "nowrap" }, formatDate(r.started_at)), OUTCOMES.map((o) => h("td", { class: "num" }, r.counts[o])), h("td", { class: "num" }, r.pass_rate.text))),
+      rows.map((r) => h("tr", {}, h("td", {}, h("a", { href: drillLink(`/run/${r.run_id}`) }, r.source)), h("td", {}, pipelineLabel(r.pipeline)), h("td", {}, r.context.framework ?? "–"), h("td", {}, r.context.browser ?? "–"), h("td", {}, r.context.build ?? "–"), h("td", { class: "nowrap" }, formatDate(r.started_at)), OUTCOMES.map((o) => h("td", { class: "num" }, r.counts[o])), h("td", { class: "num" }, r.pass_rate.text))),
       "No runs match these filters.",
     ),
   ];
@@ -766,6 +942,7 @@ async function runDetail(runId) {
   const d = await api(`/api/runs/${encodeURIComponent(runId)}`);
   const r = d.run;
   return [
+    backToResults("Runs", "/runs"),
     crumbs([["Runs", link("/runs")], ...pipelineCrumbs(r.pipeline, null, null), [r.source, null]]),
     h("h1", {}, r.source),
     h("dl", { class: "meta" }, h("dt", {}, "Framework"), h("dd", {}, r.context.framework ?? "–"), h("dt", {}, "Environment"), h("dd", {}, r.context.environment ?? "–"), h("dt", {}, "Browser / platform"), h("dd", {}, `${r.context.browser ?? "–"} / ${r.context.platform ?? "–"}`), h("dt", {}, "Build"), h("dd", {}, r.context.build ?? "–"), h("dt", {}, "Pipeline / job"), h("dd", {}, pipelineLabel(r.pipeline)), h("dt", {}, "Started"), h("dd", {}, formatDate(r.started_at)), h("dt", {}, "Pass rate"), h("dd", {}, r.pass_rate.text)),
@@ -829,7 +1006,7 @@ function pipelineDetails(p, open) {
           h(
             "tr",
             {},
-            h("td", {}, j.run_ids.length === 1 ? h("a", { href: link(`/run/${j.run_ids[0]}`) }, j.name) : j.name, j.expected ? null : h("span", { class: "sub" }, "not an expected job")),
+            h("td", {}, j.run_ids.length === 1 ? h("a", { href: drillLink(`/run/${j.run_ids[0]}`) }, j.name) : j.name, j.expected ? null : h("span", { class: "sub" }, "not an expected job")),
             h("td", {}, String(j.attempt), j.superseded_runs ? h("span", { class: "sub" }, `${j.superseded_runs} earlier run(s) replaced`) : null),
             h("td", { class: "nowrap" }, formatDate(j.started_at)),
             h("td", { class: "num" }, String(j.run_ids.length)),
@@ -886,13 +1063,26 @@ async function pipelinesView() {
 
 async function collectionView() {
   const d = await api("/api/collection");
+  const status = currentStatus ?? await api("/api/status");
   return [
     h("h1", {}, "Collection"),
-    h("p", { class: "lead" }, `Results collected from CI per repository (docs/collection.md). A repository is overdue when its last collection is older than ${d.expected_hours} hours.`),
+    h("p", { class: "lead" }, `Operations view: dashboard snapshot refresh and CI collection freshness are separate from test execution quality. A repository is overdue when its latest collection record is older than ${d.expected_hours} hours.`),
+    h("section", { class: "data-health", "aria-labelledby": "snapshot-health-title" },
+      h("h2", { id: "snapshot-health-title" }, "Dashboard snapshot"),
+      h("p", {}, badge(status.stale ? "stale" : "current"), " ", status.stale ? "Last good data is retained while refresh retries." : "The current snapshot loaded successfully."),
+      h("dl", { class: "meta" },
+        h("dt", {}, "Snapshot loaded"), h("dd", {}, formatDate(status.loaded_at)),
+        h("dt", {}, "Last refresh check"), h("dd", {}, formatDate(status.last_check)),
+        h("dt", {}, "Refresh interval"), h("dd", {}, status.refresh_seconds ? `every ${status.refresh_seconds} seconds` : "automatic refresh is disabled on the server"),
+        h("dt", {}, "Latest collection record"), h("dd", {}, formatDate(status.latest_collection_at)),
+      ),
+      status.last_error ? h("p", { class: "notice", role: "status" }, `Last refresh error (${formatDate(status.last_error_at)}): ${status.last_error}`) : null,
+      h("p", { class: "sub" }, "Refresh checks for updated dashboard source data. It does not start a CI collection workflow."),
+    ),
     d.workflow_url ? h("p", {}, external(d.workflow_url, "Open the collection workflow on GitHub")) : null,
     d.notes.length ? h("div", { class: "notice", role: "note" }, d.notes.map((n) => h("p", {}, n))) : null,
     table(
-      ["Repository", "Workflows", "Last collection", "Freshness", { label: "Pipelines (7 d)", num: true }, { label: "Complete", num: true }, { label: "Incomplete", num: true }, { label: "Results", num: true }, "CI conclusions"],
+      ["Repository", "Workflows", "Last collection", "Last complete collection", "Freshness", { label: "Pipelines (7 d)", num: true }, { label: "Complete", num: true }, { label: "Incomplete", num: true }, { label: "Results", num: true }, "CI conclusions"],
       d.repositories.map((r) =>
         h(
           "tr",
@@ -900,6 +1090,7 @@ async function collectionView() {
           h("td", {}, h("a", { href: link("/pipelines", { repository: r.repository }) }, r.repository)),
           h("td", {}, r.workflows.join(", ")),
           h("td", { class: "nowrap" }, formatDate(r.last_collected_at)),
+          h("td", { class: "nowrap" }, formatDate(r.last_complete_collection_at)),
           h("td", {}, badge(r.fresh ? "fresh" : "overdue"), h("span", { class: "sub" }, r.freshness)),
           h("td", { class: "num" }, String(r.pipelines)),
           h("td", { class: "num" }, String(r.complete)),
@@ -954,14 +1145,14 @@ async function stabilityView() {
         h(
           "tr",
           {},
-          h("td", {}, h("a", { class: "key", href: link("/test", { key: r.key }) }, r.key), r.last_failure ? h("span", { class: "sub" }, `last failure: ${r.last_failure.split("\n")[0].slice(0, 160)}`) : null),
+          h("td", {}, h("a", { class: "key", href: drillLink("/test", { key: r.key }) }, r.key), r.last_failure ? h("span", { class: "sub" }, `last failure: ${r.last_failure.split("\n")[0].slice(0, 160)}`) : null),
           h("td", {}, r.context),
           h("td", {}, badge(r.status), r.status === "flaky candidate" ? h("span", { class: "sub" }, "suspected") : null),
           h("td", { class: "num" }, r.failure_rate.text),
           h("td", { class: "nowrap" }, formatDate(r.last_failed_at)),
           h("td", { class: "num" }, String(r.affected_builds.length), r.affected_builds.length ? h("span", { class: "sub" }, r.affected_builds.join(", ")) : null),
           h("td", {}, h("ul", { class: "reasons" }, r.reasons.map((reason) => h("li", {}, reason)))),
-          h("td", {}, r.last_failing_run_id ? h("a", { href: link(`/run/${r.last_failing_run_id}`) }, "last failing") : "–", r.last_passing_run_id ? [" · ", h("a", { href: link(`/run/${r.last_passing_run_id}`) }, "last passing")] : null),
+          h("td", {}, r.last_failing_run_id ? h("a", { href: drillLink(`/run/${r.last_failing_run_id}`) }, "last failing") : "–", r.last_passing_run_id ? [" · ", h("a", { href: drillLink(`/run/${r.last_passing_run_id}`) }, "last passing")] : null),
           h("td", {}, r.test_cases.join(", ") || "–"),
         ),
       ),
@@ -976,7 +1167,7 @@ async function stabilityView() {
     h("h2", {}, `Duration regressions (${d.duration_regressions.length})`),
     table(
       ["Test", "Context", { label: "Baseline", num: true }, { label: "Latest", num: true }],
-      d.duration_regressions.map((r) => h("tr", {}, h("td", {}, h("a", { class: "key", href: link("/test", { key: r.key }) }, r.key)), h("td", {}, r.context), h("td", { class: "num" }, `${formatSeconds(r.baseline_seconds)} (${r.baseline_runs} runs)`), h("td", { class: "num" }, formatSeconds(r.latest_seconds)))),
+      d.duration_regressions.map((r) => h("tr", {}, h("td", {}, h("a", { class: "key", href: drillLink("/test", { key: r.key }) }, r.key)), h("td", {}, r.context), h("td", { class: "num" }, `${formatSeconds(r.baseline_seconds)} (${r.baseline_runs} runs)`), h("td", { class: "num" }, formatSeconds(r.latest_seconds)))),
       "No test got clearly slower in two runs in a row.",
     ),
     h("h2", {}, "Runs per context (oldest to newest)"),
@@ -992,7 +1183,7 @@ async function stabilityView() {
               h(
                 "ol",
                 { class: "strip", "aria-label": `${points.length} runs` },
-                points.map((p) => h("li", {}, h("a", { href: link(`/run/${p.run_id}`), class: p.failed ? "bad" : "good", title: `${formatDate(p.started_at)} · build ${p.build ?? "–"} · ${p.pass_rate.text}` }, h("span", { class: "sr" }, `${formatDate(p.started_at)}: ${p.pass_rate.text}`)))),
+                points.map((p) => h("li", {}, h("a", { href: drillLink(`/run/${p.run_id}`), class: p.failed ? "bad" : "good", title: `${formatDate(p.started_at)} · build ${p.build ?? "–"} · ${p.pass_rate.text}` }, h("span", { class: "sr" }, `${formatDate(p.started_at)}: ${p.pass_rate.text}`)))),
               ),
               h("div", { class: "detail" }, `${points.filter((p) => p.failed).length} of ${points.length} runs with failures`),
             ),
@@ -1313,7 +1504,7 @@ async function searchView() {
                   h(
                     "li",
                     {},
-                    h("a", { href: link(hit.route, hit.params), class: "key" }, highlight(hit.identifier, words)),
+                    h("a", { href: drillLink(hit.route, hit.params), class: "key" }, highlight(hit.identifier, words)),
                     hit.title && hit.title !== hit.identifier ? h("span", { class: "sub" }, highlight(hit.title, words)) : null,
                     h("span", { class: "sub" }, [hit.repositories.length ? hit.repositories.join(", ") : null, hit.last_seen ? `last seen ${formatDate(hit.last_seen)}` : null].filter(Boolean).join(" · ")),
                     hit.url ? external(hit.url, "Open the run on GitHub") : null,
@@ -1343,43 +1534,73 @@ async function searchView() {
 }
 
 const STATE_ORDER = ["open", "suspected", "unknown", "resolved"];
+const ATTENTION_TYPES = ["newly failing", "incomplete pipeline", "critical gap", "recurring failure", "duration regression", "flaky candidate", "overdue collection"];
 
 async function attentionView() {
   const params = route().params;
   const state = params.get("state") ?? "";
-  const d = await api(`/api/attention${apiQuery(FILTERS)}`);
+  const kind = params.get("kind") ?? "";
+  const d = await api(`/api/attention${apiQuery(FILTERS, { kind })}`);
   const shown = d.findings.filter((f) => !state || f.state === state);
+  const kindSelect = h("select", { id: "finding-kind" }, h("option", { value: "" }, "All finding types"), ATTENTION_TYPES.map((value) => h("option", { value }, value)));
+  kindSelect.value = kind;
+  kindSelect.addEventListener("change", () => (location.hash = link("/attention", { state, kind: kindSelect.value })));
+  const groups = [
+    { title: "Investigate now", states: ["open"], description: "The latest evidence still shows the listed problem." },
+    { title: "Monitor", states: ["suspected", "unknown"], description: "The evidence is mixed or not enough to resolve the finding." },
+    { title: "Resolved", states: ["resolved"], description: "Later evidence shows the condition gone; retained as history." },
+  ];
+  const findingRows = (findings) => findings.map((f) => {
+    const target = link(f.route, { ...f.params, from: location.hash });
+    const copy = h("button", { type: "button", class: "ghost copy-link", "aria-label": `Copy link for ${f.title}` }, "Copy link");
+    copy.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(`${location.origin}${location.pathname}${target}`);
+        copy.textContent = "Copied";
+      } catch (_) {
+        copy.textContent = "Copy unavailable";
+      }
+      setTimeout(() => (copy.textContent = "Copy link"), 2200);
+    });
+    return h("tr", {},
+      h("td", {}, badge(f.state)),
+      h("td", {}, f.kind),
+      h("td", {}, h("a", { class: "key", href: target }, f.title)),
+      h("td", {}, f.why),
+      h("td", { class: "num" }, String(f.evidence), h("span", { class: "sub" }, f.evidence_label)),
+      h("td", { class: "nowrap" }, f.first_seen ? formatDate(f.first_seen) : "not recorded"),
+      h("td", { class: "nowrap" }, f.last_seen ? formatDate(f.last_seen) : "not recorded"),
+      h("td", {}, f.repository ?? "not recorded"),
+      h("td", {}, f.url ? external(f.url, "GitHub run") : "not available"),
+      h("td", {}, copy),
+    );
+  });
   return [
     h("h1", {}, "Needs attention"),
-    h("p", { class: "lead" }, "What the evidence shows in the scope above, most urgent first: open problems, then suspected ones, then unknowns, then resolved ones kept as history. Each line says why it is listed and links to its records."),
-    h(
-      "nav",
-      { class: "status-filter", "aria-label": "Finding state" },
-      h("a", { href: link("/attention"), "aria-current": state ? null : "true" }, `All (${d.total})`),
-      STATE_ORDER.filter((s) => d.states[s]).map((s) => h("a", { href: link("/attention", { state: s }), "aria-current": state === s ? "true" : null }, badge(s), ` ${d.states[s]}`)),
+    h("p", { class: "lead" }, "Findings from the existing attention analysis, grouped by its documented evidence state. Open findings are shown first; suspected and unknown findings need review; resolved findings remain available as history."),
+    h("nav", { class: "status-filter", "aria-label": "Finding state" },
+      h("a", { href: link("/attention", { state: null, kind }), "aria-current": state ? null : "true" }, `All (${d.total})`),
+      STATE_ORDER.filter((s) => d.states[s]).map((s) => h("a", { href: link("/attention", { state: s, kind }), "aria-current": state === s ? "true" : null }, badge(s), ` ${d.states[s]}`)),
     ),
-    h("div", { class: "notice", role: "note" }, d.notes.map((n) => h("p", {}, n))),
+    h("div", { class: "toolbar" }, h("label", { for: "finding-kind" }, "Finding type", kindSelect)),
+    d.notes.length ? h("div", { class: "notice", role: "note" }, d.notes.map((n) => h("p", {}, n))) : null,
     d.total === 0
-      ? h("p", { class: "empty" }, "Nothing needs attention in this scope: no newly failing or recurring failures, no incomplete pipelines, no overdue collections, no critical gaps, no confirmed slowdowns or flaky candidates.")
-      : table(
-          ["State", "Kind", "Finding", "Why it is listed", { label: "Evidence", num: true }, "First seen", "Last seen", "Source"],
-          shown.map((f) =>
-            h(
-              "tr",
-              {},
-              h("td", {}, badge(f.state)),
-              h("td", {}, f.kind),
-              h("td", {}, h("a", { class: "key", href: link(f.route, f.params) }, f.title), f.repository ? h("span", { class: "sub" }, f.repository) : null),
-              h("td", {}, f.why),
-              h("td", { class: "num" }, String(f.evidence), h("span", { class: "sub" }, f.evidence_label)),
-              h("td", { class: "nowrap" }, f.first_seen ? formatDate(f.first_seen) : "–"),
-              h("td", { class: "nowrap" }, f.last_seen ? formatDate(f.last_seen) : "–"),
-              h("td", {}, f.url ? external(f.url, "GitHub run") : "–"),
-            ),
-          ),
-          state ? `No ${state} findings in this scope.` : "No findings.",
-          { tools: true, name: "needs-attention" },
-        ),
+      ? h("p", { class: "empty" }, "No findings were returned for this scope.")
+      : shown.length === 0
+        ? h("p", { class: "empty" }, "No findings match these state and type filters.")
+        : groups.map((group) => {
+            const findings = shown.filter((finding) => group.states.includes(finding.state));
+            return findings.length ? h("details", { class: "action-group", open: group.states.includes("open") || group.states.includes(state) ? "" : null },
+              h("summary", {}, `${group.title} (${findings.length})`),
+              h("p", { class: "sub" }, group.description),
+              table(
+                ["State", "Kind", "Affected entity", "Observed reason", { label: "Evidence", num: true }, "First seen", "Last seen", "Repository", "GitHub evidence", "Actions"],
+                findingRows(findings),
+                `No ${group.title.toLowerCase()} findings in this filtered view.`,
+                { tools: true, name: `attention-${group.states.join("-")}` },
+              ),
+            ) : null;
+          }),
     d.shown < d.total ? h("p", { class: "sub" }, `Showing the first ${d.shown} of ${d.total} findings; narrow the scope with the filters above.`) : null,
   ];
 }
@@ -1411,7 +1632,7 @@ function executionComparison(executions) {
       row("Retries", String(a.retries), String(b.retries)),
       row("Failure", failure(a), failure(b)),
       row("Pipeline", where(a), where(b)),
-      row("Evidence", a.ci_url ? external(a.ci_url, "GitHub run") : h("a", { href: link(`/run/${a.run_id}`) }, "run"), b.ci_url ? external(b.ci_url, "GitHub run") : h("a", { href: link(`/run/${b.run_id}`) }, "run")),
+      row("Evidence", a.ci_url ? external(a.ci_url, "GitHub run") : h("a", { href: drillLink(`/run/${a.run_id}`) }, "run"), b.ci_url ? external(b.ci_url, "GitHub run") : h("a", { href: drillLink(`/run/${b.run_id}`) }, "run")),
     );
   };
   left.addEventListener("change", draw);
@@ -1454,7 +1675,7 @@ async function render() {
   const { parts } = route();
   const name = parts[0] ?? "";
   const section = { requirement: "requirements", test: "tests", run: "runs", "": "overview" }[name] ?? name;
-  for (const a of document.querySelectorAll("nav a")) {
+  for (const a of document.querySelectorAll(".section-nav a[data-nav]")) {
     // Section links keep the active filters, like every other link on the page
     a.setAttribute("href", link(a.dataset.nav === "overview" ? "/" : `/${a.dataset.nav}`));
     if (a.dataset.nav === section) a.setAttribute("aria-current", "page");
@@ -1465,6 +1686,9 @@ async function render() {
   const handler = VIEWS[name];
   statusLine.textContent = "Loading…";
   view.setAttribute("aria-busy", "true");
+  if (!view.childElementCount) {
+    view.replaceChildren(h("div", { class: "skeleton-grid", "aria-hidden": "true" }, Array.from({ length: 4 }, () => h("div", { class: "skeleton" }))));
+  }
   try {
     if (!handler) throw new Error("This page does not exist.");
     const content = await handler(parts);
@@ -1499,6 +1723,7 @@ window.addEventListener("hashchange", render);
 
 let dataVersion = null;
 let statusTimer = null;
+let currentStatus = null;
 const freshLine = document.getElementById("data-fresh");
 const staleNote = document.getElementById("data-stale");
 const autoBox = document.getElementById("auto-refresh");
@@ -1542,6 +1767,7 @@ function describe(status) {
 }
 
 function showFreshness(status) {
+  currentStatus = status;
   freshLine.replaceChildren(...describe(status));
 }
 

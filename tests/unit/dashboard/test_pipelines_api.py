@@ -71,6 +71,30 @@ def test_a_run_filter_chooses_pipelines_but_keeps_them_whole(client: TestClient)
     assert only["state"] == "complete"
 
 
+def test_requirement_matrix_repository_rows_count_only_observed_evidence(client: TestClient) -> None:
+    """Repository denominators are linked requirements with matched results in that repository."""
+    matrix = client.get("/api/requirements/matrix").json()
+    (repository,) = matrix["by_repository"]
+    rows = client.get(
+        "/api/requirements", params={"repository": repository["repository"], "observed": "true"}
+    ).json()
+
+    assert repository["repository"] == "niranjankagri/cypress-typescript-framework"
+    assert repository["observed_requirements"] == len(rows) > 0
+    assert all(row["observed"] for row in rows)
+    assert sum(repository["execution"].values()) == repository["observed_requirements"]
+    for status, count in repository["execution"].items():
+        matching = client.get(
+            "/api/requirements",
+            params={
+                "repository": repository["repository"],
+                "observed": "true",
+                "execution_status": status,
+            },
+        ).json()
+        assert len(matching) == count
+
+
 def test_runs_carry_their_pipeline_job(client: TestClient) -> None:
     """Each run row says which pipeline and job it came from."""
     runs = client.get("/api/runs").json()
@@ -206,6 +230,7 @@ def test_collection_health_per_repository(collected: TestClient) -> None:
     assert body["workflow_url"] == "https://github.com/x/y/actions"
     assert row["repository"] == REPO
     assert row["last_collected_at"].startswith("2026-10-19T12")
+    assert row["last_complete_collection_at"].startswith("2026-10-19T12")
     assert row["fresh"] is False  # the records are from October; now is later
     assert "more than the expected 26 h" in row["freshness"]
 

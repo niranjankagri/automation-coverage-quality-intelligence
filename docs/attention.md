@@ -17,6 +17,22 @@ where there is one). Code: `qualityintel/attention.py` (the rules) and `Workspac
 
 Nothing is called *open* unless the latest evidence supports it.
 
+## Action center groups
+
+The dashboard groups the existing states to make the next action clear without changing the
+finding rules:
+
+| Dashboard group | Included states | Meaning |
+|---|---|---|
+| **Investigate now** | open | Latest evidence still supports the finding. |
+| **Monitor** | suspected, unknown | The pattern is mixed or evidence is insufficient to resolve it. |
+| **Resolved** | resolved | Later evidence shows the condition gone; history remains visible. |
+
+These labels do not add a severity or infer a cause. Findings remain in the backend's documented
+state and severity order. Finding-kind filtering happens in the API before its 200-finding response
+limit. Each row keeps the observed reason, evidence count, first and last seen, repository when
+recorded, and the investigation and GitHub links when available.
+
 ## Findings, by severity
 
 The list is sorted by state (open, suspected, unknown, resolved), then by this documented
@@ -38,5 +54,6 @@ a later re-run attempt passed (the re-run is the newer execution).
 ## Filters and limits
 
 Repository and date filters apply to runs and collection records; requirement filters to the
-critical gaps. At most 200 findings are listed (the total is shown). The findings that come from
-runs are cached per data snapshot; collection freshness is evaluated at each request.
+critical gaps. At most 200 findings are listed (the total is shown). A `kind` query filters before
+that limit and reports counts for the selected kind. Findings from runs are cached per data
+snapshot; collection freshness is evaluated at each request.

@@ -109,6 +109,13 @@ can be used as a filter value to find incomplete records).
 
 Rows can add up to more than the total; the total is always computed directly, never summed.
 
+The dashboard's repository breakdown is **observed execution evidence**, not a repository-level
+coverage ratio: for each repository it counts unique in-scope requirements with at least one
+matched result from a linked test case in that repository. Requirements with no such result are
+outside that repository row's denominator. The catalog has no requirement-to-repository ownership
+field, so the dashboard does not guess ownership or treat every repository as responsible for the
+global catalog.
+
 ## Filters
 
 | Filter | Applies to | Effect |

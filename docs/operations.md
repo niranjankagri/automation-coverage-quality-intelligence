@@ -62,6 +62,14 @@ qi history restore backups/quality-2026-10-21.db --database .qi/quality.db --rep
 | Collection | Collection page, `collect.yml` run page | every repository *on time*, no incomplete pipelines in 7 days |
 | Data problems | `/api/status` `collection_problems`, the freshness bar | empty |
 
+The dashboard separates **snapshot refresh** from **CI collection** and both from **test
+execution quality**. Collection shows when the current snapshot was loaded, when its status was
+last checked, and the last collection record per repository. It also shows the last *complete*
+collection: all expected jobs and reports were recorded, regardless of whether CI concluded
+success, failure or cancelled. The Refresh button checks whether source data changed; it does not
+start a CI workflow. There is no collection retry API in this read-only dashboard. Use the linked
+collection workflow and its GitHub run log to investigate missing artifacts or ingestion errors.
+
 A failed reload keeps the last good data and marks it stale (the bar says so); the server never
 shows a half-loaded state. The collection workflow fails when a producer cannot be read, so its
 own run history is the alert.

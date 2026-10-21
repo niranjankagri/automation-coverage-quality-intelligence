@@ -62,6 +62,19 @@ STATIC = Path(__file__).parent / "static"
 REQUIREMENT_STATUSES = frozenset(
     {"no tests", "not automated", "automated", "passing", "failing", "skipped", "not run"}
 )
+COVERAGE_STATUSES = frozenset({"no tests", "not automated", "automated"})
+EXECUTION_STATUSES = frozenset({"not automated", "not run", "skipped", "passing", "failing"})
+ATTENTION_KINDS = frozenset(
+    {
+        "newly failing",
+        "incomplete pipeline",
+        "critical gap",
+        "recurring failure",
+        "duration regression",
+        "flaky candidate",
+        "overdue collection",
+    }
+)
 # The front end loads nothing from other origins and runs no inline script
 CONTENT_SECURITY_POLICY = (
     "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
@@ -417,11 +430,29 @@ def create_app(
         return current().readiness(chosen, stale=live.status().stale)
 
     @app.get("/api/requirements", tags=["coverage"])
-    def requirements(chosen: FullScope, status: str | None = None) -> tuple[RequirementRow, ...]:
-        """In-scope requirements; ``status`` drills down to one coverage or execution status."""
+    def requirements(
+        chosen: FullScope,
+        status: str | None = None,
+        observed: bool | None = None,
+        stale: bool | None = None,
+        coverage_status: str | None = None,
+        execution_status: str | None = None,
+    ) -> tuple[RequirementRow, ...]:
+        """In-scope requirements, optionally filtered by status, linked result evidence, or staleness."""
         if status is not None:
             _check("status", [status], REQUIREMENT_STATUSES)
-        return current().requirements(chosen, status=status)
+        if coverage_status is not None:
+            _check("coverage_status", [coverage_status], COVERAGE_STATUSES)
+        if execution_status is not None:
+            _check("execution_status", [execution_status], EXECUTION_STATUSES)
+        return current().requirements(
+            chosen,
+            status=status,
+            observed=observed,
+            stale=stale,
+            coverage_status=coverage_status,
+            execution_status=execution_status,
+        )
 
     @app.get("/api/search", tags=["investigation"])
     def search(
@@ -481,9 +512,11 @@ def create_app(
         return InvestigationSummary(text=made.text, markdown=made.markdown)
 
     @app.get("/api/attention", tags=["investigation"])
-    def attention(chosen: FullScope) -> AttentionView:
+    def attention(chosen: FullScope, kind: str | None = None) -> AttentionView:
         """Findings that need attention, each with its evidence, state and links (docs/attention.md)."""
-        return current().attention(chosen)
+        if kind is not None:
+            _check("kind", [kind], ATTENTION_KINDS)
+        return current().attention(chosen, kind=kind)
 
     @app.get("/api/requirements/matrix", tags=["coverage"])
     def requirement_matrix(chosen: FullScope) -> RequirementMatrix:

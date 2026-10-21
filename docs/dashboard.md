@@ -20,7 +20,7 @@ a time. If a rebuild fails (database locked by a running import, corrupted file,
 the last good data stays, and the page says so: "The last refresh failed ...; the figures shown
 are from ...".
 
-The bar under the filters shows when the data was loaded, the latest run, the last collection
+The data bar shows when the snapshot was loaded, the latest run, the newest collection record
 and incomplete collections of the last 7 days ([collection.md](collection.md)). The page asks
 `/api/status` at the server's interval and re-renders the current view when the data changed;
 the address and every filter stay as they are. *Auto-refresh* switches that off (remembered in
@@ -35,21 +35,65 @@ every page and API call needs HTTP basic authentication. Put TLS in front when o
 
 | View | Shows | Drill-down |
 |---|---|---|
-| Overview | **release status** (ready / at risk / blocked / unknown, with every reason and the gate's rules, [readiness.md](readiness.md)), test executions, critical requirements without automation, flaky candidates, incomplete pipelines, latest collection; requirements in scope; requirement coverage, automation coverage, automated requirement coverage; execution pass rate and pass / fail / error / skip counts of the snapshot; snapshot runs; critical requirements without automation; failing requirements; other gaps | every card opens the list behind it (e.g. requirement coverage -> requirements without tests) |
+| Overview | **release status** (ready / at risk / blocked / unknown, with every reason and the gate's rules, [readiness.md](readiness.md)), test executions, critical requirements without automation, flaky candidates, incomplete pipelines, latest collection; requirements in scope; requirement coverage, automation coverage, automated requirement coverage; execution pass rate and pass / fail / error / skip counts of the snapshot; repository collection freshness; snapshot runs; critical requirements without automation; failing requirements; other gaps | cards and quick actions open the existing filtered list or evidence page |
 | Search | everything whose text contains every word of the query: repositories, workflows, pipelines (and GitHub run ids), tests, requirements, first lines of failure messages; grouped by kind with counts, query words marked; the header search opens it from any page; the repository and date filters apply | result -> its page (keeping the filters and the result's repository); pipeline -> its GitHub run |
-| Needs attention | newly failing tests, incomplete pipelines, critical gaps, recurring failures, confirmed duration regressions, flaky candidates (suspected), overdue collections; state (open, suspected, unknown, resolved), why each is listed, evidence count, first and last seen ([attention.md](attention.md)) | finding -> its test, pipeline, requirement or collection page; GitHub run |
+| Needs attention | existing findings grouped as Investigate now (open), Monitor (suspected or unknown), and Resolved; observed reason, evidence count, first and last seen, repository, affected entity, copy link ([attention.md](attention.md)) | finding -> its test, pipeline, requirement or collection page; GitHub run |
 | Requirements | id, title, feature, criticality, automated / linked test cases, coverage status, execution status; status filter | requirement -> its test cases and their latest executions |
 | Tests | every executed test with run, pass, fail, error, skip counts and last failure; search; latest-outcome filter | test -> investigation page: breadcrumbs (repository > workflow > pipeline > run > test), latest and previous result, context, repository and workflow, stability per context, source run with a link to the CI run, linked requirements and test cases, pass/fail pattern, duration chart with its numbers, latest failure and stack trace (shown as text, never as HTML, collapsed), two executions side by side (missing values say *not recorded*), every execution; copy the test identifier, the page link or a summary (text or Markdown) |
 | Compare | two builds side by side (runs, pass rate, counts and their differences, coverage snapshot, GitHub run attempts and incomplete pipelines of each build, a summary to copy) and the changes where both ran the same suite: newly failing, recovered, still failing, new, removed, slower, newly flaky; change-type chips; suites that ran in one build only listed separately ([history.md](history.md#comparing-builds)) | test -> its history |
 | Runs | every imported run with pipeline / job, context, counts and pass rate | run -> all results, failures first |
 | Pipelines | pipeline executions newest first, collected ones included even when they uploaded nothing; per pipeline: status (incomplete before the CI conclusion success / failure / cancelled), repository, workflow, run number, branch, commit, links to the exact GitHub run and commit, recorded problems, jobs with start time, attempt and counts, attempts of re-runs side by side; status chips and a workflow filter (both in the address); expected jobs ([pipelines.md](pipelines.md)) | job -> its run; run and commit -> GitHub |
-| Collection | per repository: last collection, fresh or overdue against `QI_COLLECTION_HOURS` (default 26 h), pipelines, complete, incomplete, results and CI conclusions of the last 7 days, every missing artifact and ingestion problem, link to the collection workflow (`QI_COLLECTION_URL`) ([collection.md](collection.md)) | repository -> its pipelines |
+| Collection | dashboard snapshot state and refresh time; per repository: last collection, last complete collection, fresh or overdue against `QI_COLLECTION_HOURS` (default 26 h), pipelines, complete, incomplete, results and CI conclusions of the last 7 days, every missing artifact and ingestion problem, link to the collection workflow (`QI_COLLECTION_URL`) ([collection.md](collection.md)) | repository -> its pipelines |
 | Trends | daily snapshots (results, pass rate, test duration, requirements by status), days that are not comparable (new suites, carried-over runs), duration per run for each context, coverage snapshots; every chart with its numbers in a table | run context charts list each run with its build |
 | Stability | class counts; tests needing attention with evidence; recurring failures; duration regressions; runs per context | test -> history; run strip -> run ([history.md](history.md)) |
 
 Filters (repository, feature, owner, criticality, test type, framework, environment, browser, build, pipeline job, from/to date) apply to every view
 and are kept in the address, so a filtered view can be bookmarked or shared. The drop-down values
 come from the data (`/api/facets`), never from a fixed list.
+
+**Navigation and quick views.** The header groups the existing routes as Overview, Investigate,
+Coverage, Execution, Analytics and Operations. Links keep the active URL-backed scope; the active
+section is marked for keyboard and screen-reader users. At phone widths, the navigation and
+unfiltered advanced filters start collapsed and can be opened as needed; the filter panel can be
+collapsed at every width. Quick
+views apply these existing filters and routes: Critical gaps (attention kind), Recent failures
+(failed latest outcomes from the last seven days), Incomplete pipelines, and Stale evidence.
+The active filter chips include page-specific filters and can remove them; Clear removes the
+current route filters without removing comparison build selectors. Details keep a Back to filtered
+results link when opened from a result list.
+
+**Overview guide and definitions.** The overview opens with a short workflow guide; *Guide and
+glossary* in the header can reopen it. Each headline metric has a keyboard-accessible definition.
+The copied release summary is built only from `/api/readiness`, `/api/summary` and `/api/collection`
+values for the current scope, and carries the gate reasons and limitations. The overview also
+shows test changes for the latest two builds only when the existing comparison API finds shared
+suites; its counts link to the same filtered Compare view. It does not present an incomparable
+pair as a delta. Collection freshness counts all repositories whose latest collection record is
+within the configured server window, regardless of run filters; it is not a test pass rate. An
+empty repository set is `n/a`.
+
+**Requirement breakdowns.** Criticality, feature and owner cells separate linked-test coverage,
+automation, execution status and stale evidence. Each nonzero cell drills into a query that filters
+that exact field. Repository rows count only requirements with a matched result linked to a
+requirement in that repository. They describe observed execution evidence, not repository
+ownership or an expectation that a repository covers the entire global catalog. Requirements
+without a matched result in that repository are excluded from that breakdown's denominator.
+
+**Action center groups.** The existing attention analysis remains the source of findings and order.
+Open findings appear under *Investigate now*. Suspected and unknown findings appear under
+*Monitor*. Resolved findings remain under *Resolved*. These are deterministic presentation groups
+of the documented states in [attention.md](attention.md), not new severity or diagnosis rules.
+Filtering to a finding state opens its group. Finding type filtering is applied by the API before its
+200-item limit. Each row retains the reason,
+evidence count, first and last observation, repository when recorded, investigation link, and
+GitHub run link when available; the copy action copies that filtered investigation URL.
+
+**Operations freshness.** Collection shows the dashboard snapshot's load time, last refresh check,
+refresh interval, and latest collection record separately from each repository's last collection,
+last complete collection and expected-window freshness. A complete collection means required jobs
+and reports were recorded; the CI conclusion (success, failure or cancelled) remains a separate
+field. The Refresh button checks for new source data; there is no collection retry endpoint, so it
+does not launch a workflow.
 
 Coverage and pass rate are separate cards on purpose ([ADR 0004](adr/0004-separate-metrics.md)).
 
@@ -94,10 +138,12 @@ with 6 or more rows get a row filter, *Download CSV* (the filtered and sorted ro
 columns; cells a spreadsheet would run as formulas are made inert) and a column chooser; long
 tables show 50 rows per page. Sorting and filtering only reorder what the API returned.
 
-**Requirements:** a matrix by criticality, by feature and by owner (coverage status, execution status,
-stale evidence; from `/api/requirements/matrix`), each coverage count a link to those
-requirements; *Uncovered critical requirements* as a one-click filter; per requirement its latest
-execution and a *stale* badge when that is older than 14 days.
+**Requirements:** a matrix by criticality, feature, owner and observed repository evidence (from
+`/api/requirements/matrix`), each nonzero cell linked to matching requirements. The API's
+`coverage_status`, `execution_status`, `observed` and `stale` filters keep these drill-downs exact;
+the original `status` filter remains available. Per requirement, the table distinguishes linked
+cases, automated cases, matched results, execution status and a *stale* badge when the latest
+execution is older than 14 days.
 
 **Stability:** flaky candidates are labelled *suspected*; each row shows failure rate, last
 failure, the builds with mixed results, the evidence, and links to the last failing and the last
@@ -114,6 +160,8 @@ name) to the runs of that day; every chart keeps its table of numbers.
 | ![History of the test that failed on 13 Oct](images/dashboard-test-history.png) | ![Runs, dark theme](images/dashboard-run.png) |
 | ![Trends](images/dashboard-trends.png) | ![Stability](images/dashboard-stability.png) |
 | ![Pipelines: the cancelled TaskBoard run is incomplete](images/dashboard-pipelines.png) | |
+| ![Action center findings grouped for investigation](images/dashboard-action-center.png) | ![Operations snapshot and collection freshness](images/dashboard-operations.png) |
+| ![Requirement evidence breakdown by repository](images/dashboard-repository-coverage.png) | ![Phone view with collapsed navigation and filters](images/dashboard-phone.png) |
 
 Made by `python tools/screenshots.py`; CI takes the same screenshots on every run (artifact
 `dashboard-e2e`).
@@ -128,13 +176,13 @@ Interactive documentation: `/docs` (generated from the routes, so it cannot drif
 | `GET /api/status?check=` | data version, when it was loaded, latest run, refresh interval, last check and error, stale flag, collection freshness; `check=true` looks for new data first |
 | `GET /api/facets` | filter values present in the data |
 | `GET /api/search?q=&limit=` | search results grouped by kind (at most `limit`, 1-50, per group) with full counts; `q` 2-100 characters, else 422 |
-| `GET /api/attention` | findings with state, severity, why, evidence, first and last seen, links ([attention.md](attention.md)) |
+| `GET /api/attention?kind=` | findings with state, severity, why, evidence, first and last seen, links; optional finding kind filter is applied before the 200-item limit ([attention.md](attention.md)) |
 | `GET /api/tests/summary?key=&link=` | a copyable summary of a test's investigation, as `text` and `markdown`; `link` (http/https only) is included |
 | `GET /api/compare/summary?base=&head=&link=` | the same for a build comparison |
 | `GET /api/readiness` | release status of the scope with reasons, gate rules and headline numbers |
 | `GET /api/summary` | coverage metrics, gaps, snapshot runs, outcome counts, pass rate |
-| `GET /api/requirements/matrix` | requirements by criticality and feature: coverage, execution and stale counts |
-| `GET /api/requirements?status=` | requirement rows; `status` = a coverage or execution status |
+| `GET /api/requirements/matrix` | requirements by criticality, feature, owner and observed repository evidence |
+| `GET /api/requirements?status=&coverage_status=&execution_status=&observed=&stale=` | requirement rows; exact field filters are additive, and `status` remains the combined legacy filter |
 | `GET /api/requirements/{id}` | one requirement, its test cases and their latest executions |
 | `GET /api/tests?outcome=` | every executed test with counts |
 | `GET /api/tests/history?key=` | all executions of one test, newest first (key in the query: it contains `/` and `::`) |
@@ -161,9 +209,10 @@ served with a strict Content-Security-Policy (`default-src 'self'`, no inline sc
 `X-Content-Type-Options: nosniff` and `Referrer-Policy: no-referrer`. Light and dark themes
 follow the operating system.
 
-States: a loading line while data is fetched; an empty-state text when a list has no rows; an
-error box with the API's message and a Retry button when a request fails; a message for unknown
-pages and ids.
+States: skeleton cards on the first load; a loading line while data is fetched; an empty-state
+text when a list has no rows; an error box with the API's message and a Retry button when a request
+fails; a message for unknown pages and ids. Native `details` and `dialog` elements provide
+collapsible filters, definitions and the guide without adding a framework or external code.
 
 ## How it is tested
 

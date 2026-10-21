@@ -26,6 +26,10 @@ It runs no tests and replaces no framework; it complements the automation projec
 
 ![Dashboard overview on the sample data](docs/images/dashboard-overview.png)
 
+The overview includes a comparable-build change summary when the selected builds share suites.
+The action center, collection freshness and repository evidence breakdown are documented with
+sample screenshots in [the dashboard guide](docs/dashboard.md#screenshots-sample-data).
+
 ## Try it (about two minutes)
 
 Python 3.12 or newer and Git. Nothing else: no database server, no configuration file, no
@@ -63,8 +67,8 @@ CI on Linux and Windows on every push: [docs/validation.md](docs/validation.md).
 | Quality gates | `qi gate` | configurable rules; passed / failed / incomplete as exit codes 0 / 1 / 3; JSON, HTML and Markdown reports | [quality gates](docs/quality-gates.md) |
 | Collection | `qi collect` | the CI results of the whole portfolio (23 repositories, 59 jobs: TestNG, JUnit 5, Playwright, pytest, Cypress, Robot, Cucumber, Vitest, node:test, k6), fetched from their workflow artifacts every day: one pipeline execution per run attempt, idempotent, failed and cancelled runs kept apart, missing reports in a daily audit | [collection](docs/collection.md) |
 | Pipelines | `--pipeline ID --job NAME=PATH` | the jobs of one CI execution grouped; re-run attempts; a gate never decides on a pipeline with a missing, empty or inconsistent job; Pipelines page | [pipelines](docs/pipelines.md) |
-| Dashboard | `qi dashboard` | read-only web UI and JSON API (`/docs`) over the same numbers: release readiness, requirement matrix by criticality, feature and owner, pipelines and collection health, build comparison, test investigation, flaky evidence, trends; sortable and exportable tables; live reload of new data; WCAG 2.2 checks in three browser engines; this machine only unless a login (or public mode) is set | [dashboard](docs/dashboard.md), [OpenAPI](docs/api/openapi.json) |
-| Investigation | Search, Needs attention | search across tests, failure messages, requirements, pipelines and repositories; one list of what needs attention with its evidence and state; breadcrumbs from repository to test; copyable summaries | [dashboard](docs/dashboard.md), [attention](docs/attention.md) |
+| Dashboard | `qi dashboard` | read-only web UI and JSON API (`/docs`) over the same numbers: readiness with definitions and evidence links; coverage by criticality, feature, owner and observed repository results; grouped navigation and collapsible URL-backed filters; responsive light/dark views; collection and snapshot health; accessible charts and tables; sortable and exportable data; WCAG 2.2 checks in three browser engines | [dashboard](docs/dashboard.md), [OpenAPI](docs/api/openapi.json) |
+| Investigation | Search, Needs attention | search across tests, failure messages, requirements, pipelines and repositories; evidence-backed action groups and copy links; breadcrumbs and Back to filtered results; test history, failure details and deterministic copy summaries | [dashboard](docs/dashboard.md), [attention](docs/attention.md) |
 | Operations | `qi history prune / backup / check / restore / fetch` | retention, verified backups and restores, a published history fetched safely; login lock-out, HSTS, JSON access log | [operations](docs/operations.md), [security](docs/security.md) |
 | Hosting | `Dockerfile`, `render.yaml` | the public demonstration: a non-root image, deployed from `main` after CI passed, fed by the daily collection, smoke-tested daily | [deployment](docs/deployment.md) |
 

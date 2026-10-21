@@ -41,6 +41,12 @@ left to the people who run it. Reviewed on 2026-10-20 (Phase 7 of the post-1.0 p
 | Vulnerable dependencies, leaked secrets in commits | exact versions pinned; CI job *Dependency audit* runs `pip-audit` on every installed version on every push (none known on 2026-10-21); Dependabot security and monthly grouped updates; GitHub secret scanning with push protection | `.github/workflows/ci.yml`, `.github/dependabot.yml` |
 | A gate passing on incomplete input | missing, unreadable or empty results and incomplete pipeline executions make the gate *incomplete* (exit 3) | gate and pipeline tests ([quality-gates.md](quality-gates.md), [pipelines.md](pipelines.md)) |
 
+**Dashboard UX update (2026-10-21).** The guide dialog, metric definitions, grouped navigation and
+action links are static same-origin UI. Imported values continue to enter the page as text nodes;
+the strict CSP, GET-only API, authentication behavior, referrer policy and formula-safe CSV
+download are unchanged. UI preferences remain browser-local; filters remain in the URL. The
+dashboard's Refresh control checks the snapshot only and cannot trigger a collection workflow.
+
 ## Running the dashboard for a team
 
 Modes, retention, backups, monitoring and incidents: [operations.md](operations.md).

@@ -26,6 +26,8 @@ PAGES = [
     "#/collection",
     "#/search?q=checkout",
     "#/attention",
+    "#/attention?kind=critical%20gap",
+    "#/requirements?stale=true",
     "#/test?key=com.enterprise.automation.tests.ui.CustomerManagementTest%3A%3AadminEditsACustomer",
 ]
 
@@ -52,6 +54,19 @@ def test_no_wcag_violations(page: Page, route: str, theme: str) -> None:
     assert violations(page) == []
 
 
+@pytest.mark.parametrize("theme", ["light", "dark"])
+def test_mobile_overview_has_no_wcag_violations(page: Page, theme: str) -> None:
+    """The collapsed phone navigation and filters stay accessible in either theme."""
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto("/")
+    page.evaluate(f"localStorage.setItem('qi-theme', '{theme}')")
+    page.goto("/#/")
+    expect(page.locator("#view h1")).to_be_visible()
+    expect(page.locator(".mobile-nav > summary")).to_be_visible()
+
+    assert violations(page) == []
+
+
 def test_no_wcag_violations_with_pipelines_and_test_investigation(collected_page: Page) -> None:
     """The pages that need pipeline and collection data, and a test's investigation page."""
     page = collected_page
@@ -62,4 +77,12 @@ def test_no_wcag_violations_with_pipelines_and_test_investigation(collected_page
         assert violations(page) == [], route
     page.goto("/#/pipelines")
     page.locator("details.pipeline summary").first.click()
+    assert violations(page) == []
+
+
+def test_guide_dialog_has_no_wcag_violations(page: Page) -> None:
+    """The keyboard-accessible first-use guide stays accessible when opened."""
+    page.goto("/")
+    page.get_by_role("button", name="Guide and glossary").click()
+
     assert violations(page) == []
