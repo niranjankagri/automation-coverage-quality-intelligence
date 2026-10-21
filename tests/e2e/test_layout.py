@@ -16,7 +16,21 @@ from playwright.sync_api import Page, expect
 pytestmark = pytest.mark.e2e
 
 WIDTHS = [390, 768, 1280]
-PAGES = ["#/", "#/requirements", "#/tests", "#/stability", "#/trends", "#/attention", "#/search?q=checkout"]
+PAGES = [
+    "#/",
+    "#/requirements",
+    "#/requirement/SHOP-006",
+    "#/tests",
+    "#/test?key=com.enterprise.automation.tests.ui.CustomerManagementTest%3A%3AadminEditsACustomer",
+    "#/runs",
+    "#/stability",
+    "#/trends",
+    "#/compare?framework=testng&base=f5a40d5&head=1d03232",
+    "#/pipelines",
+    "#/collection",
+    "#/attention",
+    "#/search?q=checkout",
+]
 REGIONS = ["header.top", "#filters", ".databar", "#catalog-notice", "main"]
 
 
@@ -47,6 +61,16 @@ def test_page_regions_stack_without_overlapping_or_spilling(page: Page, route: s
     for region in regions:
         assert region["x"] >= 0, f"{region['name']} starts left of the window"
         assert region["x"] + region["width"] <= width + 1, f"{region['name']} spills right"
+    document_width = page.evaluate("document.documentElement.scrollWidth")
+    overflow = page.evaluate(
+        """width => [...document.querySelectorAll('body *')]
+          .map(e => ({element: `${e.tagName.toLowerCase()}${e.id ? `#${e.id}` : ''}`,
+            className: typeof e.className === 'string' ? e.className : '',
+            right: Math.ceil(e.getBoundingClientRect().right), text: (e.textContent || '').slice(0, 80)}))
+          .filter(e => e.right > width + 1).slice(0, 12)""",
+        width,
+    )
+    assert document_width <= width + 1, f"{route} has page-wide horizontal overflow at {width}px: {overflow}"
 
 
 @pytest.mark.parametrize("width", WIDTHS)

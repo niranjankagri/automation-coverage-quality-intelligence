@@ -1,8 +1,9 @@
 # M12 gap analysis: interactive investigation
 
-Audit of the dashboard before M12 (branch `feature/m12-interactive-investigation`, built on the
-M11/M14 branch of PR #5, which `main` does not contain yet). For each capability the plan asks
-for: what exists, where, and what M12 adds. Only the gaps are built.
+Design audit of the dashboard before M12 (branch `feature/m12-interactive-investigation`, built on
+the M11/M14 branch of PR #5). M11/M14 and M12 are now merged into `main`; this file records the
+baseline and implementation decisions. PR #9 reviews the merged behavior and closes concrete
+issues found without duplicating completed capabilities.
 
 ## Baseline
 

@@ -209,6 +209,63 @@ def test_a_path_holding_two_formats_is_refused_instead_of_counted_twice(store: H
     assert "holds Allure and JUnit XML results" in record.problems[0]
 
 
+def test_duplicate_report_contents_are_visible_and_make_the_collection_incomplete(
+    store: HistoryStore,
+) -> None:
+    """Identical files are not silently discarded while the attempt is marked complete."""
+    config = CONFIG.model_copy(
+        update={
+            "producer": (
+                CONFIG.producer[0].model_copy(
+                    update={"job": (CONFIG.producer[0].job[0].model_copy(update={"path": "."}),)}
+                ),
+            )
+        }
+    )
+    artifacts: dict[str, dict[str, bytes] | bytes] = {
+        "report-api": {"first.xml": API_XML.read_bytes(), "copy.xml": API_XML.read_bytes()}
+    }
+
+    with store:
+        collect(config, FakeSource([run()], artifacts), store, SINCE, now=NOW)
+        (record,) = store.collections()
+
+    assert record.state == "incomplete"
+    assert record.results == 32
+    assert any("duplicate report" in problem and "copy.xml" in problem for problem in record.problems)
+
+
+def test_duplicate_artifact_names_are_not_resolved_by_arbitrary_order(store: HistoryStore) -> None:
+    """The correct artifact cannot be inferred when GitHub lists two with the configured name."""
+
+    class DuplicateArtifacts(FakeSource):
+        def artifacts(self, repository: str, run_id: int) -> list[Artifact]:
+            return [
+                *super().artifacts(repository, run_id),
+                Artifact(id=999, name="report-api", size=1, expired=False),
+            ]
+
+    with store:
+        collect(CONFIG, DuplicateArtifacts([run()], good_artifacts()), store, SINCE, now=NOW)
+        (record,) = store.collections()
+
+    assert record.state == "incomplete"
+    assert any("job api: artifact report-api is ambiguous" in problem for problem in record.problems)
+
+
+def test_a_zip_file_directory_collision_becomes_an_incomplete_attempt(store: HistoryStore) -> None:
+    """A malformed artifact cannot crash the collector with NotADirectoryError."""
+    artifacts = good_artifacts()
+    artifacts["report-api"] = {"junit.xml": API_XML.read_bytes(), "junit.xml/nested.xml": b"<testsuite/>"}
+
+    with store:
+        collect(CONFIG, FakeSource([run()], artifacts), store, SINCE, now=NOW)
+        (record,) = store.collections()
+
+    assert record.state == "incomplete"
+    assert any("conflicting file paths" in problem for problem in record.problems)
+
+
 def test_a_wrong_path_and_a_broken_zip_are_named(store: HistoryStore) -> None:
     """Problems that belong to the run are recorded with the job they concern."""
     artifacts = good_artifacts()

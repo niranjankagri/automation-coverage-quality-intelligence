@@ -106,10 +106,14 @@ missing job is incomplete with conclusion `cancelled`: the two never look alike.
 |---|---|
 | Same attempt collected again | skipped, nothing downloaded (idempotent) |
 | Re-run of a run (attempt 2) | collected as its own attempt; a pipeline gate uses the job's latest attempt |
+| GitHub repeats a workflow-run row on adjacent API pages | deduplicated by run id and attempt; changing totals during pagination are retried |
 | Job's artifact missing (job cancelled, failed before upload) | recorded incomplete: "artifact X not found" |
+| Several artifacts have the configured name | recorded incomplete as ambiguous; no arbitrary artifact is selected |
 | Artifact expired | recorded incomplete |
-| Path missing in the artifact, broken zip, unreadable report | recorded incomplete, with the reason |
+| Path missing in the artifact, unsafe or malformed zip, unreadable report | recorded incomplete, with the reason |
+| Duplicate report contents or parser warnings | recorded incomplete and listed so dropped or ambiguous evidence is visible |
 | Network error, token missing or not allowed, rate limit, GitHub server error | **nothing recorded**: the run is tried again next time; `qi collect` exits 3 |
+| Malformed, oversized or shifting GitHub API response | **nothing recorded**: the producer or run is reported as an error and retried |
 | A producer cannot be listed | error for that producer; the others are still collected |
 
 Exit codes: 0 when every producer could be read (incomplete pipelines are recorded, not errors),
@@ -139,9 +143,11 @@ problem, so the gate is **incomplete (exit 3)** however its rules come out. A ga
 
 Artifacts come from other repositories and are untrusted ([security.md](security.md)):
 
-- zip members are checked before anything is written: no absolute paths, no `..`, no drive
-  letters, no links; at most 5,000 files and 200 MB unpacked (checked against the declared sizes
-  and again while writing, which stops zip bombs); downloads at most 150 MB;
+- zip members are checked before anything is written: no absolute paths, `..`, drive letters,
+  links, Windows-special names, duplicate paths or file/directory collisions; at most 10,000
+  entries, 5,000 files, 150 MB compressed and 200 MB unpacked; downloads at most 150 MB;
+- GitHub API responses are limited to 20 MB; malformed rows and incomplete pagination are
+  reported as retryable errors instead of appearing as an empty list;
 - the token is read from `GITHUB_TOKEN` (or `GH_TOKEN`), sent only to `api.github.com`, never to
   the signed storage URL a download redirects to, and never part of a message;
 - unpacked files are deleted after each run; imported failure messages are redacted as always;

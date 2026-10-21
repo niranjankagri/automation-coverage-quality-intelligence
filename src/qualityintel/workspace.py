@@ -42,6 +42,7 @@ from qualityintel.history.builds import BuildSide, builds_in_order, compare_buil
 from qualityintel.history.trends import CoverageSnapshot, coverage_changes, daily_trend
 from qualityintel.ingest.batch import Batch, import_results
 from qualityintel.ingest.catalog_file import load_catalog
+from qualityintel.links import github_run_url
 from qualityintel.models.catalog import Catalog, Requirement
 from qualityintel.models.collection import PipelineCollection
 from qualityintel.models.enums import AutomationStatus, Outcome
@@ -830,7 +831,7 @@ class Workspace:
     def test_history(self, key: str, scope: Scope = EVERYTHING) -> TestHistory:
         """All executions of one test key, newest first, with its requirements (``KeyError``: never ran)."""
         runs = self._runs(scope)
-        urls = {c.pipeline_id: c.url for c in self.collections if c.url.startswith("https://github.com/")}
+        urls = {c.pipeline_id: c.url for c in self.collections if github_run_url(c.url)}
         workflows = {c.pipeline_id: c.workflow for c in self.collections}
         executions = [
             _execution_view(run, r, urls, workflows) for run in runs for r in run.results if r.key == key
@@ -1042,7 +1043,7 @@ class Workspace:
                             pipeline_id=c.pipeline_id,
                             attempt=c.attempt,
                             # the attempt's own page: GitHub keeps one per re-run
-                            run_url=f"{c.url}/attempts/{c.attempt}" if c.url.startswith("https://") else None,
+                            run_url=f"{c.url}/attempts/{c.attempt}" if github_run_url(c.url) else None,
                             text=p,
                         )
                         for c in recent
@@ -1245,7 +1246,7 @@ class Workspace:
                         repositories=tuple(sorted(e.repositories)),
                         first_seen=e.first_seen,
                         last_seen=e.last_seen,
-                        url=e.url if e.url and e.url.startswith("https://github.com/") else None,
+                        url=github_run_url(e.url),
                     )
                     for e in entries
                 )
@@ -1295,7 +1296,7 @@ class Workspace:
     def _run_findings(self, scope: Scope) -> list[FindingView]:
         """Findings from the runs: newly failing, recurring, slower, flaky (all time-independent)."""
         runs = self._runs(scope)
-        urls = {c.pipeline_id: c.url for c in self.collections if c.url.startswith("https://github.com/")}
+        urls = {c.pipeline_id: c.url for c in self.collections if github_run_url(c.url)}
         latest = latest_outcomes(runs)
         found: list[FindingView] = []
         for item in newly_failing(runs):
@@ -1418,9 +1419,7 @@ class Workspace:
                     repository=record.repository,
                     route="/pipelines",
                     params={"repository": record.repository, "pipeline": record.pipeline_id},
-                    url=f"{record.url}/attempts/{record.attempt}"
-                    if record.url.startswith("https://github.com/")
-                    else None,
+                    url=f"{record.url}/attempts/{record.attempt}" if github_run_url(record.url) else None,
                 )
             )
         chosen = scope.run_filters.repositories
@@ -1641,7 +1640,7 @@ def _pipeline_view(execution: PipelineExecution, records: Sequence[PipelineColle
         repository=repository,
         workflow=latest.workflow if latest else None,
         run_number=latest.run_number if latest else None,
-        url=latest.url if latest and latest.url.startswith("https://github.com/") else None,
+        url=github_run_url(latest.url) if latest else None,
         commit_url=f"https://github.com/{repository}/commit/{commit}" if repository and commit else None,
         branch=execution.branch or (latest.branch if latest else None),
         commit=commit,
@@ -1698,7 +1697,7 @@ def _side_view(side: BuildSide, records: Sequence[PipelineCollection] = ()) -> B
         if coverage
         else None,
         ci_runs=tuple(
-            sorted({f"{c.url}/attempts/{c.attempt}" for c in mine if c.url.startswith("https://github.com/")})
+            sorted({f"{github_run_url(c.url)}/attempts/{c.attempt}" for c in mine if github_run_url(c.url)})
         ),
         incomplete_pipelines=tuple(
             sorted({f"{c.pipeline_id} attempt {c.attempt}" for c in mine if c.state == "incomplete"})
