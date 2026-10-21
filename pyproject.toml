@@ -15,12 +15,12 @@ license-files = ["LICENSE"]
 authors = [{ name = "Niranjan Kumar Agri" }]
 requires-python = ">=3.12"
 dependencies = [
-    "pydantic==2.13.5",
+    "pydantic==2.14.1",
     # dashboard (Milestone 5): JSON API and a static single-page front end
-    "fastapi==0.142.2",
+    "fastapi==0.143.5",
     "uvicorn==0.54.0",
     # pinned: FastAPI only sets a lower bound, and newer releases change the test client
-    "starlette==1.7.0",
+    "starlette==1.8.0",
 ]
 
 [project.optional-dependencies]
@@ -28,7 +28,7 @@ dependencies = [
 dev = [
     "pytest==9.1.1",
     "pytest-cov==7.1.0",
-    "ruff==0.16.10",
+    "ruff==0.17.1",
     "mypy==2.4.0",
     # HTTP client behind FastAPI's TestClient (starlette deprecated plain httpx for it)
     "httpx2==2.13.1",
