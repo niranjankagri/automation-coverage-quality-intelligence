@@ -6,6 +6,7 @@ sample data, so the browser sees exactly what a user of the demonstration sees.
 
 import os
 import socket
+import sys
 import threading
 import time
 from collections.abc import Callable, Iterator
@@ -138,6 +139,24 @@ def collected_url() -> Iterator[str]:
 def collected_page(browser: Browser, collected_url: str) -> Iterator[Page]:
     """A page on the dashboard with collection records."""
     yield from _page(browser, collected_url)
+
+
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    """On Windows only: ignore the test servers' unclosed browser sockets reported at garbage collection.
+
+    Warnings are errors (pyproject.toml). On Windows, asyncio's Proactor loop leaves the sockets of
+    browser connections that a closed browser context abandoned to the garbage collector, which
+    reports them as ``PytestUnraisableExceptionWarning`` in whichever test happens to run, failing
+    an unrelated test at random. Only that exact report is ignored, only here; Linux (CI) and every
+    other warning are unchanged.
+    """
+    if sys.platform != "win32":
+        return
+    marker = pytest.mark.filterwarnings(
+        r"ignore:.*(socket\.socket|_ProactorBasePipeTransport\.__del__):pytest.PytestUnraisableExceptionWarning"
+    )
+    for item in items:
+        item.add_marker(marker)
 
 
 @pytest.fixture(scope="session")
