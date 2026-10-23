@@ -50,6 +50,7 @@ from qualityintel.workspace import (
     PipelinesView,
     ReadinessView,
     RegressionsView,
+    ReportOption,
     ReportOverview,
     ReportSuites,
     RepositoryTrendsView,
@@ -104,6 +105,7 @@ def run_scope(
     until: date | None = None,
     repository: ListQuery = None,
     job: ListQuery = None,
+    kind: ListQuery = None,
 ) -> Scope:
     """Run filters from query parameters (``?browser=firefox&browser=chrome&since=2026-10-13``)."""
     if since is not None and until is not None and since > until:
@@ -116,6 +118,7 @@ def run_scope(
             builds=frozenset(build or ()),
             repositories=frozenset(repository or ()),
             jobs=frozenset(job or ()),
+            kinds=frozenset(kind or ()),
             since=since,
             until=until,
         )
@@ -136,11 +139,12 @@ def full_scope(
     until: date | None = None,
     repository: ListQuery = None,
     job: ListQuery = None,
+    kind: ListQuery = None,
 ) -> Scope:
     """Catalog and run filters; values that can never match an enum are a client error."""
     _check("criticality", criticality or [], {c.value for c in Criticality})
     _check("test_type", test_type or [], {t.value for t in TestType})
-    runs = run_scope(framework, environment, browser, build, since, until, repository, job).run_filters
+    runs = run_scope(framework, environment, browser, build, since, until, repository, job, kind).run_filters
     return Scope(
         filters=Filters(
             features=frozenset(feature or ()),
@@ -396,6 +400,11 @@ def create_app(
         """The latest snapshot as the report overview: totals, suites, failure causes, trend."""
         return current().report_overview(chosen)
 
+    @app.get("/api/report/options", tags=["report"])
+    def report_options() -> tuple[ReportOption, ...]:
+        """Recorded repository / test type / browser / environment combinations for the filter bar."""
+        return current().report_options()
+
     @app.get("/api/report/suites", tags=["report"])
     def report_suites(chosen: RunScope) -> ReportSuites:
         """The latest snapshot as a tree: repository (or framework) > job > class > test."""
@@ -577,10 +586,12 @@ def create_app(
         chosen: RunScope,
         limit: Annotated[int, Query(ge=1, le=100)] = 10,
         suite: Annotated[str | None, Query(max_length=500)] = None,
-        kind: Annotated[str | None, Query(max_length=50)] = None,
     ) -> ExecutionDashboard:
-        """Historical test-execution dashboard; counts all reports in scope, not the latest snapshot."""
-        return current().execution_dashboard(chosen, limit, suite, kind)
+        """Historical test-execution dashboard; counts all reports in scope, not the latest snapshot.
+
+        ``kind`` (an execution family such as ``api`` or ``ui``) is part of the scope like on every route.
+        """
+        return current().execution_dashboard(chosen, limit, suite)
 
     @app.get("/api/tests", tags=["executions"])
     def tests(chosen: RunScope, outcome: Outcome | None = None) -> tuple[TestRow, ...]:

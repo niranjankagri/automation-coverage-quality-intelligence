@@ -39,6 +39,8 @@ class DailyPoint:
     Attributes:
         counts: Outcomes of every result in the day's snapshot.
         duration_seconds: Sum of the recorded test durations in the snapshot.
+        timed_results: Results in the snapshot that recorded a duration; 0 means the sum
+            is unknown, not zero.
         requirement_status: Number of in-scope requirements per execution status.
         contexts: Run contexts in the snapshot.
         carried: Contexts (as ``framework/environment/browser/platform``) whose latest run
@@ -56,6 +58,7 @@ class DailyPoint:
     contexts: int
     carried: tuple[str, ...]
     added: tuple[str, ...] = ()
+    timed_results: int = 0
 
 
 @dataclass(frozen=True)
@@ -95,6 +98,9 @@ def daily_trend(
                 pass_rate=report.pass_rate,
                 duration_seconds=sum(
                     r.duration_seconds or 0.0 for run in report.snapshot for r in run.results
+                ),
+                timed_results=sum(
+                    1 for run in report.snapshot for r in run.results if r.duration_seconds is not None
                 ),
                 requirement_status=statuses,
                 contexts=len(report.snapshot),

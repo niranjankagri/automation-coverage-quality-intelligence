@@ -143,7 +143,7 @@ def test_navigation_family_uses_explicit_job_conventions(
     job: str, framework: str, browser: str | None, expected: str
 ) -> None:
     """A browser must never turn an API or ambiguous job into a UI classification."""
-    from qualityintel.workspace import execution_kind
+    from qualityintel.traceability.report import execution_kind
 
     source = run(result("A")).model_copy(
         update={
