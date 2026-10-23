@@ -33,13 +33,23 @@ jobs:
           python-version: "3.13"
           cache: pip
       - run: pip install -e ".[e2e]"
-      # Usually about 30 s; time-boxed and retried like the CI browser installs
+      # Usually about 30 s; time-boxed and retried like the CI browser installs (ci.yml, other-browsers):
+      # system libraries first (a killed apt-get must release the dpkg lock), then the browser itself
       - name: Install Chromium
-        timeout-minutes: 16
+        timeout-minutes: 30
         run: |
+          for attempt in 1 2; do
+            timeout 600 playwright install-deps chromium && break
+            echo "::warning::system libraries: attempt $attempt failed or timed out"
+            sudo pkill -9 -x apt-get || true
+            sudo pkill -9 -x dpkg || true
+            sudo rm -f /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/cache/apt/archives/lock
+            sudo dpkg --configure -a
+            [ "$attempt" = 2 ] && exit 1
+          done
           for attempt in 1 2 3; do
-            timeout 300 playwright install --with-deps chromium && exit 0
-            echo "::warning::playwright install attempt $attempt failed or timed out"
+            timeout 300 playwright install chromium && exit 0
+            echo "::warning::Chromium download: attempt $attempt failed or timed out"
           done
           exit 1
       # The free host may be asleep and the deploy takes a few minutes: up to 20 minutes for the
