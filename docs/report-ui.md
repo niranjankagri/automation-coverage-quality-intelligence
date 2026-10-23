@@ -35,7 +35,7 @@ by cause, and a tree with the selected test's details beside it.
 |---|---|---|
 | Overview | **built** | `GET /api/report/overview`: the latest snapshot (latest run of each suite) as totals and pass rate, suites (a repository, or a framework for files that were not collected), failure categories (failed and error results grouped by failure signature, [metrics.md](metrics.md#recurring-failures)), the daily snapshot trend of the last 14 days with runs, and the environment |
 | Categories | next | recurring failures and issue drafts ([issues.md](issues.md)) |
-| Suites | next | tests and their history |
+| Suites | **built** | `GET /api/report/suites`: the same snapshot as a tree, repository (or framework for files not collected) > pipeline job (or run context) > class > test, with counts per level. Left pane: the tree with a name filter and status chips; right pane: the selected test from `/api/tests/history` (latest result and failure, the pass/fail pattern, stability, executions with run and CI links, requirements). The selection is in the address (`#/suites?test=...`), so Back works and a test can be shared |
 | Graphs | next | trends, durations, regressions, gate history |
 | Behaviors | next | requirements, coverage, gaps by owner |
 
@@ -45,7 +45,7 @@ Overview's figures are the classic coverage page's (a test compares them), so bo
 ## Checks
 
 `tests/e2e/test_report_ui.py`: the Overview on the samples (221 results, 100 % pass rate, four
-suites), the repository switcher on collected data (address kept on reload), a section still to
+suites), the Suites tree (221 tests, a selected test kept on reload, name and status filters), the repository switcher on collected data (address kept on reload), a section still to
 build links its classic page, the theme button like the portfolio's, axe-core WCAG 2.2 A/AA in both
 themes, and a phone width without sideways scrolling. API tests in `tests/unit/dashboard/test_api.py`
 check the overview against `/api/summary`, the grouping of failures by cause and of collected runs by

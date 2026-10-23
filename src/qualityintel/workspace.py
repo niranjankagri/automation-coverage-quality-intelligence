@@ -70,7 +70,13 @@ from qualityintel.traceability.coverage import UNSPECIFIED, Filters
 from qualityintel.traceability.gaps import prioritised_gaps
 from qualityintel.traceability.matching import match_results
 from qualityintel.traceability.pipelines import PipelineExecution, pipeline_execution, pipeline_ids
-from qualityintel.traceability.report import RunFilters, TraceabilityReport, build_report, latest_runs
+from qualityintel.traceability.report import (
+    RunFilters,
+    TraceabilityReport,
+    build_report,
+    context_key,
+    latest_runs,
+)
 
 
 class View(BaseModel):
@@ -719,6 +725,49 @@ class ReportOverview(View):
     categories: tuple[ReportCategory, ...]
     trend: tuple[ReportTrendPoint, ...]
     environment: dict[str, tuple[str, ...]]
+
+
+class SuiteTest(View):
+    """One test in the Suites tree: its latest result in the snapshot."""
+
+    key: str
+    name: str
+    outcome: Outcome
+    duration_seconds: float | None
+    retries: int
+
+
+class SuiteClass(View):
+    """A test class (or module, or Robot suite) and its tests, sorted by name."""
+
+    name: str
+    counts: dict[Outcome, int]
+    tests: tuple[SuiteTest, ...]
+
+
+class SuiteJob(View):
+    """A pipeline job (or a run context for files not collected) and its classes."""
+
+    name: str
+    context: str
+    counts: dict[Outcome, int]
+    classes: tuple[SuiteClass, ...]
+
+
+class SuiteGroup(View):
+    """A repository (or a framework for files not collected) and its jobs."""
+
+    name: str
+    collected: bool
+    counts: dict[Outcome, int]
+    jobs: tuple[SuiteJob, ...]
+
+
+class ReportSuites(View):
+    """The Suites tree of the latest snapshot (docs/report-ui.md): group > job > class > test."""
+
+    groups: tuple[SuiteGroup, ...]
+    total: int
 
 
 class GateDayView(View):
@@ -1971,6 +2020,58 @@ class Workspace:
             )
 
         return self._cached(("gate-history", scope), compute)
+
+    def report_suites(self, scope: Scope = EVERYTHING) -> ReportSuites:
+        """The latest snapshot as a tree: repository (or framework) > job (or context) > class > test."""
+
+        def compute() -> ReportSuites:
+            tree: dict[tuple[str, bool], dict[tuple[str, str], dict[str, list[SuiteTest]]]] = {}
+            for run in self._report(scope).snapshot:
+                repository = run.pipeline.repository if run.pipeline else None
+                group = repository or f"{run.context.framework or 'unknown framework'} (not collected)"
+                context = "/".join(part or "-" for part in context_key(run.context))
+                job = run.pipeline.job if run.pipeline else context
+                classes = tree.setdefault((group, repository is not None), {}).setdefault((job, context), {})
+                for result in run.results:
+                    classes.setdefault(result.classname or result.suite or "(no class)", []).append(
+                        SuiteTest(
+                            key=result.key,
+                            name=result.name,
+                            outcome=result.outcome,
+                            duration_seconds=result.duration_seconds,
+                            retries=result.retries,
+                        )
+                    )
+
+            def counts(tests: Iterable[SuiteTest]) -> dict[Outcome, int]:
+                found = dict.fromkeys(Outcome, 0)
+                for test in tests:
+                    found[test.outcome] += 1
+                return found
+
+            groups = []
+            for (group, collected), jobs in sorted(
+                tree.items(), key=lambda item: (not item[0][1], item[0][0])
+            ):
+                job_views = []
+                for (job, context), classes in sorted(jobs.items()):
+                    class_views = tuple(
+                        SuiteClass(
+                            name=name, counts=counts(tests), tests=tuple(sorted(tests, key=lambda t: t.name))
+                        )
+                        for name, tests in sorted(classes.items())
+                    )
+                    every = [t for c in class_views for t in c.tests]
+                    job_views.append(
+                        SuiteJob(name=job, context=context, counts=counts(every), classes=class_views)
+                    )
+                every = [t for j in job_views for c in j.classes for t in c.tests]
+                groups.append(
+                    SuiteGroup(name=group, collected=collected, counts=counts(every), jobs=tuple(job_views))
+                )
+            return ReportSuites(groups=tuple(groups), total=sum(sum(g.counts.values()) for g in groups))
+
+        return self._cached(("report-suites", scope), compute)
 
     def report_overview(self, scope: Scope = EVERYTHING) -> ReportOverview:
         """The latest snapshot of the scope as the report overview: totals, suites, causes, trend."""

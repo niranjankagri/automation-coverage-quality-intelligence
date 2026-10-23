@@ -4,15 +4,16 @@
 import { api, scopeQuery } from "./api.js";
 import { h, repoName } from "./dom.js";
 import { overview } from "./overview.js";
+import { suites } from "./suites.js";
 
 // Sections still to come: each says so and links the classic page that has the data today
 const COMING = {
   categories: { title: "Categories", what: "failures grouped by cause, with their tests, runs and an issue draft", classic: "/#/stability" },
-  suites: { title: "Suites", what: "every repository, job and test as a tree, with the selected test's details beside it", classic: "/#/tests" },
   graphs: { title: "Graphs", what: "results per day, durations, regressions and the release gate over time", classic: "/#/trends" },
   behaviors: { title: "Behaviors", what: "requirements, their test cases and the coverage gaps by owner", classic: "/#/coverage" },
 };
-const PAGES = { overview };
+const PAGES = { overview, suites };
+const TITLES = { overview: "Overview", suites: "Suites" };
 
 const main = document.getElementById("main");
 const select = document.getElementById("repository");
@@ -23,7 +24,7 @@ let rendering = 0;
 function route() {
   const [path, query = ""] = location.hash.replace(/^#\/?/, "").split("?");
   const params = new URLSearchParams(query);
-  return { section: path || "overview", repository: params.get("repository") ?? "" };
+  return { section: path || "overview", repository: params.get("repository") ?? "", params };
 }
 
 /** The same section with another repository (or all of them). */
@@ -55,7 +56,7 @@ async function render() {
   main.replaceChildren(...[content].flat(Infinity).filter((part) => part !== null && part !== undefined));
   main.removeAttribute("aria-busy");
   document.getElementById("retry")?.addEventListener("click", render);
-  const title = COMING[state.section]?.title ?? "Overview";
+  const title = COMING[state.section]?.title ?? TITLES[state.section];
   document.title = `${title} · ${repoName(state.repository)} · Quality Intelligence report`;
   main.querySelector("h1")?.setAttribute("tabindex", "-1");
   if (document.activeElement !== select) main.querySelector("h1")?.focus({ preventScroll: true });
@@ -126,6 +127,8 @@ function setUpTheme() {
 
 select.addEventListener("change", () => go(route().section, select.value));
 window.addEventListener("hashchange", render);
+// Back/forward between selections pushed with history.pushState (Suites)
+window.addEventListener("popstate", render);
 setUpTheme();
 loadFooter();
 await loadRepositories();

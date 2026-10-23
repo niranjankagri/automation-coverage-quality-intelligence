@@ -49,13 +49,46 @@ def test_the_repository_switcher_narrows_the_report_and_keeps_it_in_the_address(
 
 
 def test_a_section_still_to_build_links_its_classic_page(page: Page) -> None:
-    """Suites is not built yet: it says so and opens the classic Tests page, not a dead end."""
+    """Categories is not built yet: it says so and opens the classic Stability page, not a dead end."""
+    page.goto("/next/#/categories")
+
+    expect(page.get_by_role("heading", name="Categories", level=1)).to_be_visible()
+    expect(page.get_by_role("link", name="Open it in the classic dashboard")).to_have_attribute(
+        "href", "/#/stability"
+    )
+
+
+def test_suites_lists_the_snapshot_as_a_tree_and_shows_the_selected_test(page: Page) -> None:
+    """Four framework groups with 221 tests; a test opens beside the tree and its address can be shared."""
     page.goto("/next/#/suites")
 
-    expect(page.get_by_role("heading", name="Suites", level=1)).to_be_visible()
-    expect(page.get_by_role("link", name="Open it in the classic dashboard")).to_have_attribute(
-        "href", "/#/tests"
-    )
+    expect(page.locator(".tree-count")).to_have_text("221 tests")
+    expect(page.locator(".tree > .node")).to_have_count(4)
+    page.locator(".tree > .node > summary").filter(has_text="playwright").click()
+    page.locator(".tree > .node .node > summary").first.click()
+    page.locator(".tree > .node .node .node > summary").first.click()
+    row = page.locator(".test-row").first
+    name = row.locator(".test-name").inner_text()
+    row.click()
+
+    expect(page.locator(".detail-title")).to_have_text(name)
+    expect(page.locator(".suite-detail .badge").first).to_have_text("passed")
+    expect(page.locator(".pattern li").first).to_be_visible()
+    expect(page).to_have_url(re.compile(r"#/suites\?test="))
+    page.reload()
+    expect(page.locator(".detail-title")).to_have_text(name)
+    expect(page.locator(".test-row[aria-current='true']")).to_have_count(1)
+
+
+def test_suites_filters_by_name_and_status(page: Page) -> None:
+    """The name filter lists matching tests with their parents open; a status chip narrows the tree."""
+    page.goto("/next/#/suites")
+    page.get_by_label("Filter tests by name").fill("catalog")
+
+    expect(page.locator(".tree-count")).to_contain_text("of 221 tests match")
+    expect(page.locator(".test-row").first).to_be_visible()
+    page.get_by_role("button", name=re.compile(r"^failed")).click()
+    expect(page.get_by_text("No test matches this filter.")).to_be_visible()
 
 
 def test_the_theme_button_works_like_the_portfolio(page: Page) -> None:
@@ -71,9 +104,9 @@ def test_the_theme_button_works_like_the_portfolio(page: Page) -> None:
 
 
 @pytest.mark.parametrize("theme", ["light", "dark"])
-@pytest.mark.parametrize("route", ["#/overview", "#/categories"])
+@pytest.mark.parametrize("route", ["#/overview", "#/suites", "#/categories"])
 def test_no_wcag_violations_in_the_report(page: Page, route: str, theme: str) -> None:
-    """The shell, the Overview and a section to come, in both themes."""
+    """The shell, the Overview, Suites and a section to come, in both themes."""
     page.goto("/next/")
     page.evaluate(f"localStorage.setItem('na-theme', '{theme}')")
     page.goto(f"/next/{route}")
