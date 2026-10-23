@@ -75,9 +75,9 @@ def test_quick_filter_changes_keep_current_url_state(page: Page, first: str) -> 
     query = parse_qs(urlsplit(page.url).fragment.partition("?")[2])
     assert query["suite"] == [suite]
     assert query["limit"] == ["25"]
-    page.unroute(pattern)
     for request in held:
         request.continue_()
+    page.unroute(pattern)
     expect(page.get_by_role("heading", name="Top 25 longest-running tests")).to_be_visible()
     page.reload()
     expect(page.locator("#execution-suite")).to_have_value(suite)
