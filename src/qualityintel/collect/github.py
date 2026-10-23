@@ -62,6 +62,8 @@ class Artifact:
     name: str
     size: int
     expired: bool
+    # When it was uploaded: a re-run attempt uploads its artifacts again under the same names
+    created_at: datetime | None = None
 
 
 class CiSource(Protocol):
@@ -304,11 +306,15 @@ def _artifact(item: dict[str, Any]) -> Artifact:
         or type(expired) is not bool
     ):
         raise ValueError("invalid artifact fields")
+    created = item.get("created_at")
     return Artifact(
         id=_positive_int(item["id"], "id"),
         name=name,
         size=_nonnegative_int(item["size_in_bytes"], "size_in_bytes"),
         expired=expired,
+        created_at=datetime.fromisoformat(created.replace("Z", "+00:00"))
+        if isinstance(created, str)
+        else None,
     )
 
 

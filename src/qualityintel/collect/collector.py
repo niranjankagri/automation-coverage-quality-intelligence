@@ -96,6 +96,9 @@ def _collect_run(
         inputs: dict[str, list[str]] = {}
         for job in producer.job:
             choices = artifacts.get(job.artifact, [])
+            if len(choices) > 1 and (latest := _latest_attempt(choices)) is not None:
+                # "Re-run failed jobs" uploads the job's artifact again; the newest is the final result
+                choices = [latest]
             if len(choices) > 1:
                 problems.append(
                     f"job {job.name}: artifact {job.artifact} is ambiguous "
@@ -229,3 +232,16 @@ def _formats(path: Path) -> set[str]:
 def _named(problems: list[str]) -> set[str]:
     """Job names that already have a problem (``job <name>: ...``)."""
     return {p.split(":", 1)[0].removeprefix("job ") for p in problems if p.startswith("job ")}
+
+
+def _latest_attempt(choices: list[Artifact]) -> Artifact | None:
+    """The newest of artifacts sharing a name, or ``None`` when upload times cannot tell them apart.
+
+    GitHub refuses two artifacts with one name in one attempt, so duplicates come from re-run
+    attempts and the newest upload belongs to the latest attempt. Without times, or with a tie,
+    the choice would be arbitrary: the caller records the artifact as ambiguous instead.
+    """
+    if any(artifact.created_at is None for artifact in choices):
+        return None
+    ordered = sorted(choices, key=lambda artifact: artifact.created_at or datetime.min.replace(tzinfo=UTC))
+    return ordered[-1] if ordered[-1].created_at != ordered[-2].created_at else None
