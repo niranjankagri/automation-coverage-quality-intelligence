@@ -157,7 +157,9 @@ name) to the runs of that day; every chart keeps its table of numbers.
 
 | | |
 |---|---|
-| ![Overview](images/dashboard-overview.png) | ![Requirements, critical only](images/dashboard-requirements.png) |
+| ![Test execution dashboard, the landing page](images/dashboard-executions.png) | ![Test execution dashboard, dark theme](images/dashboard-executions-dark.png) |
+| ![Test execution dashboard on a phone](images/dashboard-executions-phone.png) | |
+| ![Coverage and release overview (#/coverage)](images/dashboard-overview.png) | ![Requirements, critical only](images/dashboard-requirements.png) |
 | ![History of the test that failed on 13 Oct](images/dashboard-test-history.png) | ![Runs, dark theme](images/dashboard-run.png) |
 | ![Trends](images/dashboard-trends.png) | ![Stability](images/dashboard-stability.png) |
 | ![Pipelines: the cancelled TaskBoard run is incomplete](images/dashboard-pipelines.png) | |
