@@ -197,6 +197,17 @@ numbers masked (`Timeout 15000ms` and `Timeout 30000ms` are one cause). A signat
 least 2 runs are listed separately (errors usually mean set-up or environment problems, not
 assertion failures).
 
+**Rank** (frequency and recency, M13). Recurring failures are ordered by:
+
+1. *recent runs*: runs with the signature in the **7 days before the newest run** of the history
+   (the history's own newest run, not today's date, so the same history always ranks the same);
+2. all runs with the signature;
+3. the latest occurrence (undated runs last);
+4. occurrences, then the signature text.
+
+A cause that keeps failing this week therefore outranks one that failed more often a month ago
+and stopped. Each row links its newest supporting runs (up to 10; the run count covers all).
+
 ### Durations
 
 | Metric | Rule (defaults) |

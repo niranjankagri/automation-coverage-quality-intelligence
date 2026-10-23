@@ -418,12 +418,20 @@ class RequirementMatrix(View):
 
 
 class RecurringView(View):
-    """A failure signature seen in several runs."""
+    """A failure signature seen in several runs, in rank order (docs/metrics.md).
+
+    ``run_ids`` are the newest supporting runs (at most ``RECURRING_RUNS_LISTED``); ``runs``
+    counts all of them.
+    """
 
     signature: str
     occurrences: int
     runs: int
     tests: tuple[str, ...]
+    recent_runs: int
+    first_seen: datetime | None
+    last_seen: datetime | None
+    run_ids: tuple[str, ...]
 
 
 class RegressionView(View):
@@ -614,6 +622,8 @@ EVERYTHING = Scope()
 
 # Distinct filter combinations whose analyses one workspace keeps (each holds a few MB at most)
 MAX_CACHED_VIEWS = 64
+# Newest supporting runs a recurring failure links to (its run count covers all of them)
+RECURRING_RUNS_LISTED = 10
 T = TypeVar("T")
 
 
@@ -1139,7 +1149,16 @@ class Workspace:
                 for r in shown
             ),
             recurring_failures=tuple(
-                RecurringView(signature=f.signature, occurrences=f.occurrences, runs=f.runs, tests=f.tests)
+                RecurringView(
+                    signature=f.signature,
+                    occurrences=f.occurrences,
+                    runs=f.runs,
+                    tests=f.tests,
+                    recent_runs=f.recent_runs,
+                    first_seen=f.first_seen,
+                    last_seen=f.last_seen,
+                    run_ids=f.run_ids[:RECURRING_RUNS_LISTED],
+                )
                 for f in recurring_failures(runs)
             ),
             duration_regressions=tuple(
@@ -1365,7 +1384,8 @@ class Workspace:
                     state=recurring_state(failure.tests, latest),
                     title=failure.signature[:200],
                     why=(
-                        f"the same failure in {failure.runs} runs ({failure.occurrences} occurrences) of "
+                        f"the same failure in {failure.runs} runs, {failure.recent_runs} of them in the "
+                        f"7 days before the newest run ({failure.occurrences} occurrences) of "
                         f"{len(failure.tests)} test(s): {', '.join(failure.tests[:3])}"
                         + (" ..." if len(failure.tests) > 3 else "")
                     ),

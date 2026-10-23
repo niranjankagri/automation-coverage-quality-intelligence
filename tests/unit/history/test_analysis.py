@@ -190,6 +190,52 @@ def test_recurring_failures_need_several_runs() -> None:
     assert found.tests == ("suite::a", "suite::b", "suite::c")
 
 
+def failing_on(signature: str, *days: int) -> list[TestRun]:
+    """One run per day in which test ``signature`` fails with the message ``signature``."""
+    return [run(result(signature, F, failure={"message": signature, "type": "X"}), day=d) for d in days]
+
+
+def test_a_cause_failing_this_week_outranks_an_older_more_frequent_one() -> None:
+    """Rank: runs in the 7 days before the newest run first, then all runs (docs/metrics.md)."""
+    runs = [*failing_on("old", 1, 2, 3), *failing_on("new", 25, 28)]
+
+    ranked = recurring_failures(runs)
+
+    assert [(f.signature, f.recent_runs, f.runs) for f in ranked] == [("X: new", 2, 2), ("X: old", 0, 3)]
+
+
+def test_equal_recent_runs_rank_by_total_runs_then_latest_occurrence() -> None:
+    """Ties on recent runs go to the cause seen in more runs, then to the one seen last."""
+    runs = [*failing_on("a", 20, 27), *failing_on("b", 10, 21, 26), *failing_on("c", 22, 28)]
+
+    ranked = recurring_failures(runs)
+
+    # since = 28 Oct - 7 days = 21 Oct: a 1 recent (27), b 2 (21, 26), c 2 (22, 28)
+    assert [(f.signature, f.recent_runs, f.runs) for f in ranked] == [
+        ("X: b", 2, 3),
+        ("X: c", 2, 2),
+        ("X: a", 1, 2),
+    ]
+
+
+def test_recent_is_measured_from_the_newest_run_not_the_clock() -> None:
+    """The same history ranks the same on any day: the window ends at its newest run."""
+    (found,) = recurring_failures(failing_on("t", 1, 3))
+
+    assert found.recent_runs == 2
+
+
+def test_recurring_failure_lists_its_runs_newest_first() -> None:
+    """Every supporting run is linked; undated runs come last and never count as recent."""
+    dated = failing_on("t", 2, 5)
+    undated = run(result("t", F, failure={"message": "t", "type": "X"}), day=None)
+
+    (found,) = recurring_failures([*dated, undated])
+
+    assert found.run_ids == (dated[1].run_id, dated[0].run_id, undated.run_id)
+    assert found.recent_runs == 2
+
+
 def test_repeated_errors_count_runs_not_rows() -> None:
     """Errors (not assertion failures) in two different runs."""
     runs = [run(result("a", E), result("b", F), day=1), run(result("a", E), result("b", F), day=2)]

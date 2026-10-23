@@ -1570,11 +1570,46 @@
         "type": "object"
       },
       "RecurringView": {
-        "description": "A failure signature seen in several runs.",
+        "description": "A failure signature seen in several runs, in rank order (docs/metrics.md).\n\n``run_ids`` are the newest supporting runs (at most ``RECURRING_RUNS_LISTED``); ``runs``\ncounts all of them.",
         "properties": {
+          "first_seen": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Seen"
+          },
+          "last_seen": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Seen"
+          },
           "occurrences": {
             "title": "Occurrences",
             "type": "integer"
+          },
+          "recent_runs": {
+            "title": "Recent Runs",
+            "type": "integer"
+          },
+          "run_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Run Ids",
+            "type": "array"
           },
           "runs": {
             "title": "Runs",
@@ -1596,7 +1631,11 @@
           "signature",
           "occurrences",
           "runs",
-          "tests"
+          "tests",
+          "recent_runs",
+          "first_seen",
+          "last_seen",
+          "run_ids"
         ],
         "title": "RecurringView",
         "type": "object"
