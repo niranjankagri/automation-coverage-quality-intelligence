@@ -141,16 +141,19 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -e ".[dev,e2e]"
-      # Usually about 30 s, but the install has hung for up to 51 min on some runs: give each try
-      # 5 min and try three times, so a stuck download fails fast instead of holding the merge
+      # Usually about 30 s. Two parts: the system libraries come from the Ubuntu mirror, which can
+      # crawl (fonts at ~40 kB/s, 185 packages for WebKit) but keeps going, so it gets one long try:
+      # killing a slow apt only restarts it and leaves its dpkg lock behind. The browser download
+      # has stalled outright, so it gets 5 minutes a try and three tries.
       - name: Install ${{ matrix.engine }}
-        timeout-minutes: 16
+        timeout-minutes: 45
         env:
           ENGINE: ${{ matrix.engine }}
         run: |
+          timeout 1800 playwright install-deps "$ENGINE"
           for attempt in 1 2 3; do
-            timeout 300 playwright install --with-deps "$ENGINE" && exit 0
-            echo "::warning::playwright install $ENGINE attempt $attempt failed or timed out"
+            timeout 300 playwright install "$ENGINE" && exit 0
+            echo "::warning::$ENGINE download: attempt $attempt failed or timed out"
           done
           exit 1
       - name: pytest -m e2e

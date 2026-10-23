@@ -489,6 +489,11 @@
             },
             "title": "Requirement Status",
             "type": "object"
+          },
+          "timed_results": {
+            "default": 0,
+            "title": "Timed Results",
+            "type": "integer"
           }
         },
         "required": [
@@ -2529,6 +2534,64 @@
         "title": "RegressionsView",
         "type": "object"
       },
+      "ReportBrowser": {
+        "description": "One browser's share of the snapshot; ``browser`` is ``None`` for runs without one (API, unit).",
+        "properties": {
+          "browser": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Browser"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/Outcome"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "pass_rate": {
+            "$ref": "#/components/schemas/RatioView"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "untimed": {
+            "title": "Untimed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "browser",
+          "counts",
+          "total",
+          "pass_rate",
+          "duration_seconds",
+          "untimed"
+        ],
+        "title": "ReportBrowser",
+        "type": "object"
+      },
       "ReportCategory": {
         "description": "Failures of the snapshot that share one cause (failure signature).",
         "properties": {
@@ -2560,9 +2623,84 @@
         "title": "ReportCategory",
         "type": "object"
       },
+      "ReportOption": {
+        "description": "One recorded combination for the report's filter bar, with how many latest results it has.",
+        "properties": {
+          "browser": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Browser"
+          },
+          "environment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environment"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "platform": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Platform"
+          },
+          "repository": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repository"
+          },
+          "results": {
+            "title": "Results",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "repository",
+          "kind",
+          "browser",
+          "environment",
+          "platform",
+          "results"
+        ],
+        "title": "ReportOption",
+        "type": "object"
+      },
       "ReportOverview": {
         "description": "The Allure-style overview of the scope (docs/report-ui.md): the latest snapshot in figures.",
         "properties": {
+          "browsers": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ReportBrowser"
+            },
+            "title": "Browsers",
+            "type": "array"
+          },
           "categories": {
             "items": {
               "$ref": "#/components/schemas/ReportCategory"
@@ -2658,9 +2796,42 @@
       "ReportSuite": {
         "description": "One group of the report overview: a repository, or a framework for uncollected files.",
         "properties": {
+          "branch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Branch"
+          },
+          "ci_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ci Url"
+          },
           "collected": {
             "title": "Collected",
             "type": "boolean"
+          },
+          "commit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commit"
           },
           "counts": {
             "additionalProperties": {
@@ -3839,6 +4010,17 @@
       "SuiteJob": {
         "description": "A pipeline job (or a run context for files not collected) and its classes.",
         "properties": {
+          "browser": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Browser"
+          },
           "classes": {
             "items": {
               "$ref": "#/components/schemas/SuiteClass"
@@ -3860,9 +4042,36 @@
             "title": "Counts",
             "type": "object"
           },
+          "environment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environment"
+          },
+          "kind": {
+            "default": "other",
+            "title": "Kind",
+            "type": "string"
+          },
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "platform": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Platform"
           }
         },
         "required": [
@@ -3902,6 +4111,22 @@
           "retries": {
             "title": "Retries",
             "type": "integer"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
           }
         },
         "required": [
@@ -3909,7 +4134,9 @@
           "name",
           "outcome",
           "duration_seconds",
-          "retries"
+          "retries",
+          "run_id",
+          "started_at"
         ],
         "title": "SuiteTest",
         "type": "object"
@@ -4385,7 +4612,10 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
                 },
                 {
                   "type": "null"
@@ -4818,6 +5048,25 @@
               ],
               "title": "Job"
             }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
           }
         ],
         "responses": {
@@ -5048,6 +5297,25 @@
               ],
               "title": "Job"
             }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
           }
         ],
         "responses": {
@@ -5268,6 +5536,25 @@
                 }
               ],
               "title": "Job"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
             }
           }
         ],
@@ -5563,6 +5850,25 @@
               ],
               "title": "Job"
             }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
           }
         ],
         "responses": {
@@ -5857,6 +6163,25 @@
               ],
               "title": "Job"
             }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
           }
         ],
         "responses": {
@@ -5915,7 +6240,7 @@
     },
     "/api/executions": {
       "get": {
-        "description": "Historical test-execution dashboard; counts all reports in scope, not the latest snapshot.",
+        "description": "Historical test-execution dashboard; counts all reports in scope, not the latest snapshot.\n\n``kind`` (an execution family such as ``api`` or ``ui``) is part of the scope like on every route.",
         "operationId": "execution_dashboard_api_executions_get",
         "parameters": [
           {
@@ -5945,23 +6270,6 @@
                 }
               ],
               "title": "Suite"
-            }
-          },
-          {
-            "in": "query",
-            "name": "kind",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maxLength": 50,
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Kind"
             }
           },
           {
@@ -6110,6 +6418,25 @@
                 }
               ],
               "title": "Job"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
             }
           }
         ],
@@ -6410,6 +6737,25 @@
               ],
               "title": "Job"
             }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
           }
         ],
         "responses": {
@@ -6687,6 +7033,25 @@
               ],
               "title": "Job"
             }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
           }
         ],
         "responses": {
@@ -6904,6 +7269,25 @@
                 }
               ],
               "title": "Job"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
             }
           }
         ],
@@ -7160,6 +7544,25 @@
                 }
               ],
               "title": "Job"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
             }
           }
         ],
@@ -7438,6 +7841,25 @@
               ],
               "title": "Job"
             }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
           }
         ],
         "responses": {
@@ -7620,6 +8042,25 @@
               ],
               "title": "Job"
             }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
           }
         ],
         "responses": {
@@ -7647,6 +8088,32 @@
         "summary": "Regressions",
         "tags": [
           "history"
+        ]
+      }
+    },
+    "/api/report/options": {
+      "get": {
+        "description": "Recorded repository / test type / browser / environment combinations for the filter bar.",
+        "operationId": "report_options_api_report_options_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReportOption"
+                  },
+                  "title": "Response Report Options Api Report Options Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Report Options",
+        "tags": [
+          "report"
         ]
       }
     },
@@ -7801,6 +8268,25 @@
                 }
               ],
               "title": "Job"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
             }
           }
         ],
@@ -7983,6 +8469,25 @@
                 }
               ],
               "title": "Job"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
             }
           }
         ],
@@ -8177,6 +8682,25 @@
                 }
               ],
               "title": "Job"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
             }
           }
         ],
@@ -8535,6 +9059,25 @@
               ],
               "title": "Job"
             }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
           }
         ],
         "responses": {
@@ -8816,6 +9359,25 @@
               ],
               "title": "Job"
             }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
           }
         ],
         "responses": {
@@ -9007,6 +9569,25 @@
               ],
               "title": "Job"
             }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
           }
         ],
         "responses": {
@@ -9188,6 +9769,25 @@
                 }
               ],
               "title": "Job"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
             }
           }
         ],
@@ -9440,6 +10040,25 @@
               ],
               "title": "Job"
             }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
           }
         ],
         "responses": {
@@ -9643,6 +10262,25 @@
                 }
               ],
               "title": "Job"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
             }
           }
         ],
@@ -9965,6 +10603,25 @@
               ],
               "title": "Job"
             }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
           }
         ],
         "responses": {
@@ -10163,6 +10820,25 @@
               ],
               "title": "Job"
             }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
           }
         ],
         "responses": {
@@ -10358,6 +11034,25 @@
                 }
               ],
               "title": "Job"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
             }
           }
         ],
@@ -10568,6 +11263,25 @@
                 }
               ],
               "title": "Job"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
             }
           }
         ],
@@ -10845,6 +11559,25 @@
                 }
               ],
               "title": "Job"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
             }
           }
         ],

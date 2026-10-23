@@ -26,6 +26,54 @@ NOT_RUN = "not run"
 NOT_AUTOMATED = "not automated"
 
 
+# Execution families from explicit job naming conventions (execution_kind); "other" when ambiguous
+EXECUTION_KINDS = (
+    "api",
+    "unit",
+    "component",
+    "integration",
+    "contract",
+    "ui",
+    "visual",
+    "accessibility",
+    "mobile",
+    "performance",
+    "other",
+)
+
+
+def execution_kind(run: TestRun) -> str:
+    """Navigation labels from explicit job conventions; ambiguous jobs remain Other.
+
+    These are execution families, not requirement/catalog coverage classifications.
+    A browser on its own is not sufficient evidence of a UI job (API tests use browsers too).
+    """
+    job = run.pipeline.job.lower().replace("_", "-") if run.pipeline else ""
+    if run.context.framework == "k6":
+        return "performance"
+    if job == "api" or job.startswith(("api-", "checks-api")):
+        return "api"
+    if job == "unit" or job.startswith(("unit-", "checks-service-unit")):
+        return "unit"
+    if job.startswith("component"):
+        return "component"
+    if job.startswith("visual"):
+        return "visual"
+    if job.startswith(("a11y", "accessibility")):
+        return "accessibility"
+    if job in {"android", "ios", "emulation"} or job.startswith("mobile"):
+        return "mobile"
+    if job in {"consumer", "provider"} or job.startswith("contract"):
+        return "contract"
+    if job.startswith("integration"):
+        return "integration"
+    if job in {"chromium", "firefox", "webkit"} or job.startswith(("ui-", "e2e-")) or job == "ui":
+        return "ui"
+    if run.context.browser and job.startswith(("smoke", "regression", "full", "grid")):
+        return "ui"
+    return "other"
+
+
 @dataclass(frozen=True)
 class RunFilters:
     """Which runs are analysed; empty = all. Values compare with the run context.
@@ -41,6 +89,8 @@ class RunFilters:
     builds: frozenset[str] = frozenset()
     repositories: frozenset[str] = frozenset()
     jobs: frozenset[str] = frozenset()
+    # Execution families (execution_kind): api, unit, ui ...
+    kinds: frozenset[str] = frozenset()
     since: date | None = None
     until: date | None = None
 
@@ -53,6 +103,8 @@ class RunFilters:
             day = run.started_at.astimezone(UTC).date()
             if (self.since is not None and day < self.since) or (self.until is not None and day > self.until):
                 return False
+        if self.kinds and execution_kind(run) not in self.kinds:
+            return False
         return all(
             not chosen or value in chosen
             for chosen, value in (

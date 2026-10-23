@@ -4,6 +4,7 @@ Run with ``pytest -m e2e`` after ``playwright install chromium``. The server ser
 sample data, so the browser sees exactly what a user of the demonstration sees.
 """
 
+import hashlib
 import os
 import socket
 import sys
@@ -201,6 +202,105 @@ def recurring_page(browser: Browser, recurring_url: str) -> Iterator[Page]:
     yield from _page(browser, recurring_url)
 
 
+EDGE_REPO = "e/edge"
+
+
+def edge_runs() -> list[TestRun]:
+    """Synthetic edge cases for the report (docs/report-ui.md), three days of one repository.
+
+    api job: only skipped results (no verdict, so no pass rate). ui-chrome job: ``checkout pays``
+    passes, passes, fails (a new failure); ``cart recovers`` fails, passes, passes (recovered);
+    ``login works`` passes without a recorded duration. Nothing links to the catalog (not mapped).
+    """
+    ui = {
+        17: [
+            ("checkout", "pays", "passed", 2.0),
+            ("cart", "recovers", "failed", 1.0),
+            ("login", "works", "passed", None),
+        ],
+        18: [
+            ("checkout", "pays", "passed", 2.1),
+            ("cart", "recovers", "passed", 1.1),
+            ("login", "works", "passed", None),
+        ],
+        19: [
+            ("checkout", "pays", "failed", 2.4),
+            ("cart", "recovers", "passed", 1.0),
+            ("login", "works", "passed", None),
+        ],
+    }
+    runs = []
+    for day, results in ui.items():
+        for job, browser, rows in (
+            ("ui-chrome", "chrome", results),
+            ("api", None, [("health", "answers", "skipped", None), ("orders", "list", "skipped", 0.2)]),
+        ):
+            runs.append(
+                TestRun.model_validate(
+                    {
+                        "run_id": hashlib.sha256(f"{job}-{day}".encode()).hexdigest(),
+                        "source": f"{job}-{day}.xml",
+                        "started_at": datetime(2026, 10, day, 9, tzinfo=UTC),
+                        "context": {"framework": "playwright", "browser": browser, "environment": "ci"},
+                        "pipeline": {
+                            "pipeline_id": f"e#{day}",
+                            "job": job,
+                            "repository": EDGE_REPO,
+                            "commit": f"c0ffee{day}",
+                            "branch": "main",
+                        },
+                        "results": [
+                            {
+                                "classname": cls,
+                                "name": name,
+                                "outcome": outcome,
+                                "duration_seconds": seconds,
+                                **(
+                                    {
+                                        "failure": {
+                                            "type": "AssertionError",
+                                            "message": "expected 3 items, got 2",
+                                        }
+                                    }
+                                    if outcome == "failed"
+                                    else {}
+                                ),
+                            }
+                            for cls, name, outcome, seconds in rows
+                        ],
+                    }
+                )
+            )
+    return runs
+
+
+@pytest.fixture(scope="session")
+def edge_url() -> Iterator[str]:
+    """The edge cases, with a stale (3 days old) and an incomplete collection record."""
+    old = datetime.now(UTC) - timedelta(days=3)
+    records = [
+        PipelineCollection(
+            pipeline_id=f"e#{day}",
+            attempt=1,
+            repository=EDGE_REPO,
+            workflow="CI",
+            conclusion="failure" if day == 19 else "success",
+            url=f"https://github.com/{EDGE_REPO}/actions/runs/{day}",
+            collected_at=old - timedelta(days=19 - day),
+            state="incomplete" if day == 18 else "complete",
+            problems=("job ui-firefox: artifact report-ui-firefox not found",) if day == 18 else (),
+        )
+        for day in (17, 18, 19)
+    ]
+    yield from _serve(Workspace(load_catalog(SAMPLES / "catalog.toml"), edge_runs(), collections=records))
+
+
+@pytest.fixture
+def edge_page(browser: Browser, edge_url: str) -> Iterator[Page]:
+    """A page on the report's edge cases."""
+    yield from _page(browser, edge_url)
+
+
 @pytest.fixture(scope="session")
 def secured_url() -> Iterator[str]:
     """The sample dashboard with a login (QI_DASHBOARD_PASSWORD set)."""
@@ -241,9 +341,9 @@ def browser() -> Iterator[Browser]:
 
 @pytest.fixture
 def chromium_only() -> None:
-    """Skip tests that use Chromium-only features (clipboard permissions) in other engines."""
+    """Skip tests that need Chromium itself (clipboard permissions, a separate Chromium) elsewhere."""
     if ENGINE != "chromium":
-        pytest.skip(f"clipboard permissions are a Chromium feature; engine is {ENGINE}")
+        pytest.skip(f"needs Chromium (only it is installed in the Chromium job); engine is {ENGINE}")
 
 
 @pytest.fixture

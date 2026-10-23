@@ -189,6 +189,7 @@ def test_openapi_documentation_lists_every_route(client: TestClient) -> None:
         "/api/digest/summary",
         "/api/issue-suggestions",
         "/api/report/overview",
+        "/api/report/options",
         "/api/report/suites",
     }
 
@@ -598,6 +599,90 @@ def test_the_report_suites_tree_holds_every_test_of_the_snapshot(client: TestCli
             assert sum(sum(c["counts"].values()) for c in job["classes"]) == sum(job["counts"].values())
     pytest_jobs = [j["name"] for j in body["groups"][1]["jobs"]]
     assert pytest_jobs == ["pytest/ci/-/linux", "pytest/ci/chromium/linux"]
+
+
+def _edge_client() -> TestClient:
+    """The report's synthetic edge cases (tests/e2e/conftest.py, edge_runs)."""
+    import sys
+
+    sys.path.insert(0, str(Path(__file__).parents[2] / "e2e"))
+    from conftest import edge_runs
+
+    samples, _ = Workspace.load(SAMPLES / "catalog.toml", [])
+    return TestClient(create_app(Workspace(samples.catalog, edge_runs())))
+
+
+def test_report_options_are_the_recorded_combinations_with_their_results() -> None:
+    """One row per repository / test type / browser / environment; API without a browser."""
+    options = _edge_client().get("/api/report/options").json()
+
+    assert [(o["repository"], o["kind"], o["browser"], o["environment"], o["results"]) for o in options] == [
+        ("e/edge", "api", None, "ci", 2),
+        ("e/edge", "ui", "chrome", "ci", 3),
+    ]
+
+
+def test_the_test_type_filters_every_report_route() -> None:
+    """kind=api keeps the skipped-only job: no verdict, so no pass rate (never 100%)."""
+    client = _edge_client()
+    api = client.get("/api/report/overview", params={"kind": "api"}).json()
+    suites = client.get("/api/report/suites", params={"kind": "ui"}).json()
+
+    assert (api["total"], api["counts"]["skipped"], api["pass_rate"]["percent"]) == (2, 2, None)
+    assert [j["name"] for g in suites["groups"] for j in g["jobs"]] == ["ui-chrome"]
+    assert client.get("/api/report/overview", params={"kind": "nothing"}).json()["total"] == 0
+
+
+def test_each_listed_test_names_its_execution_and_context() -> None:
+    """Run id and start per test, job context per job: details open this execution, not another."""
+    (group,) = _edge_client().get("/api/report/suites", params={"kind": "ui"}).json()["groups"]
+    (job,) = group["jobs"]
+    tests = {t["name"]: t for c in job["classes"] for t in c["tests"]}
+
+    assert (job["kind"], job["browser"], job["environment"]) == ("ui", "chrome", "ci")
+    assert len(tests["pays"]["run_id"]) == 64
+    assert tests["pays"]["started_at"].startswith("2026-10-19")
+    assert tests["works"]["duration_seconds"] is None
+
+
+def test_the_browser_comparison_keeps_untimed_results_apart() -> None:
+    """chrome: 2 of 3 passed, 3.4 s from two timed results, one untimed; API: no browser."""
+    browsers = _edge_client().get("/api/report/overview").json()["browsers"]
+
+    assert [
+        (b["browser"], b["total"], b["pass_rate"]["text"], b["duration_seconds"], b["untimed"])
+        for b in browsers
+    ] == [("chrome", 3, "66.7 % (2/3)", 3.4, 1), (None, 2, "n/a (0/0)", 0.2, 1)]
+
+
+def test_a_day_without_recorded_durations_is_not_a_zero_time() -> None:
+    """timed_results says whether the day's duration sum means anything."""
+    from qualityintel.models.results import TestRun
+
+    run = TestRun.model_validate(
+        {
+            "run_id": "a" * 64,
+            "source": "x.xml",
+            "started_at": "2026-10-19T09:00:00Z",
+            "results": [{"name": "t", "outcome": "passed"}],
+        }
+    )
+    samples, _ = Workspace.load(SAMPLES / "catalog.toml", [])
+    (day,) = TestClient(create_app(Workspace(samples.catalog, [run]))).get("/api/trends").json()["daily"]
+
+    assert (day["duration_seconds"], day["timed_results"]) == (0.0, 0)
+
+
+def test_the_report_overview_names_the_commit_and_branch_it_shows() -> None:
+    """The newest run of a collected repository: branch and commit (CI link when collected)."""
+    (suite,) = _edge_client().get("/api/report/overview").json()["suites"]
+
+    assert (suite["name"], suite["branch"], suite["commit"], suite["ci_url"]) == (
+        "e/edge",
+        "main",
+        "c0ffee19",
+        None,
+    )
 
 
 def test_the_report_page_is_served_beside_the_classic_one(client: TestClient) -> None:

@@ -1,58 +1,83 @@
 # Report UI (`/next/`)
 
-A new front end for the same data, shaped like an **Allure report**, at `/next/`. It is being built
-beside the current dashboard (`/`), which stays the main page until the new one covers everything
-and the owner switches them. Nothing in the engine changes: the report reads the same read-only
-JSON API, and where it needs data shaped differently it gets one more `GET` route.
+A front end for the same data, shaped like an **Allure report**, at `/next/`. It is built beside
+the classic dashboard (`/`), which stays the main page until the owner switches them. Nothing in
+the engine changes: the report reads the same read-only JSON API, and where it needs data shaped
+differently it gets one more `GET` route.
 
-## Why
-
-The current dashboard is organised by data type (tests, runs, pipelines, requirements, builds …)
-in about 17 navigation entries; people arrive with a question and have to find the page that holds
-the answer. An Allure report is easy to read because it does a few things consistently: a short
-sidebar that never moves, an overview that answers "how did it go" at a glance, failures grouped
-by cause, and a tree with the selected test's details beside it.
+The reading order is **Repository → Test type → Browser / environment → Section → Evidence**: pick
+what to look at in the filter bar, read the section, and every figure links to the results behind it.
 
 ## Decisions (owner, 2026-10-23)
 
-- **Fresh front end in the same project, on the existing data.** No new framework or build step:
-  plain JavaScript modules (`static/next/js/`), the same strict Content Security Policy.
-- **Separate address first.** `/next/`; the current UI stays at `/` until the owner says the new
-  one looks good, then it replaces the main page.
-- **Allure structure:** left sidebar with Overview, Categories, Suites (two panes: tree + test
-  details), Graphs, Behaviors (requirements); tools such as Pipelines, Collection, Compare and Search
-  stay reachable but out of the main navigation. Timeline is left out for now.
-- **Repository switcher at the top, "All repositories" by default** (one report per repository, or
-  all of them together).
-- **The portfolio's design.** Visitors come from niranjankagri.github.io, so the report uses its
-  colours, contrast, type and light/dark behaviour exactly (tokens copied into
-  `static/next/report.css`; the theme button and the `na-theme` storage key work like the
-  portfolio's). The portfolio itself is not changed by this work.
+- **Fresh front end in the same project, on the existing data.** Plain JavaScript modules
+  (`static/next/js/`), no build step, the same strict Content Security Policy.
+- **Separate address first.** `/next/`; the classic UI stays at `/` until the owner switches them.
+- **Allure structure, plain names:** Overview, Test Results, Failures & Stability, Trends, Coverage &
+  Requirements. The first version's addresses (`#/suites`, `#/categories`, `#/graphs`,
+  `#/behaviors`) still open the renamed sections.
+- **The portfolio's identity:** its NA mark, type, rounded controls and theme button (`na-theme`),
+  with slate surfaces and indigo as the report colour; green only for success. The portfolio itself
+  is not changed by this work.
 
-## Status
+## Navigation
 
-| Section | State | Data |
+| Part | What it does |
+|---|---|
+| Filter bar | Repository, Test type, Browser, Environment, From/To dates. Choices come from `GET /api/report/options` (combinations with latest results), so it never offers an empty one. Browser and environment appear only when there is more than one to choose (an API job in one browser needs no choice). Changing a parent drops child choices it does not have. Active filters are removable chips, with **Reset all**. A typed address with a combination no run has says so. On phones the bar folds behind a **Filters (N active)** button |
+| Freshness | Next to the filters: when the data was last collected, incomplete collections in the last 7 days, a stale collection (older than 30 hours) or a failed reload, and **Refresh** |
+| Addresses | Everything is in the address: section, scope (`repository`, `kind`, `browser`, `environment`, `job`, `since`, `until`), search and status filters, the selected test and run, the open tab. Reload, Back/Forward and shared links show the same thing; Back returns to the same scroll position |
+| Loading | A section shows a skeleton at once (never the previous section's content under a new heading); a newer navigation cancels older requests; a failed request says why, with **Retry** |
+
+**Test type** is the execution family from the job naming conventions (`execution_kind`: `api`,
+`unit-*`, `ui-*`, `a11y-*` …; anything ambiguous is "Other"), because collected runs carry no other
+reliable type. It is a run filter (`kind=`) on every API route, like `browser=`.
+
+## Sections
+
+| Section | Shows | Data |
 |---|---|---|
-| Overview | **built** | `GET /api/report/overview`: the latest snapshot (latest run of each suite) as totals and pass rate, suites (a repository, or a framework for files that were not collected), failure categories (failed and error results grouped by failure signature, [metrics.md](metrics.md#recurring-failures)), the daily snapshot trend of the last 14 days with runs, and the environment |
-| Categories | **built** | no new route: **Failing now** (the Overview's causes: failed = product defect, error = broken), **Unstable tests** from `/api/stability` (consistently failing, new failures, flaky candidates, recovered; last verdicts per test and context, [metrics.md](metrics.md)), **Recurring causes** with a pre-filled GitHub issue from `/api/issue-suggestions` ([issues.md](issues.md)). Every test opens in Suites |
-| Suites | **built** | `GET /api/report/suites`: the same snapshot as a tree, repository (or framework for files not collected) > pipeline job (or run context) > class > test, with counts per level. Left pane: the tree with a name filter and status chips; right pane: the selected test from `/api/tests/history` (latest result and failure, the pass/fail pattern, stability, executions with run and CI links, requirements). The selection is in the address (`#/suites?test=...`), so Back works and a test can be shared |
-| Graphs | **built** | no new route: results and pass rate per day and suite time per day (`/api/trends`, last 30 days with runs; the pass-rate axis starts below the lowest day and is labelled), how long the latest results take and the slowest tests (`/api/report/suites`), tests getting slower (`/api/stability`), the release gate per day (`/api/gate-history`). Every chart has its numbers in a table; phones get a narrow drawing canvas |
-| Behaviors | **built** | no new route: product > feature > requirement from the catalog's `feature` ("Toolshop / Checkout"), each requirement with its status (failing first), criticality and automated test cases, linking its classic page; the coverage figures from `/api/summary`; gaps by owner, riskiest first, from `/api/gaps` |
+| Overview | Four headline figures kept apart: **execution pass rate** (latest results; skipped not counted; change against the previous day), **automation coverage** (automated catalog test cases), **critical gaps**, **release readiness**. Each opens its evidence. A results donut (each status opens those results), the execution trend (each day opens that day's results), browser comparison (results, pass rate, recorded time per browser), feature coverage (covered and run / not run here / not automated / no tests per product), **Needs attention** (new failures, flaky candidates, critical gaps, slower tests, data problems), the readiness explanation and scorecard, and the selected scope (repositories with their latest branch, commit and CI run) | `/api/report/overview`, `/api/summary`, `/api/readiness`, `/api/requirements`, `/api/stability` |
+| Test Results | The latest result of every test: a tree of repository > job (with its browser and environment) > class > test; with a search or status filter a flat list, 50 at a time with **Load more** and "Showing X of Y" | `/api/report/suites` (each test carries its run id; each job its type, browser, environment, platform) |
+| Test details | One execution of one test: name, where it ran, outcome and time, date, commit and CI run, then tabs **Selected execution**, **History** (in this context, then across all contexts), **Browser comparison** (latest result per context), **Evidence** (failure output; screenshots, videos and logs are not collected, so the page links the CI run that keeps them). **Back to results** keeps the filters and scroll position | `/api/tests/history` in the execution's context and without one |
+| Failures & Stability | Failing now, grouped by cause: *failed check* (an assertion did not hold: product, test or environment) and *error* (the test could not run as written), never labelled a product defect; unstable tests (consistently failing, new failures, flaky candidates); **recovered** tests shown apart and not counted as unstable; recurring causes with a pre-filled GitHub issue | `/api/report/overview`, `/api/stability`, `/api/issue-suggestions` |
+| Trends | Results and pass rate per day, suite time per day (a day without recorded durations shows "–", not zero), how long the latest tests take, the slowest tests per job and browser, tests getting slower, the release gate per day. Each day opens its results; every chart has its numbers | `/api/trends`, `/api/report/suites`, `/api/stability`, `/api/gate-history` |
+| Coverage & Requirements | Product > feature > requirement with its status in this scope, coverage figures, gaps by owner (riskiest first). A requirement opens inside the report with its test cases and the executions in scope | `/api/summary`, `/api/requirements`, `/api/gaps`, `/api/requirements/{id}` |
 
-All five sections are built; an unknown section address opens the Overview. Requirement and run pages
-still open in the classic dashboard. The Overview's figures are the classic coverage page's (a test compares them), so both UIs always agree.
+## Data rules
+
+- **Pass rate is not coverage.** The pass rate counts latest results; automation coverage counts
+  automated catalog test cases. They sit in separate cards with their own denominators.
+- **No results is not 100 %.** A scope without verdicts (none, or only skipped) shows "No results".
+- **A missing duration is not zero.** Untimed results are "not recorded" and counted apart in the
+  browser comparison and the duration buckets; a day without durations has no time (`timed_results`).
+- **A failure is not a product defect** until its cause says so.
+- **Recovered is not unstable.** It is listed separately.
+- **The catalog is labelled.** Requirements come from the synthetic sample catalog; filters narrow the
+  execution evidence (what ran), never which requirements exist. A scope whose results link to no
+  requirement shows **Coverage not mapped**.
+- **Empty means something specific:** no collected data, nothing matching the filters, an unsupported
+  filter combination, coverage not mapped, or no failures — each says which.
 
 ## Checks
 
-`tests/e2e/test_report_ui.py`: the Overview on the samples (221 results, 100 % pass rate, four
-suites), the Suites tree (221 tests, a selected test kept on reload, name and status filters), Categories
-(nothing failing now, four flaky candidates, a test link opening Suites), Graphs (13 days, two
-tests getting slower, no gate, a slow test opening Suites), the repository switcher on collected data (address kept on reload), Behaviors (four
-products, 90.5 % of requirements with tests, ten gaps), an unknown section opening the Overview, the theme button like the portfolio's, axe-core WCAG 2.2 A/AA in both
-themes, and a phone width without sideways scrolling. API tests in `tests/unit/dashboard/test_api.py`
-check the overview against `/api/summary`, the grouping of failures by cause and of collected runs by
-repository, and how `/next/` is served (policy, revalidation, redirect from `/next`).
-
+- `tests/e2e/test_report_ui.py`: headline figures on the samples; donut, trend and headline cards
+  open their evidence; repository → test type → browser with parent resets, chips and Reset all; an
+  unsupported combination; the same test in Chrome, Firefox and Edge opens its own execution (the
+  confirmed defect: a Firefox row opened another browser's run); Back, Forward, reload and a shared
+  link keep the selection; keyboard tabs; Load more; the newest of quick navigations wins; old
+  addresses; a requirement inside the report. Edge cases (`edge_url`): skipped-only, a failed check,
+  recovered vs unstable, stale and incomplete collections, coverage not mapped, missing durations.
+  axe-core WCAG 2.2 A/AA on every section, a test and a requirement in both themes; every section at
+  phone width; visible keyboard focus; reduced motion.
+- `tests/unit/dashboard/test_api.py`: report options, the `kind` filter, run identity per test,
+  the browser comparison with untimed results, `timed_results`, branch and commit per repository.
+- `tools/screenshots.py`: every section on a desktop and a phone (`docs/images/report-*.png`).
+- **After each deployment** (`.github/workflows/deploy-smoke.yml`): once CI passes on `main`, wait
+  until the live service reports that commit (`tools/smoke.py --expect-commit`), then check health,
+  all report routes and assets, repository selection, a test drill-down into its own execution and
+  a requirement drill-down over HTTP, and the same in a browser with no application errors
+  (`tools/report_smoke.py`).
 
 ### Installed deployment guard
 
@@ -60,19 +85,12 @@ The report's files live below `dashboard/static/next/`, so package-data patterns
 include that directory and `next/js/`. A top-level `dashboard/static/*` pattern alone omits
 them from the wheel: editable source tests pass, but `/next/` raises HTTP 500 after installation.
 CI builds a real wheel and runs `tools/check_wheel_assets.py` against every source dashboard
-asset, including nested folders. The container and live smoke check `/next/`, the CSS, all
-current JavaScript modules and `/api/report/overview`, including MIME types for assets.
+asset, including nested folders. The container, live and deployment smoke check `/next/`, the CSS
+and every JavaScript module, including MIME types.
 
+### Colour
 
-### Report colour balance
-
-The report keeps the portfolio's NA mark, typography, rounded controls and theme button, while
-using neutral slate surfaces and indigo interaction accents. Passed chart segments and their
-legend use the same muted blue; failures stay red, errors amber and skips grey. Green is reserved
-for compact success indicators. Counts and labels remain authoritative; colours do not change
-results or release decisions. Light, dark and system themes use the same layout.
-
-The Overview adds a softly tinted heading, snapshot scope badges and distinct widget markers.
-The Suites panel is vertically bounded with a labelled, keyboard-focusable scroll region; all
-suite rows remain available. CI captures report screenshots in light, dark and phone layouts,
-alongside the existing accessibility and responsive checks.
+Slate surfaces and indigo interaction accents; the portfolio's teal only for its NA mark. Passed
+chart segments use a muted blue; failures stay red, errors amber and skips grey; green marks success.
+Counts and labels remain authoritative; colours do not change results or release decisions. Light,
+dark and system themes share one layout; motion only plays when the system allows it.

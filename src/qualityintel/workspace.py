@@ -75,6 +75,7 @@ from qualityintel.traceability.report import (
     TraceabilityReport,
     build_report,
     context_key,
+    execution_kind,
     latest_runs,
 )
 
@@ -364,38 +365,6 @@ class ExecutionOption(View):
     executions: int
 
 
-def execution_kind(run: TestRun) -> str:
-    """Navigation labels from explicit job conventions; ambiguous jobs remain Other.
-
-    These are execution families, not requirement/catalog coverage classifications.
-    A browser on its own is not sufficient evidence of a UI job (API tests use browsers too).
-    """
-    job = run.pipeline.job.lower().replace("_", "-") if run.pipeline else ""
-    if run.context.framework == "k6":
-        return "performance"
-    if job == "api" or job.startswith(("api-", "checks-api")):
-        return "api"
-    if job == "unit" or job.startswith(("unit-", "checks-service-unit")):
-        return "unit"
-    if job.startswith("component"):
-        return "component"
-    if job.startswith("visual"):
-        return "visual"
-    if job.startswith(("a11y", "accessibility")):
-        return "accessibility"
-    if job in {"android", "ios", "emulation"} or job.startswith("mobile"):
-        return "mobile"
-    if job in {"consumer", "provider"} or job.startswith("contract"):
-        return "contract"
-    if job.startswith("integration"):
-        return "integration"
-    if job in {"chromium", "firefox", "webkit"} or job.startswith(("ui-", "e2e-")) or job == "ui":
-        return "ui"
-    if run.context.browser and job.startswith(("smoke", "regression", "full", "grid")):
-        return "ui"
-    return "other"
-
-
 class ExecutionDashboard(View):
     """Historical execution counts; deliberately separate from snapshot coverage."""
 
@@ -648,6 +617,8 @@ class DailyView(View):
     counts: dict[Outcome, int]
     pass_rate: RatioView
     duration_seconds: float
+    # Results that recorded a duration; 0 means duration_seconds is unknown (not zero)
+    timed_results: int = 0
     requirement_status: dict[str, int]
     contexts: int
     carried: tuple[str, ...]
@@ -694,6 +665,33 @@ class ReportSuite(View):
     counts: dict[Outcome, int]
     runs: int
     latest_started_at: datetime | None
+    # The newest run of the group: what it tested and where its CI run is (collected groups)
+    branch: str | None = None
+    commit: str | None = None
+    ci_url: str | None = None
+
+
+class ReportBrowser(View):
+    """One browser's share of the snapshot; ``browser`` is ``None`` for runs without one (API, unit)."""
+
+    browser: str | None
+    counts: dict[Outcome, int]
+    total: int
+    pass_rate: RatioView
+    # Sum of recorded durations; None when no result recorded one (never shown as zero)
+    duration_seconds: float | None
+    untimed: int
+
+
+class ReportOption(View):
+    """One recorded combination for the report's filter bar, with how many latest results it has."""
+
+    repository: str | None
+    kind: str
+    browser: str | None
+    environment: str | None
+    platform: str | None
+    results: int
 
 
 class ReportCategory(View):
@@ -725,6 +723,7 @@ class ReportOverview(View):
     categories: tuple[ReportCategory, ...]
     trend: tuple[ReportTrendPoint, ...]
     environment: dict[str, tuple[str, ...]]
+    browsers: tuple[ReportBrowser, ...] = ()
 
 
 class SuiteTest(View):
@@ -735,6 +734,9 @@ class SuiteTest(View):
     outcome: Outcome
     duration_seconds: float | None
     retries: int
+    # The execution shown: details open this run, not the newest run of any context
+    run_id: str
+    started_at: datetime | None
 
 
 class SuiteClass(View):
@@ -752,6 +754,10 @@ class SuiteJob(View):
     context: str
     counts: dict[Outcome, int]
     classes: tuple[SuiteClass, ...]
+    kind: str = "other"
+    browser: str | None = None
+    environment: str | None = None
+    platform: str | None = None
 
 
 class SuiteGroup(View):
@@ -2021,17 +2027,46 @@ class Workspace:
 
         return self._cached(("gate-history", scope), compute)
 
+    def report_options(self) -> tuple[ReportOption, ...]:
+        """Repository / test type / browser / environment / platform combinations of the latest results.
+
+        Only combinations that exist, so the filter bar never offers an empty choice; counted on the
+        whole snapshot, so every filter's choices come from the same evidence.
+        """
+
+        def compute() -> tuple[ReportOption, ...]:
+            found: Counter[tuple[str | None, str, str | None, str | None, str | None]] = Counter()
+            for run in self._report(EVERYTHING).snapshot:
+                key = (
+                    run.pipeline.repository if run.pipeline else None,
+                    execution_kind(run),
+                    run.context.browser,
+                    run.context.environment,
+                    run.context.platform,
+                )
+                found[key] += len(run.results)
+            return tuple(
+                ReportOption(
+                    repository=k[0], kind=k[1], browser=k[2], environment=k[3], platform=k[4], results=n
+                )
+                for k, n in sorted(found.items(), key=lambda item: tuple(part or "" for part in item[0]))
+            )
+
+        return self._cached(("report-options",), compute)
+
     def report_suites(self, scope: Scope = EVERYTHING) -> ReportSuites:
         """The latest snapshot as a tree: repository (or framework) > job (or context) > class > test."""
 
         def compute() -> ReportSuites:
             tree: dict[tuple[str, bool], dict[tuple[str, str], dict[str, list[SuiteTest]]]] = {}
+            job_context: dict[tuple[str, str], TestRun] = {}
             for run in self._report(scope).snapshot:
                 repository = run.pipeline.repository if run.pipeline else None
                 group = repository or f"{run.context.framework or 'unknown framework'} (not collected)"
                 context = "/".join(part or "-" for part in context_key(run.context))
                 job = run.pipeline.job if run.pipeline else context
                 classes = tree.setdefault((group, repository is not None), {}).setdefault((job, context), {})
+                job_context.setdefault((job, context), run)
                 for result in run.results:
                     classes.setdefault(result.classname or result.suite or "(no class)", []).append(
                         SuiteTest(
@@ -2040,6 +2075,8 @@ class Workspace:
                             outcome=result.outcome,
                             duration_seconds=result.duration_seconds,
                             retries=result.retries,
+                            run_id=run.run_id,
+                            started_at=run.started_at,
                         )
                     )
 
@@ -2062,8 +2099,18 @@ class Workspace:
                         for name, tests in sorted(classes.items())
                     )
                     every = [t for c in class_views for t in c.tests]
+                    sample = job_context[(job, context)]
                     job_views.append(
-                        SuiteJob(name=job, context=context, counts=counts(every), classes=class_views)
+                        SuiteJob(
+                            name=job,
+                            context=context,
+                            counts=counts(every),
+                            classes=class_views,
+                            kind=execution_kind(sample),
+                            browser=sample.context.browser,
+                            environment=sample.context.environment,
+                            platform=sample.context.platform,
+                        )
                     )
                 every = [t for j in job_views for c in j.classes for t in c.tests]
                 groups.append(
@@ -2093,6 +2140,19 @@ class Workspace:
                     failures.setdefault(key, set()).add(result.key)
                     failure_results[key] = failure_results.get(key, 0) + 1
         starts = [r.started_at for r in report.snapshot if r.started_at]
+        urls = {c.pipeline_id: c.url for c in self.collections if github_run_url(c.url)}
+
+        def newest(runs: list[TestRun]) -> dict[str, str | None]:
+            """Branch, commit and CI link of the group's newest run (what the latest results tested)."""
+            pipeline = max(runs, key=lambda r: r.started_at or datetime.min.replace(tzinfo=UTC)).pipeline
+            if pipeline is None:
+                return {}
+            return {
+                "branch": pipeline.branch,
+                "commit": pipeline.commit,
+                "ci_url": urls.get(pipeline.pipeline_id),
+            }
+
         return ReportOverview(
             counts=report.outcome_counts,
             total=sum(report.outcome_counts.values()),
@@ -2107,6 +2167,7 @@ class Workspace:
                     counts=_outcome_totals(runs),
                     runs=len(runs),
                     latest_started_at=max((r.started_at for r in runs if r.started_at), default=None),
+                    **newest(runs),
                 )
                 for (name, collected), runs in sorted(
                     suites.items(), key=lambda item: (not item[0][1], item[0][0])
@@ -2127,6 +2188,7 @@ class Workspace:
                 ReportTrendPoint(day=point.day, counts=point.counts)
                 for point in self.trends(scope).daily[-REPORT_TREND_DAYS:]
             ),
+            browsers=_browser_comparison(report.snapshot),
             environment={
                 "repositories": _sorted(r.pipeline.repository for r in report.snapshot if r.pipeline),
                 "frameworks": _sorted(r.context.framework for r in report.snapshot),
@@ -2169,6 +2231,7 @@ class Workspace:
                     counts=p.counts,
                     pass_rate=RatioView.of(p.pass_rate),
                     duration_seconds=round(p.duration_seconds, 3),
+                    timed_results=p.timed_results,
                     requirement_status=p.requirement_status,
                     contexts=p.contexts,
                     carried=p.carried,
@@ -2902,3 +2965,25 @@ def _outcome_totals(runs: Iterable[TestRun]) -> dict[Outcome, int]:
         for outcome, n in run.outcome_counts().items():
             counts[outcome] += n
     return counts
+
+
+def _browser_comparison(snapshot: Iterable[TestRun]) -> tuple[ReportBrowser, ...]:
+    """Per browser (``None`` = no browser): counts, pass rate and recorded duration of the snapshot."""
+    groups: dict[str | None, list[TestRun]] = {}
+    for run in snapshot:
+        groups.setdefault(run.context.browser, []).append(run)
+    views = []
+    for browser, runs in sorted(groups.items(), key=lambda item: (item[0] is None, item[0] or "")):
+        counts = _outcome_totals(runs)
+        timed = [r.duration_seconds for run in runs for r in run.results if r.duration_seconds is not None]
+        views.append(
+            ReportBrowser(
+                browser=browser,
+                counts=counts,
+                total=sum(counts.values()),
+                pass_rate=RatioView.of(execution_pass_rate(counts)),
+                duration_seconds=sum(timed) if timed else None,
+                untimed=sum(len(run.results) for run in runs) - len(timed),
+            )
+        )
+    return tuple(views)
