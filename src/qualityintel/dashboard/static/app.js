@@ -848,9 +848,32 @@ async function testHistory() {
   ];
 }
 
+// Each suite's newest build against its previous build on the same branch (docs/history.md)
+function latestRegressions(d) {
+  const tests = (keys) => [keys.slice(0, 5).map((k, i) => [i ? ", " : null, h("a", { class: "key", href: drillLink("/test", { key: k }) }, k)]), keys.length > 5 ? ` and ${keys.length - 5} more` : null];
+  return h(
+    "section",
+    { "aria-labelledby": "regressions-title" },
+    h("h2", { id: "regressions-title" }, `Latest regressions (${d.regressions.length})`),
+    h("p", { class: "sub" }, `Each suite's newest build compared with its previous build on the same branch: ${d.compared} suites compared, ${d.single_build} ran in one build only. ${d.notes.join(" ")}`),
+    table(
+      ["Suite", "Repository · branch", "Builds", "Newly failing", "Recovered", "Runs"],
+      d.regressions.map((r) => h("tr", {},
+        h("td", {}, r.suite),
+        h("td", {}, `${r.repository ?? "not recorded"} · ${r.branch ?? "branch not recorded"}`),
+        h("td", { class: "nowrap" }, h("a", { href: link("/compare", { base: r.base_build, head: r.head_build }) }, `${r.base_build} → ${r.head_build}`), r.head_started_at ? h("span", { class: "sub" }, formatDate(r.head_started_at)) : null),
+        h("td", {}, tests(r.newly_failing)),
+        h("td", { class: "num" }, r.fixed.length),
+        h("td", { class: "nowrap" }, h("a", { href: drillLink(`/run/${r.base_run_id}`) }, "previous"), " · ", h("a", { href: drillLink(`/run/${r.head_run_id}`) }, "newest")),
+      )),
+      "No suite fails a test in its newest build that passed in its previous build.",
+    ),
+  );
+}
+
 async function compareView() {
   const params = route().params;
-  const builds = await api(`/api/builds${apiQuery(RUN_FILTERS)}`);
+  const [builds, regressions] = await Promise.all([api(`/api/builds${apiQuery(RUN_FILTERS)}`), api(`/api/regressions${apiQuery(RUN_FILTERS)}`)]);
   const head = params.get("head") ?? builds[builds.length - 1] ?? "";
   const base = params.get("base") ?? builds[builds.length - 2] ?? "";
   const pick = (id, value, other) => {
@@ -865,6 +888,7 @@ async function compareView() {
     h("div", { class: "toolbar" }, h("label", { for: "base-build" }, "Baseline build", pick("base-build", base, "base")), h("label", { for: "head-build" }, "Comparison build", pick("head-build", head, "head"))),
     // Builds of different repositories never share a suite: say so while all are listed
     params.get("repository") ? null : h("p", { class: "sub" }, "Tip: choose a Repository above to list only its builds; builds of different repositories have no suite in common."),
+    latestRegressions(regressions),
   ];
   if (builds.length < 2) return [...header, h("p", { class: "empty" }, "At least two builds are needed in this scope.")];
   if (base === head) return [...header, h("p", { class: "empty" }, "Choose two different builds.")];

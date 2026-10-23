@@ -1640,6 +1640,93 @@
         "title": "RecurringView",
         "type": "object"
       },
+      "RegressionRow": {
+        "description": "A suite whose newest build fails tests that passed in its previous build (docs/history.md).",
+        "properties": {
+          "base_build": {
+            "title": "Base Build",
+            "type": "string"
+          },
+          "base_run_id": {
+            "title": "Base Run Id",
+            "type": "string"
+          },
+          "branch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Branch"
+          },
+          "fixed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Fixed",
+            "type": "array"
+          },
+          "head_build": {
+            "title": "Head Build",
+            "type": "string"
+          },
+          "head_run_id": {
+            "title": "Head Run Id",
+            "type": "string"
+          },
+          "head_started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Head Started At"
+          },
+          "newly_failing": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Newly Failing",
+            "type": "array"
+          },
+          "repository": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repository"
+          },
+          "suite": {
+            "title": "Suite",
+            "type": "string"
+          }
+        },
+        "required": [
+          "suite",
+          "repository",
+          "branch",
+          "base_build",
+          "head_build",
+          "base_run_id",
+          "head_run_id",
+          "head_started_at",
+          "newly_failing",
+          "fixed"
+        ],
+        "title": "RegressionRow",
+        "type": "object"
+      },
       "RegressionView": {
         "description": "A test that became clearly slower and stayed slower.",
         "properties": {
@@ -1672,6 +1759,41 @@
           "baseline_runs"
         ],
         "title": "RegressionView",
+        "type": "object"
+      },
+      "RegressionsView": {
+        "description": "Latest regressions of every suite, and how many suites could be checked.",
+        "properties": {
+          "compared": {
+            "title": "Compared",
+            "type": "integer"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "regressions": {
+            "items": {
+              "$ref": "#/components/schemas/RegressionRow"
+            },
+            "title": "Regressions",
+            "type": "array"
+          },
+          "single_build": {
+            "title": "Single Build",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "regressions",
+          "compared",
+          "single_build",
+          "notes"
+        ],
+        "title": "RegressionsView",
         "type": "object"
       },
       "RepositoryHealth": {
@@ -4451,6 +4573,188 @@
         "summary": "Readiness",
         "tags": [
           "coverage"
+        ]
+      }
+    },
+    "/api/regressions": {
+      "get": {
+        "description": "Each suite's newest build against its previous build on the same branch (build filter ignored).",
+        "operationId": "regressions_api_regressions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "framework",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Framework"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment"
+            }
+          },
+          {
+            "in": "query",
+            "name": "browser",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Browser"
+            }
+          },
+          {
+            "in": "query",
+            "name": "build",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Build"
+            }
+          },
+          {
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "in": "query",
+            "name": "until",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Until"
+            }
+          },
+          {
+            "in": "query",
+            "name": "repository",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repository"
+            }
+          },
+          {
+            "in": "query",
+            "name": "job",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegressionsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Regressions",
+        "tags": [
+          "history"
         ]
       }
     },

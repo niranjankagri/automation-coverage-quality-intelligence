@@ -38,7 +38,13 @@ from qualityintel.history.analysis import (
     trend,
 )
 from qualityintel.history.analysis import Execution as HistoryExecution
-from qualityintel.history.builds import BuildSide, builds_in_order, compare_builds, label
+from qualityintel.history.builds import (
+    BuildSide,
+    builds_in_order,
+    compare_builds,
+    label,
+    latest_regressions,
+)
 from qualityintel.history.trends import CoverageSnapshot, coverage_changes, daily_trend
 from qualityintel.ingest.batch import Batch, import_results
 from qualityintel.ingest.catalog_file import load_catalog
@@ -359,6 +365,30 @@ class BuildComparisonView(View):
     only_in_head: tuple[str, ...]
     changes: tuple[ChangeRow, ...]
     category_counts: dict[str, int]
+    notes: tuple[str, ...]
+
+
+class RegressionRow(View):
+    """A suite whose newest build fails tests that passed in its previous build (docs/history.md)."""
+
+    suite: str
+    repository: str | None
+    branch: str | None
+    base_build: str
+    head_build: str
+    base_run_id: str
+    head_run_id: str
+    head_started_at: datetime | None
+    newly_failing: tuple[str, ...]
+    fixed: tuple[str, ...]
+
+
+class RegressionsView(View):
+    """Latest regressions of every suite, and how many suites could be checked."""
+
+    regressions: tuple[RegressionRow, ...]
+    compared: int
+    single_build: int
     notes: tuple[str, ...]
 
 
@@ -1104,6 +1134,39 @@ class Workspace:
             repositories=tuple(rows),
             notes=tuple(notes),
         )
+
+    def regressions(self, scope: Scope = EVERYTHING) -> RegressionsView:
+        """Each suite's newest build against its previous build on the same branch (docs/history.md)."""
+
+        def compute() -> RegressionsView:
+            scan = latest_regressions(self._runs(_without_builds(scope)))
+            return RegressionsView(
+                regressions=tuple(
+                    RegressionRow(
+                        suite=r.label,
+                        repository=r.repository,
+                        branch=r.branch,
+                        base_build=r.base_run.context.build or "",
+                        head_build=r.head_run.context.build or "",
+                        base_run_id=r.base_run.run_id,
+                        head_run_id=r.head_run.run_id,
+                        head_started_at=r.head_run.started_at,
+                        newly_failing=r.newly_failing,
+                        fixed=r.fixed,
+                    )
+                    for r in scan.regressions
+                ),
+                compared=scan.compared,
+                single_build=scan.single_build,
+                notes=(
+                    "A suite is a run context and pipeline job on one branch; builds of other suites "
+                    "or branches are never the baseline.",
+                    "Only dated runs with a build label take part; the highest job attempt of a build "
+                    "counts.",
+                ),
+            )
+
+        return self._cached(("regressions", scope), compute)
 
     def stability(
         self, scope: Scope = EVERYTHING, settings: HistorySettings = DEFAULTS, include_stable: bool = False

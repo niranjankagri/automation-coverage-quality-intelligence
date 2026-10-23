@@ -42,6 +42,7 @@ from qualityintel.workspace import (
     Facets,
     PipelinesView,
     ReadinessView,
+    RegressionsView,
     RequirementDetail,
     RequirementMatrix,
     RequirementRow,
@@ -564,6 +565,11 @@ def create_app(
             raise HTTPException(
                 status_code=404, detail=f"no runs of build {error.args[0]!r} in this scope"
             ) from None
+
+    @app.get("/api/regressions", tags=["history"])
+    def regressions(chosen: RunScope) -> RegressionsView:
+        """Each suite's newest build against its previous build on the same branch (build filter ignored)."""
+        return current().regressions(chosen)
 
     @app.get("/api/stability", tags=["history"])
     def stability(

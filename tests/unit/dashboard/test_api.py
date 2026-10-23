@@ -177,6 +177,7 @@ def test_openapi_documentation_lists_every_route(client: TestClient) -> None:
         "/api/runs/{run_id}",
         "/api/builds",
         "/api/compare",
+        "/api/regressions",
         "/api/stability",
         "/api/trends",
     }
@@ -358,6 +359,19 @@ def test_builds_of_different_suites_are_not_compared(client: TestClient) -> None
     assert body["only_in_base"]
     assert body["only_in_head"]
     assert any("share no suite" in n for n in body["notes"])
+
+
+def test_latest_regressions_on_the_samples_compare_each_suite_with_its_previous_build(
+    client: TestClient,
+) -> None:
+    """Four suites ran in two or more builds (none newly fails there); one ran in a single build."""
+    body = client.get("/api/regressions").json()
+
+    assert (body["compared"], body["single_build"], body["regressions"]) == (4, 1, [])
+    assert any("branch" in note for note in body["notes"])
+    # The scope applies: TestNG on Firefox is one of the four (f5a40d5 -> 1d03232 only got slower)
+    testng = client.get("/api/regressions", params={"framework": "testng"}).json()
+    assert (testng["compared"], testng["regressions"]) == (1, [])
 
 
 def test_comparison_input_errors(client: TestClient) -> None:

@@ -4,11 +4,11 @@ from datetime import UTC, datetime
 
 import pytest
 
-from qualityintel.history.builds import builds_in_order, compare_builds
+from qualityintel.history.builds import builds_in_order, compare_builds, latest_regressions
 from qualityintel.history.trends import CoverageSnapshot
 from qualityintel.models.enums import Outcome
 from qualityintel.models.metrics import Ratio
-from qualityintel.models.results import TestRun
+from qualityintel.models.results import PipelineJob, TestRun
 
 from ..traceability.helpers import result, run
 
@@ -143,3 +143,80 @@ def test_a_job_with_several_files_is_compared_file_by_file() -> None:
         "-/-/-/- (it) · TEST-A.xml",
         "-/-/-/- (it) · TEST-B.xml",
     ]
+
+
+def in_pipeline(run_: TestRun, branch: str = "main", attempt: int = 1) -> TestRun:
+    """``run_`` as job ``ui`` of a pipeline on ``branch``."""
+    job = PipelineJob(pipeline_id="1", job="ui", attempt=attempt, branch=branch, repository="o/r")
+    return run_.model_copy(update={"pipeline": job})
+
+
+def test_the_newest_build_is_compared_with_the_previous_build_of_the_same_suite() -> None:
+    """Only the last two builds count: b1 -> b2 regressed, but the scan reports b2 -> b3."""
+    runs = [
+        runs_of("b1", 17, {"a": P, "b": P}),
+        runs_of("b2", 18, {"a": F, "b": P}),
+        runs_of("b3", 19, {"a": F, "b": F}),
+    ]
+
+    scan = latest_regressions(runs)
+
+    (found,) = scan.regressions
+    assert (found.base_run.context.build, found.head_run.context.build) == ("b2", "b3")
+    assert found.newly_failing == ("suite::b",)
+    assert (scan.compared, scan.single_build) == (1, 0)
+
+
+def test_a_suite_that_only_got_better_is_compared_but_not_reported() -> None:
+    """Fixed tests alone are no regression."""
+    scan = latest_regressions([runs_of("b1", 18, {"a": F}), runs_of("b2", 19, {"a": P})])
+
+    assert scan.regressions == ()
+    assert scan.compared == 1
+
+
+def test_builds_are_only_compared_within_their_suite() -> None:
+    """Chrome b2 is not compared with Firefox b1; each suite ran once, so nothing is comparable."""
+    scan = latest_regressions([runs_of("b1", 18, {"a": P}, browser="firefox"), runs_of("b2", 19, {"a": F})])
+
+    assert scan.regressions == ()
+    assert (scan.compared, scan.single_build) == (0, 2)
+
+
+def test_a_pull_request_build_is_never_the_baseline_of_main() -> None:
+    """Branches are separate suites: main m2 is compared with main m1, not with the PR build."""
+    runs = [
+        in_pipeline(runs_of("m1", 17, {"a": P})),
+        in_pipeline(runs_of("pr1", 18, {"a": F}), branch="feature"),
+        in_pipeline(runs_of("m2", 19, {"a": F})),
+    ]
+
+    scan = latest_regressions(runs)
+
+    (found,) = scan.regressions
+    assert (found.base_run.context.build, found.branch, found.repository) == ("m1", "main", "o/r")
+    assert scan.single_build == 1  # the feature branch ran one build
+
+
+def test_the_highest_attempt_of_a_build_counts() -> None:
+    """A re-run that passed replaces the failed first attempt of the same build."""
+    runs = [
+        in_pipeline(runs_of("b1", 17, {"a": P})),
+        in_pipeline(runs_of("b2", 18, {"a": F})),
+        in_pipeline(run(result("a", P), day=18, hour=11, build="b2", browser="chrome"), attempt=2),
+    ]
+
+    assert latest_regressions(runs).regressions == ()
+
+
+def test_undated_or_unlabelled_runs_take_no_part() -> None:
+    """Order is unknown without a date; a run without a build has no build to compare."""
+    runs = [
+        runs_of("b1", 18, {"a": P}),
+        run(result("a", F), day=None, build="b2"),
+        run(result("a", F), day=19),
+    ]
+
+    scan = latest_regressions(runs)
+
+    assert (scan.regressions, scan.compared, scan.single_build) == ((), 0, 1)

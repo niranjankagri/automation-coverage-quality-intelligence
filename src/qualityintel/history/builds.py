@@ -10,6 +10,10 @@ never counted as a change.
 test that is a flaky candidate up to the head build but was not up to the base build.
 Coverage is taken from the latest recorded coverage snapshot before each build's last run; when
 there is none, that is said instead of guessing.
+
+**Latest regressions** (:func:`latest_regressions`, M13) need no chosen builds: for every suite
+the newest build is compared with the previous build *of the same suite on the same branch*,
+and tests that passed there and fail now are regressions (docs/history.md).
 """
 
 from __future__ import annotations
@@ -188,3 +192,79 @@ def _newly_flaky(
         }
 
     return tuple(sorted(flaky(head.last_started_at) - flaky(base.last_started_at)))
+
+
+@dataclass(frozen=True)
+class Regression:
+    """A suite whose newest build fails tests that passed in its previous comparable build."""
+
+    label: str
+    repository: str | None
+    branch: str | None
+    base_run: TestRun
+    head_run: TestRun
+    newly_failing: tuple[str, ...]
+    fixed: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class RegressionScan:
+    """Regressions of every suite, and how many suites could be checked at all."""
+
+    regressions: tuple[Regression, ...]
+    compared: int
+    single_build: int
+
+
+def latest_regressions(runs: Iterable[TestRun], settings: HistorySettings = DEFAULTS) -> RegressionScan:
+    """Compare each suite's newest build with its previous comparable build (docs/history.md).
+
+    A suite is :func:`_compare_key` plus the pipeline branch: a pull request build is never the
+    baseline of a ``main`` build. Only dated runs with a build label take part (an undated run
+    cannot be placed before or after another). Per suite and build the highest job attempt, then
+    the latest start, counts. The newest build is compared with the build that ran before it;
+    a suite that ran in one build only is counted in ``single_build``.
+    """
+    streams: dict[tuple[tuple[str | None, ...], str | None], dict[str, TestRun]] = {}
+    for run in runs:
+        build = run.context.build
+        if build is None or run.started_at is None:
+            continue
+        key = (_compare_key(run), run.pipeline.branch if run.pipeline else None)
+        builds = streams.setdefault(key, {})
+        current = builds.get(build)
+        if current is None or _newer(run, current):
+            builds[build] = run
+    found = []
+    compared = single = 0
+    for (_, branch), builds in streams.items():
+        ordered = sorted(builds.values(), key=lambda r: (r.started_at, r.source))
+        if len(ordered) < 2:
+            single += 1
+            continue
+        compared += 1
+        base, head = ordered[-2], ordered[-1]
+        changes = compare_runs(base, head, settings)
+        if changes.newly_failing:
+            found.append(
+                Regression(
+                    label=label(head),
+                    repository=head.pipeline.repository if head.pipeline else None,
+                    branch=branch,
+                    base_run=base,
+                    head_run=head,
+                    newly_failing=tuple(changes.newly_failing),
+                    fixed=tuple(changes.fixed),
+                )
+            )
+    # Newest head build first, then by suite label (two stable sorts: dates cannot be negated)
+    found.sort(key=lambda r: r.label)
+    found.sort(key=lambda r: r.head_run.started_at or datetime.min, reverse=True)
+    return RegressionScan(regressions=tuple(found), compared=compared, single_build=single)
+
+
+def _newer(run: TestRun, other: TestRun) -> bool:
+    """``run`` replaces ``other`` of the same suite and build: higher attempt, then later start."""
+    attempt = run.pipeline.attempt if run.pipeline else 1
+    other_attempt = other.pipeline.attempt if other.pipeline else 1
+    return (attempt, run.started_at) > (other_attempt, other.started_at)
