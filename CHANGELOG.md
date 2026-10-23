@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add a historical Test execution dashboard with UTC daily outcome charts, status distribution,
+  suite and shared run filters, top 10/25/100 duration/failure/error rankings and test-history
+  drill-downs. Preserve unknown timings and distinguish summed test time from wall-clock time
+  and test outcomes from cancelled/incomplete pipeline evidence.
+
 - **CI collection** (`qi collect`, [docs/collection.md](docs/collection.md),
   [ADR 0007](docs/adr/0007-ci-collection.md)): a producers file names, per job, the artifact
   and the one path to import; completed runs of four public repositories are collected as
