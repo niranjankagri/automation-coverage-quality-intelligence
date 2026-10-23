@@ -4,16 +4,13 @@
 import { api, scopeQuery } from "./api.js";
 import { h, repoName } from "./dom.js";
 import { overview } from "./overview.js";
+import { behaviors } from "./behaviors.js";
 import { categories } from "./categories.js";
 import { graphs } from "./graphs.js";
 import { suites } from "./suites.js";
 
-// Sections still to come: each says so and links the classic page that has the data today
-const COMING = {
-  behaviors: { title: "Behaviors", what: "requirements, their test cases and the coverage gaps by owner", classic: "/#/coverage" },
-};
-const PAGES = { overview, categories, suites, graphs };
-const TITLES = { overview: "Overview", categories: "Categories", suites: "Suites", graphs: "Graphs" };
+const PAGES = { overview, categories, suites, graphs, behaviors };
+const TITLES = { overview: "Overview", categories: "Categories", suites: "Suites", graphs: "Graphs", behaviors: "Behaviors" };
 
 const main = document.getElementById("main");
 const select = document.getElementById("repository");
@@ -35,7 +32,7 @@ function go(section, repository) {
 async function render() {
   const mine = ++rendering;
   const state = route();
-  if (!PAGES[state.section] && !COMING[state.section]) return go("overview", state.repository);
+  if (!PAGES[state.section]) return go("overview", state.repository);
   select.value = state.repository;
   if (select.value !== state.repository) select.append(h("option", { value: state.repository }, repoName(state.repository)));
   select.value = state.repository;
@@ -47,7 +44,7 @@ async function render() {
   main.setAttribute("aria-busy", "true");
   let content;
   try {
-    content = PAGES[state.section] ? await PAGES[state.section](state) : coming(state);
+    content = await PAGES[state.section](state);
   } catch (error) {
     content = h("div", { class: "error-box", role: "alert" }, "Could not load this page. ", String(error.message), " ",
       h("button", { type: "button", class: "pill-link", id: "retry" }, "Retry"));
@@ -56,22 +53,9 @@ async function render() {
   main.replaceChildren(...[content].flat(Infinity).filter((part) => part !== null && part !== undefined));
   main.removeAttribute("aria-busy");
   document.getElementById("retry")?.addEventListener("click", render);
-  const title = COMING[state.section]?.title ?? TITLES[state.section];
-  document.title = `${title} · ${repoName(state.repository)} · Quality Intelligence report`;
+  document.title = `${TITLES[state.section]} · ${repoName(state.repository)} · Quality Intelligence report`;
   main.querySelector("h1")?.setAttribute("tabindex", "-1");
   if (document.activeElement !== select) main.querySelector("h1")?.focus({ preventScroll: true });
-}
-
-/** A section of the plan that is not built yet: what it will show, and where the data is today. */
-function coming(state) {
-  const page = COMING[state.section];
-  return [
-    h("p", { class: "eyebrow" }, `Report · ${repoName(state.repository)}`),
-    h("h1", {}, page.title),
-    h("div", { class: "card next-step" },
-      h("p", {}, `This section will show ${page.what}. It is being built next.`),
-      h("p", {}, h("a", { class: "button", href: `${page.classic}${scopeQuery(state.repository)}` }, "Open it in the classic dashboard"))),
-  ];
 }
 
 async function loadRepositories() {

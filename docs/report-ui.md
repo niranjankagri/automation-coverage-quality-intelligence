@@ -37,18 +37,18 @@ by cause, and a tree with the selected test's details beside it.
 | Categories | **built** | no new route: **Failing now** (the Overview's causes: failed = product defect, error = broken), **Unstable tests** from `/api/stability` (consistently failing, new failures, flaky candidates, recovered; last verdicts per test and context, [metrics.md](metrics.md)), **Recurring causes** with a pre-filled GitHub issue from `/api/issue-suggestions` ([issues.md](issues.md)). Every test opens in Suites |
 | Suites | **built** | `GET /api/report/suites`: the same snapshot as a tree, repository (or framework for files not collected) > pipeline job (or run context) > class > test, with counts per level. Left pane: the tree with a name filter and status chips; right pane: the selected test from `/api/tests/history` (latest result and failure, the pass/fail pattern, stability, executions with run and CI links, requirements). The selection is in the address (`#/suites?test=...`), so Back works and a test can be shared |
 | Graphs | **built** | no new route: results and pass rate per day and suite time per day (`/api/trends`, last 30 days with runs; the pass-rate axis starts below the lowest day and is labelled), how long the latest results take and the slowest tests (`/api/report/suites`), tests getting slower (`/api/stability`), the release gate per day (`/api/gate-history`). Every chart has its numbers in a table; phones get a narrow drawing canvas |
-| Behaviors | next | requirements, coverage, gaps by owner |
+| Behaviors | **built** | no new route: product > feature > requirement from the catalog's `feature` ("Toolshop / Checkout"), each requirement with its status (failing first), criticality and automated test cases, linking its classic page; the coverage figures from `/api/summary`; gaps by owner, riskiest first, from `/api/gaps` |
 
-A section that is not built yet says so and links the classic page that has the data today. The
-Overview's figures are the classic coverage page's (a test compares them), so both UIs always agree.
+All five sections are built; an unknown section address opens the Overview. Requirement and run pages
+still open in the classic dashboard. The Overview's figures are the classic coverage page's (a test compares them), so both UIs always agree.
 
 ## Checks
 
 `tests/e2e/test_report_ui.py`: the Overview on the samples (221 results, 100 % pass rate, four
 suites), the Suites tree (221 tests, a selected test kept on reload, name and status filters), Categories
 (nothing failing now, four flaky candidates, a test link opening Suites), Graphs (13 days, two
-tests getting slower, no gate, a slow test opening Suites), the repository switcher on collected data (address kept on reload), a section still to
-build links its classic page, the theme button like the portfolio's, axe-core WCAG 2.2 A/AA in both
+tests getting slower, no gate, a slow test opening Suites), the repository switcher on collected data (address kept on reload), Behaviors (four
+products, 90.5 % of requirements with tests, ten gaps), an unknown section opening the Overview, the theme button like the portfolio's, axe-core WCAG 2.2 A/AA in both
 themes, and a phone width without sideways scrolling. API tests in `tests/unit/dashboard/test_api.py`
 check the overview against `/api/summary`, the grouping of failures by cause and of collected runs by
 repository, and how `/next/` is served (policy, revalidation, redirect from `/next`).

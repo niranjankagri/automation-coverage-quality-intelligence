@@ -166,7 +166,6 @@ th { color: var(--muted); font-weight: 650; }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 
 /* Sections still to come in this report */
-.next-step { max-width: 640px; }
 .button { display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: var(--radius); background: var(--accent); color: var(--accent-ink); font-weight: 700; text-decoration: none; }
 .loading, .error-box { color: var(--muted); }
 .error-box[role="alert"] { padding: 14px 16px; border-radius: var(--radius); background: var(--failed-soft); color: var(--failed); border: 1px solid var(--failed); }
@@ -207,7 +206,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .node-label small { display: block; color: var(--muted); font-weight: 500; font-size: 12px; }
 .node-counts { display: inline-flex; gap: 6px; font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .count-passed { color: var(--passed); } .count-failed { color: var(--failed); }
-.count-error { color: var(--error); } .count-skipped { color: var(--skipped); }
+.count-error { color: var(--error); } .count-skipped { color: var(--muted); } /* --skipped is too light for small text */
 .test-row {
   display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; align-items: center; gap: 8px; width: 100%; min-height: 32px;
   margin-left: 14px; width: calc(100% - 14px); padding: 4px 8px; border: 0; border-radius: 8px; background: none; color: var(--ink);
@@ -295,6 +294,28 @@ h3 { margin: 18px 0 8px; font-size: 15px; }
 .gate-passed { background: var(--passed-soft); color: var(--passed); }
 .gate-failed { background: var(--failed-soft); color: var(--failed); }
 .gate-skipped { background: var(--skipped-soft); color: var(--skipped); }
+
+/* ---- Behaviors ---- */
+.behaviors-summary { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.behaviors-tree { max-height: none; }
+.behaviors-tree .node-counts span { white-space: nowrap; }
+.behaviors-tree .node-counts { flex-wrap: wrap; justify-content: flex-end; }
+.req-list { list-style: none; margin: 4px 0 8px 22px; padding: 0; display: grid; gap: 2px; }
+.req-row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; align-items: baseline; padding: 6px 8px; border-radius: 8px; font-size: 13.5px; }
+.req-row:hover { background: var(--surface-2); }
+.req-row .badge { justify-self: start; }
+.req-text { overflow-wrap: anywhere; }
+.req-meta { grid-column: 2; color: var(--muted); font-size: 12.5px; }
+.owner + .owner { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.owner h3 { margin: 0 0 8px; }
+@media (max-width: 900px) { .behaviors-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* Phones: counts move under the label, a gap's kind under its title, so names keep their width */
+@media (max-width: 600px) {
+  .behaviors-tree .node > summary { flex-wrap: wrap; }
+  .behaviors-tree .node-counts { flex-basis: 100%; justify-content: flex-start; padding-left: 21px; }
+  .rank li { grid-template-columns: minmax(0, 1fr); gap: 0; }
+}
+@media (max-width: 420px) { .behaviors-summary { grid-template-columns: minmax(0, 1fr); } }
 
 /* ---- Tablet and phone: sidebar becomes a scrollable tab row under the header ---- */
 @media (max-width: 1100px) {

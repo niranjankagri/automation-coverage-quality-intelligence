@@ -48,14 +48,25 @@ def test_the_repository_switcher_narrows_the_report_and_keeps_it_in_the_address(
     expect(page).to_have_url(re.compile(r"#/suites\?repository="))
 
 
-def test_a_section_still_to_build_links_its_classic_page(page: Page) -> None:
-    """Behaviors is not built yet: it says so and opens the classic Coverage page, not a dead end."""
+def test_behaviors_shows_features_coverage_and_gaps_by_owner(page: Page) -> None:
+    """Samples: 42 requirements in four products, 90.5 % with tests, 10 gaps; a requirement opens classic."""
     page.goto("/next/#/behaviors")
 
-    expect(page.get_by_role("heading", name="Behaviors", level=1)).to_be_visible()
-    expect(page.get_by_role("link", name="Open it in the classic dashboard")).to_have_attribute(
-        "href", "/#/coverage"
-    )
+    expect(page.locator(".cat-stat").first).to_contain_text("90.5 % (38/42)")
+    expect(page.locator(".behaviors-tree > .node")).to_have_count(4)
+    expect(page.locator(".card").filter(has_text="Gaps by owner")).to_contain_text("10 to close")
+    toolshop = page.locator(".behaviors-tree > .node").filter(has_text="Toolshop")
+    toolshop.locator("> summary").click()
+    toolshop.locator(".node > summary").filter(has_text="Checkout").click()
+    expect(toolshop.get_by_role("link", name="SHOP-008")).to_have_attribute("href", "/#/requirement/SHOP-008")
+
+
+def test_an_unknown_section_opens_the_overview(page: Page) -> None:
+    """An old or mistyped address lands on the Overview with the repository kept."""
+    page.goto("/next/#/timeline?repository=o%2Fr")
+
+    expect(page).to_have_url(re.compile(r"#/overview\?repository=o%2Fr$"))
+    expect(page.get_by_role("heading", name="Overview", level=1)).to_be_visible()
 
 
 def test_categories_groups_failures_and_links_each_test_to_suites(page: Page) -> None:
@@ -138,9 +149,9 @@ def test_the_theme_button_works_like_the_portfolio(page: Page) -> None:
 
 
 @pytest.mark.parametrize("theme", ["light", "dark"])
-@pytest.mark.parametrize("route", ["#/overview", "#/suites", "#/categories", "#/graphs", "#/behaviors"])
+@pytest.mark.parametrize("route", ["#/overview", "#/categories", "#/suites", "#/graphs", "#/behaviors"])
 def test_no_wcag_violations_in_the_report(page: Page, route: str, theme: str) -> None:
-    """Every built section and one still to come, in both themes."""
+    """Every section, in both themes."""
     page.goto("/next/")
     page.evaluate(f"localStorage.setItem('na-theme', '{theme}')")
     page.goto(f"/next/{route}")
