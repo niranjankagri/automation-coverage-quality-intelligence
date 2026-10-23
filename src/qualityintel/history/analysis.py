@@ -18,7 +18,7 @@ import re
 import statistics
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import StrEnum
 from itertools import pairwise
 
@@ -93,7 +93,12 @@ class TestStability:
 
 @dataclass(frozen=True)
 class RecurringFailure:
-    """The same failure signature seen in several runs."""
+    """The same failure signature seen in several runs.
+
+    ``recent_runs`` counts the runs within ``recent_days`` before the newest run of the history
+    (not the clock, so the same history always ranks the same); ``run_ids`` are every supporting
+    run, newest first.
+    """
 
     signature: str
     occurrences: int
@@ -101,6 +106,8 @@ class RecurringFailure:
     tests: tuple[str, ...]
     first_seen: datetime | None
     last_seen: datetime | None
+    recent_runs: int = 0
+    run_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -275,30 +282,53 @@ def failure_signature(result: TestResult) -> str:
     return (prefix + text.strip())[:200] or result.outcome.value
 
 
-def recurring_failures(runs: Iterable[TestRun], min_runs: int = 2) -> list[RecurringFailure]:
-    """Failure signatures seen in at least ``min_runs`` different runs, most frequent first."""
+def recurring_failures(
+    runs: Iterable[TestRun], min_runs: int = 2, recent_days: int = 7
+) -> list[RecurringFailure]:
+    """Failure signatures seen in at least ``min_runs`` different runs, ranked (docs/metrics.md).
+
+    Rank: most runs in the last ``recent_days`` before the newest run first, then most runs in
+    total, then the most recent occurrence, then most occurrences. A cause that keeps failing
+    this week outranks one that failed often a month ago and stopped.
+    """
+    runs = list(runs)
     seen: dict[str, list[Execution]] = {}
     for run in runs:
         for result in run.results:
             if result.outcome in (Outcome.FAILED, Outcome.ERROR):
                 seen.setdefault(failure_signature(result), []).append(Execution(run, result))
+    newest = max((run.started_at for run in runs if run.started_at), default=None)
+    since = newest - timedelta(days=recent_days) if newest else None
     found = []
     for signature, executions in seen.items():
-        run_ids = {e.run.run_id for e in executions}
-        if len(run_ids) < min_runs:
+        failing = {e.run.run_id: e.run for e in executions}
+        if len(failing) < min_runs:
             continue
         dates = [e.run.started_at for e in executions if e.run.started_at]
         found.append(
             RecurringFailure(
                 signature=signature,
                 occurrences=len(executions),
-                runs=len(run_ids),
+                runs=len(failing),
                 tests=tuple(sorted({e.result.key for e in executions})),
                 first_seen=min(dates, default=None),
                 last_seen=max(dates, default=None),
+                recent_runs=sum(
+                    1 for r in failing.values() if since and r.started_at and r.started_at >= since
+                ),
+                run_ids=tuple(r.run_id for r in sorted(failing.values(), key=_run_order, reverse=True)),
             )
         )
-    return sorted(found, key=lambda f: (-f.runs, -f.occurrences, f.signature))
+    return sorted(
+        found,
+        key=lambda f: (
+            -f.recent_runs,
+            -f.runs,
+            -(f.last_seen.timestamp() if f.last_seen else float("-inf")),
+            -f.occurrences,
+            f.signature,
+        ),
+    )
 
 
 def repeated_errors(runs: Iterable[TestRun], min_runs: int = 2) -> dict[str, int]:
