@@ -345,6 +345,49 @@ class ExecutionRank(View):
     max_seconds: float | None
 
 
+class ExecutionOption(View):
+    """One recorded context for the guided repository/type/browser picker."""
+
+    repository: str
+    kind: str
+    job: str
+    browser: str
+    framework: str
+    executions: int
+
+
+def execution_kind(run: TestRun) -> str:
+    """Navigation labels from explicit job conventions; ambiguous jobs remain Other.
+
+    These are execution families, not requirement/catalog coverage classifications.
+    A browser on its own is not sufficient evidence of a UI job (API tests use browsers too).
+    """
+    job = run.pipeline.job.lower().replace("_", "-") if run.pipeline else ""
+    if run.context.framework == "k6":
+        return "performance"
+    if job == "api" or job.startswith(("api-", "checks-api")):
+        return "api"
+    if job == "unit" or job.startswith(("unit-", "checks-service-unit")):
+        return "unit"
+    if job.startswith("component"):
+        return "component"
+    if job.startswith("visual"):
+        return "visual"
+    if job.startswith(("a11y", "accessibility")):
+        return "accessibility"
+    if job in {"android", "ios", "emulation"} or job.startswith("mobile"):
+        return "mobile"
+    if job in {"consumer", "provider"} or job.startswith("contract"):
+        return "contract"
+    if job.startswith("integration"):
+        return "integration"
+    if job in {"chromium", "firefox", "webkit"} or job.startswith(("ui-", "e2e-")) or job == "ui":
+        return "ui"
+    if run.context.browser and job.startswith(("smoke", "regression", "full", "grid")):
+        return "ui"
+    return "other"
+
+
 class ExecutionDashboard(View):
     """Historical execution counts; deliberately separate from snapshot coverage."""
 
@@ -1084,7 +1127,11 @@ class Workspace:
         return tuple(rows)
 
     def execution_dashboard(
-        self, scope: Scope = EVERYTHING, limit: int = 10, suite: str | None = None
+        self,
+        scope: Scope = EVERYTHING,
+        limit: int = 10,
+        suite: str | None = None,
+        kind: str | None = None,
     ) -> ExecutionDashboard:
         """All recorded executions in scope, grouped without merging unrelated contexts.
 
@@ -1096,12 +1143,38 @@ class Workspace:
         if not 1 <= limit <= 100:
             raise ValueError("limit must be between 1 and 100")
         return self._cached(
-            ("execution-dashboard", scope, limit, suite),
-            lambda: self._execution_dashboard(scope, limit, suite),
+            ("execution-dashboard", scope, limit, suite, kind),
+            lambda: self._execution_dashboard(scope, limit, suite, kind),
         )
 
-    def _execution_dashboard(self, scope: Scope, limit: int, suite: str | None) -> ExecutionDashboard:
-        runs = self._runs(scope)
+    def execution_options(self) -> tuple[ExecutionOption, ...]:
+        """Only combinations that actually have imported executions; no fabricated facets."""
+
+        def compute() -> tuple[ExecutionOption, ...]:
+            counts: Counter[tuple[str, ...]] = Counter()
+            for run in self.runs:
+                key = (
+                    run.pipeline.repository or "" if run.pipeline else "",
+                    execution_kind(run),
+                    run.pipeline.job if run.pipeline else "",
+                    run.context.browser or "",
+                    run.context.framework or "",
+                )
+                counts[key] += len(run.results)
+            return tuple(
+                ExecutionOption(
+                    repository=k[0], kind=k[1], job=k[2], browser=k[3], framework=k[4], executions=n
+                )
+                for k, n in sorted(counts.items())
+                if n
+            )
+
+        return self._cached(("execution-options",), compute)
+
+    def _execution_dashboard(
+        self, scope: Scope, limit: int, suite: str | None, kind: str | None
+    ) -> ExecutionDashboard:
+        runs = [r for r in self._runs(scope) if kind is None or execution_kind(r) == kind]
         suites = tuple(sorted({result.suite for run in runs for result in run.results}))
         matched_runs: set[str] = set()
         counts: Counter[Outcome] = Counter()

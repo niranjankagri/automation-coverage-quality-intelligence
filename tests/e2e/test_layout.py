@@ -17,7 +17,7 @@ pytestmark = pytest.mark.e2e
 
 WIDTHS = [390, 768, 1280]
 PAGES = [
-    "#/",
+    "#/coverage",
     "#/requirements",
     "#/requirement/SHOP-006",
     "#/tests",
@@ -78,7 +78,7 @@ def test_page_regions_stack_without_overlapping_or_spilling(page: Page, route: s
 def test_card_values_fit_their_cards_and_nav_links_stay_on_screen(page: Page, width: int) -> None:
     """Numbers like '90.5 %' never overflow a card; every section link can be reached."""
     page.set_viewport_size({"width": width, "height": 900})
-    page.goto("/")
+    page.goto("/#/coverage")
     expect(page.get_by_role("heading", name="Overview", exact=True)).to_be_visible()
     if width <= 720:
         page.locator(".mobile-nav > summary").click()

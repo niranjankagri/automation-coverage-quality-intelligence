@@ -37,7 +37,7 @@ TASKBOARD_JOBS = ("api", "ui-chrome", "ui-firefox", "ui-edge", "component")
 TASKBOARD_REPO = "niranjankagri/cypress-typescript-framework"
 SHOTS = [
     # (file name, hash route, viewport width, colour scheme, full page)
-    ("dashboard-overview.png", "#/", 1280, "light", True),
+    ("dashboard-overview.png", "#/coverage", 1280, "light", True),
     ("dashboard-requirements.png", "#/requirements?criticality=critical", 1280, "light", False),
     (
         "dashboard-test-history.png",

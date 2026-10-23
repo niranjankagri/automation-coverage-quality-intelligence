@@ -171,6 +171,7 @@ def test_openapi_documentation_lists_every_route(client: TestClient) -> None:
         "/api/requirements/{requirement_id}",
         "/api/tests",
         "/api/executions",
+        "/api/execution-options",
         "/api/tests/history",
         "/api/runs",
         "/api/pipelines",

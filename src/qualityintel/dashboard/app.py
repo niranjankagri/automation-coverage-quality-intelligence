@@ -40,6 +40,7 @@ from qualityintel.workspace import (
     BuildComparisonView,
     CollectionHealthView,
     ExecutionDashboard,
+    ExecutionOption,
     Facets,
     GapsView,
     GateHistoryView,
@@ -172,7 +173,7 @@ class SecurityHeaders(BaseHTTPMiddleware):
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()"
         if request.url.scheme == "https":
             response.headers["Strict-Transport-Security"] = "max-age=31536000"
-        if request.url.path.startswith("/api/"):
+        if request.url.path == "/" or request.url.path.startswith(("/api/", "/static/")):
             response.headers["Cache-Control"] = "private, no-store" if self.private else "no-cache"
         if not request.url.path.startswith(("/docs", "/openapi.json")):
             response.headers["Content-Security-Policy"] = CONTENT_SECURITY_POLICY
@@ -541,14 +542,20 @@ def create_app(
         except KeyError:
             raise HTTPException(status_code=404, detail=f"unknown requirement {requirement_id!r}") from None
 
+    @app.get("/api/execution-options", tags=["executions"])
+    def execution_options() -> tuple[ExecutionOption, ...]:
+        """Recorded repository/type/browser combinations for progressive navigation."""
+        return current().execution_options()
+
     @app.get("/api/executions", tags=["executions"])
     def execution_dashboard(
         chosen: RunScope,
         limit: Annotated[int, Query(ge=1, le=100)] = 10,
         suite: Annotated[str | None, Query(max_length=500)] = None,
+        kind: Annotated[str | None, Query(max_length=50)] = None,
     ) -> ExecutionDashboard:
         """Historical test-execution dashboard; counts all reports in scope, not the latest snapshot."""
-        return current().execution_dashboard(chosen, limit, suite)
+        return current().execution_dashboard(chosen, limit, suite, kind)
 
     @app.get("/api/tests", tags=["executions"])
     def tests(chosen: RunScope, outcome: Outcome | None = None) -> tuple[TestRow, ...]:

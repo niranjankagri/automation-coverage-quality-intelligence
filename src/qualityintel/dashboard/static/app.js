@@ -6,7 +6,7 @@
 const FILTERS = ["repository", "feature", "owner", "criticality", "test_type", "framework", "environment", "browser", "build", "job", "since", "until"];
 const RUN_FILTERS = ["repository", "framework", "environment", "browser", "build", "job", "since", "until"];
 const FILTER_NAMES = { repository: "Repository", feature: "Feature", owner: "Owner", criticality: "Criticality", test_type: "Test type", framework: "Framework", environment: "Environment", browser: "Browser", build: "Build", job: "Job", since: "From", until: "To" };
-const VIEW_FILTER_NAMES = { suite: "Suite", status: "Status", coverage_status: "Coverage", execution_status: "Execution", observed: "Observed evidence", stale: "Stale evidence", outcome: "Latest outcome", state: "Finding state", kind: "Finding type" };
+const VIEW_FILTER_NAMES = { suite: "Suite", status: "Status", coverage_status: "Coverage", execution_status: "Execution", observed: "Observed evidence", stale: "Stale evidence", outcome: "Latest outcome", state: "Finding state", kind: "Type" };
 const OUTCOMES = ["passed", "failed", "error", "skipped"];
 const view = document.getElementById("view");
 const statusLine = document.getElementById("status");
@@ -169,7 +169,8 @@ function table(headers, rows, emptyText, options = {}) {
 function route() {
   const raw = location.hash.replace(/^#/, "") || "/";
   const [path, query = ""] = raw.split("?");
-  return { parts: path.split("/").filter(Boolean).map(decodeURIComponent), params: new URLSearchParams(query) };
+  const parts = path.split("/").filter(Boolean).map(decodeURIComponent);
+  return { parts: parts.length ? parts : ["executions"], params: new URLSearchParams(query) };
 }
 
 /** Link to a path, keeping the active filters. */
@@ -753,7 +754,7 @@ const EXECUTION_HEADERS = ["Test", "Framework / browser", "Build", "Outcome", { 
 
 function backToResults(defaultLabel, defaultPath) {
   const from = route().params.get("from");
-  const safeFrom = from === "#/" || /^#\/(search|attention|requirements|requirement|tests|test|runs|run|pipelines|collection|compare|stability|trends|executions)(\?|$)/.test(from ?? "");
+  const safeFrom = from === "#/" || /^#\/(search|attention|requirements|requirement|tests|test|runs|run|pipelines|collection|compare|stability|trends|executions|coverage)(\?|$)/.test(from ?? "");
   return h("p", { class: "detail-back" }, h("a", { href: safeFrom ? from : link(defaultPath) }, safeFrom ? "Back to filtered results" : `Back to ${defaultLabel}`));
 }
 
@@ -1411,23 +1412,99 @@ function repositoryTrends(t) {
   ];
 }
 
-/** A status distribution with exact counts alongside an illustrative ring. */
+const EXECUTION_KINDS = { api: "API", ui: "UI", unit: "Unit", component: "Component", mobile: "Mobile", performance: "Performance", contract: "Contract", integration: "Integration", accessibility: "Accessibility", visual: "Visual", other: "Other" };
+// Families whose third step is a browser; "other" keeps browsers because a job with only a
+// browser and no recognised name is classified Other (docs/dashboard.md)
+const BROWSER_KINDS = new Set(["ui", "component", "mobile", "accessibility", "visual", "other"]);
+const formatPercent = (value) => value === null ? "n/a" : value > 0 && value < 0.1 ? "<0.1%" : `${value.toFixed(1)}%`;
+const prettyRepo = (value) => value ? value.split("/").at(-1).replaceAll("-", " ") : "Unassigned repository";
+
+/** Every step is derived from recorded context combinations, never global catalog facets. */
+function executionNavigator(options) {
+  const params = route().params;
+  const repository = params.get("repository") || "";
+  const kind = params.get("kind") || "";
+  const browser = params.get("browser") || "";
+  const job = params.get("job") || "";
+  const choose = (changes) => {
+    const current = route().params;
+    const extra = { suite: current.get("suite"), kind: current.get("kind"), limit: current.get("limit"), ...changes };
+    location.hash = link("/executions", extra);
+  };
+  function choice(label, selected, changes, title = label) {
+    const button = h("button", { type: "button", class: "scope-choice", "aria-pressed": String(selected), title }, label);
+    button.addEventListener("click", () => choose(changes));
+    return button;
+  }
+  const repos = [...new Set(options.map((item) => item.repository).filter(Boolean))];
+  if (repository && !repos.includes(repository)) repos.push(repository);
+  const inRepo = options.filter((item) => !repository || item.repository === repository);
+  const kinds = [...new Set(inRepo.map((item) => item.kind))];
+  const inKind = inRepo.filter((item) => !kind || item.kind === kind);
+  // A browser is only a meaningful choice for browser families: Cypress records "electron" for its
+  // API job too, and API, unit, contract ... are chosen by their recorded job (docs/dashboard.md)
+  const browserFamily = !kind || BROWSER_KINDS.has(kind);
+  const browsers = browserFamily ? [...new Set(inKind.map((item) => item.browser).filter(Boolean))] : [];
+  const jobs = [...new Set(inKind.map((item) => item.job).filter(Boolean))];
+  const resetContext = { browser: null, job: null, framework: null, environment: null, build: null, suite: null };
+  const step = (number, title, controls, hint) => h("section", { class: "scope-step", "aria-label": title },
+    h("div", { class: "scope-step-heading" }, h("span", { class: "step-number", "aria-hidden": "true" }, number), h("h2", {}, title)),
+    // Spread: controls is [allButton, [choiceButtons]] and h() flattens children one level only,
+    // so passing it whole turned the recorded choices into "[object HTMLButtonElement]" text
+    h("div", { class: "scope-choices" }, ...controls), hint ? h("p", { class: "sub" }, hint) : null);
+  return h("div", { class: "execution-navigator" },
+    step("01", "Choose a repository", [choice("All repositories", !repository, { repository: null, kind: null, ...resetContext }),
+      repos.map((repo) => choice(prettyRepo(repo), repo === repository, { repository: repo, kind: null, ...resetContext }, repo))], "Choose a project, then narrow its recorded tests."),
+    step("02", "Choose a test family", [choice("All tests", !kind, { kind: null, ...resetContext }),
+      kinds.map((value) => choice(EXECUTION_KINDS[value] ?? value, value === kind, { kind: value, ...resetContext }))], null),
+    step("03", browsers.length ? "Choose a browser" : "Choose a job", browsers.length
+      ? [choice("All browsers / jobs", !browser && !job, { browser: null, job: null, suite: null }), browsers.map((value) => choice(value, value === browser, { browser: value, job: null, suite: null }))]
+      : [choice("All jobs", !job, { job: null, browser: null, suite: null }), jobs.map((value) => choice(value, value === job, { job: value, browser: null, suite: null }))],
+      "The dashboard updates as you choose. API and non-browser jobs use their recorded job names."));
+}
+
+/** Interactive donut: keyboard-accessible legend and slices share an exact-count readout. */
 function executionDistribution(d) {
+  const total = h("strong", {}, d.executions.toLocaleString());
+  const selectedLabel = h("span", {}, "recorded executions");
+  const selected = h("p", { class: "donut-selection", "aria-live": "polite" }, "Select a segment or a status to explore its share.");
+  const controls = [];
+  const select = (outcome) => {
+    total.textContent = d.counts[outcome].toLocaleString();
+    selectedLabel.textContent = outcome;
+    selected.textContent = `${d.counts[outcome].toLocaleString()} ${outcome} · ${formatPercent(d.percentages[outcome])} of recorded executions`;
+    controls.forEach(([name, button]) => button.setAttribute("aria-pressed", String(name === outcome)));
+    circles.forEach((circle, index) => circle.classList.toggle("slice-muted", OUTCOMES[index] !== outcome));
+  };
   let offset = 0;
   const circles = OUTCOMES.map((outcome) => {
     const percent = d.percentages[outcome] ?? 0;
-    const circle = s("circle", { class: `execution-slice ${outcome}`, cx: 60, cy: 60, r: 45, pathLength: 100, "stroke-dasharray": `${percent} ${100 - percent}`, "stroke-dashoffset": -offset });
+    const circle = s("circle", { class: `execution-slice execution-slice-${outcome}`, cx: 60, cy: 60, r: 45, pathLength: 100, "stroke-dasharray": `${percent} ${100 - percent}`, "stroke-dashoffset": -offset });
+    circle.append(s("title", {}, `${outcome}: ${d.counts[outcome]} (${formatPercent(d.percentages[outcome])})`));
+    circle.addEventListener("click", () => select(outcome));
     offset += percent;
     return circle;
   });
-  return h("section", { class: "execution-panel", "aria-labelledby": "execution-status-title" },
-    h("h2", { id: "execution-status-title" }, "Results by status"),
-    s("svg", { viewBox: "0 0 120 120", class: "execution-donut", "aria-hidden": "true" },
-      s("circle", { class: "execution-ring", cx: 60, cy: 60, r: 45 }), circles),
-    table(["Status", { label: "Executions", num: true }, { label: "Percentage", num: true }],
-      OUTCOMES.map((outcome) => h("tr", {}, h("th", { scope: "row" }, badge(outcome)), h("td", { class: "num" }, d.counts[outcome]), h("td", { class: "num" }, d.percentages[outcome] === null ? "n/a" : `${d.percentages[outcome].toFixed(1)} %`))),
-      "No recorded results.", { tools: false }),
-    h("p", { class: "sub" }, "Percentages use all recorded executions in scope, including skipped results. Coverage and release readiness remain separate."));
+  const legend = h("div", { class: "donut-legend", role: "group", "aria-label": "Explore result status" }, OUTCOMES.map((outcome) => {
+    const button = h("button", { type: "button", class: "legend-choice", "aria-pressed": "false" },
+      h("span", { class: `status-dot status-dot-${outcome}`, "aria-hidden": "true" }), h("span", {}, outcome), h("strong", {}, d.counts[outcome].toLocaleString()), h("span", { class: "sub" }, formatPercent(d.percentages[outcome])));
+    controls.push([outcome, button]);
+    button.addEventListener("click", () => select(outcome));
+    return button;
+  }));
+  const reset = h("button", { type: "button", class: "ghost" }, "Reset chart");
+  reset.addEventListener("click", () => {
+    total.textContent = d.executions.toLocaleString(); selectedLabel.textContent = "recorded executions";
+    selected.textContent = "Select a segment or a status to explore its share.";
+    controls.forEach(([, button]) => button.setAttribute("aria-pressed", "false"));
+    circles.forEach((circle) => circle.classList.remove("slice-muted"));
+  });
+  return h("section", { class: "execution-panel status-panel", "aria-labelledby": "execution-status-title" },
+    h("div", { class: "panel-heading" }, h("h2", { id: "execution-status-title" }, "Results by status"), reset),
+    h("div", { class: "donut-layout" }, h("div", { class: "donut-visual" },
+      s("svg", { viewBox: "0 0 120 120", class: "execution-donut", "aria-hidden": "true" },
+        s("circle", { class: "execution-ring", cx: 60, cy: 60, r: 45 }), circles), h("div", { class: "donut-center" }, total, selectedLabel)), legend), selected,
+    h("p", { class: "sub" }, "All imported results, including skipped tests. Execution success is separate from requirement coverage and release readiness."));
 }
 
 function executionTestLink(row) {
@@ -1451,41 +1528,80 @@ function executionRanking(title, rows, kind) {
   scroll.setAttribute("tabindex", "0");
   scroll.setAttribute("role", "region");
   scroll.setAttribute("aria-label", `${title} data; scroll horizontally on narrow screens`);
+  const max = Math.max(...rows.map((row) => duration ? row.average_seconds : row[kind === "failed" ? "failed" : "errors"]), 1);
+  const bars = h("div", { class: "ranking-bars" }, rows.slice(0, 5).map((row) => {
+    const value = duration ? row.average_seconds : row[kind === "failed" ? "failed" : "errors"];
+    const anchor = executionTestLink(row).querySelector("a");
+    anchor.classList.add("ranking-label");
+    const meter = h("span", { class: "ranking-track", "aria-hidden": "true" }, h("span", { class: `ranking-fill ranking-fill-${kind}` }));
+    meter.firstElementChild.style.width = `${100 * value / max}%`;
+    return h("div", { class: "ranking-bar" }, anchor, h("strong", {}, duration ? formatSeconds(value) : value), meter,
+      h("span", { class: "sub" }, `${prettyRepo(row.repository)} · ${row.job || row.suite || "Unassigned job"}`));
+  }));
   return h("section", { class: "execution-panel execution-ranking" }, h("h2", {}, title),
-    h("p", { class: "sub execution-scroll-hint" }, "Scroll the table horizontally to compare values."), data);
+    rows.length ? bars : h("p", { class: "empty" }, duration ? "No recorded durations in this scope." : "No matching results in this scope."),
+    h("details", { class: "ranking-details" }, h("summary", {}, "Explore all tests & export"),
+      h("p", { class: "sub execution-scroll-hint" }, "Scroll the table horizontally to compare values."), data));
 }
 
 async function executionsView() {
   const params = route().params;
   const suite = params.get("suite");
+  const kind = params.get("kind");
   const limit = ["10", "25", "100"].includes(params.get("limit")) ? params.get("limit") : "10";
-  const d = await api(`/api/executions${apiQuery(RUN_FILTERS, { suite, limit })}`);
+  const [d, options] = await Promise.all([api(`/api/executions${apiQuery(RUN_FILTERS, { suite, limit, kind })}`), api("/api/execution-options")]);
   const suiteSelect = h("select", { id: "execution-suite" }, h("option", { value: "" }, "All suites"),
     d.suites.filter(Boolean).map((value) => h("option", { value }, value)));
   suiteSelect.value = suite ?? "";
-  suiteSelect.addEventListener("change", () => (location.hash = link("/executions", { suite: suiteSelect.value || null, limit: route().params.get("limit") })));
+  suiteSelect.addEventListener("change", () => (location.hash = link("/executions", { suite: suiteSelect.value || null, kind: route().params.get("kind"), limit: route().params.get("limit") })));
   const limitSelect = h("select", { id: "execution-limit" }, ["10", "25", "100"].map((value) => h("option", { value }, `Top ${value}`)));
   limitSelect.value = limit;
-  limitSelect.addEventListener("change", () => (location.hash = link("/executions", { suite: route().params.get("suite"), limit: limitSelect.value })));
-  const duration = d.recorded_duration_seconds === null ? "Not recorded" : `${d.recorded_duration_seconds.toFixed(3)} s`;
+  limitSelect.addEventListener("change", () => (location.hash = link("/executions", { suite: route().params.get("suite"), kind: route().params.get("kind"), limit: limitSelect.value })));
+  const duration = d.recorded_duration_seconds === null ? "Not recorded" : formatSeconds(d.recorded_duration_seconds);
   const cards = h("div", { class: "cards execution-cards" },
-    countCard("Recorded executions", d.executions, null, `${d.unique_tests} test identities · ${d.runs} imported runs`, "All result records in the selected history, not the latest snapshot. A test identity is repository plus result key; parameter rows and browser runs are executions."),
-    countCard("Recorded test duration", duration, null, `${d.timed_executions} of ${d.executions} executions have duration`, "Sum of recorded test durations. Missing durations are excluded; parallel tests overlap, so this is not elapsed CI time."),
-    OUTCOMES.map((outcome) => countCard(outcome[0].toUpperCase() + outcome.slice(1), d.counts[outcome], null,
-      d.percentages[outcome] === null ? "No executions" : `${d.percentages[outcome].toFixed(1)} % of recorded executions`)));
+    countCard("Recorded executions", d.executions.toLocaleString(), null, `${d.unique_tests.toLocaleString()} test identities · ${d.runs} imported runs`, "All imported result records in the selected history, not the latest snapshot."),
+    countCard("Recorded test duration", duration, null, `${d.timed_executions.toLocaleString()} of ${d.executions.toLocaleString()} executions timed`, "Sum of recorded test durations. Missing durations are excluded; parallel tests overlap, so this is not elapsed CI time."),
+    OUTCOMES.map((outcome) => {
+      const card = countCard(outcome[0].toUpperCase() + outcome.slice(1), d.counts[outcome].toLocaleString(), null,
+        d.percentages[outcome] === null ? "No executions" : `${formatPercent(d.percentages[outcome])} of recorded executions`);
+      card.classList.add(`outcome-${outcome}`); return card;
+    }));
   const series = OUTCOMES.map((outcome) => ({ name: outcome, cls: `s-${outcome}`, values: d.daily.map((day) => day.counts[outcome]) }));
   const days = d.daily.map((day) => day.day);
-  return [h("h1", {}, "Test execution dashboard"),
-    h("p", { class: "lead" }, "Investigate recorded test executions across your repositories. Repository, framework, environment, browser, build, job and date filters apply; catalog-only filters do not change execution history."),
-    h("div", { class: "toolbar" }, h("label", { for: "execution-suite" }, "Suite", suiteSelect), h("label", { for: "execution-limit" }, "Ranking size", limitSelect)), cards,
-    h("p", { class: "sub" }, "Cancelled and in-progress are pipeline states, not imported test outcomes. ", h("a", { href: link("/pipelines") }, "Inspect pipeline status and missing reports"), "."),
+  const dateButtons = ["7", "30", "0"].map((days) => {
+    const button = h("button", { type: "button", class: "ghost" }, days === "0" ? "All dates" : `${days} days`);
+    button.addEventListener("click", () => {
+      const until = new Date().toISOString().slice(0, 10);
+      const since = new Date(Date.now() - (Number(days) - 1) * 86400000).toISOString().slice(0, 10);
+      location.hash = link("/executions", { since: days === "0" ? null : since, until: days === "0" ? null : until,
+        kind: route().params.get("kind"), suite: route().params.get("suite"), limit: route().params.get("limit") });
+    }); return button;
+  });
+  const advanced = h("button", { type: "button", class: "ghost", "aria-expanded": String(document.body.classList.contains("dashboard-advanced")), "aria-controls": "filter-panel" }, "Advanced filters");
+  advanced.addEventListener("click", () => {
+    const open = document.body.classList.toggle("dashboard-advanced"); filterPanel.open = open;
+    advanced.setAttribute("aria-expanded", String(open));
+    if (open) filterPanel.scrollIntoView({ block: "start" });
+  });
+  const scope = [params.get("repository") ? prettyRepo(params.get("repository")) : "All repositories", kind ? EXECUTION_KINDS[kind] ?? kind : "All tests", params.get("browser") || params.get("job") || "All contexts"].join(" / ");
+  return [h("div", { class: "dashboard-hero" }, h("div", {}, h("p", { class: "eyebrow" }, "Niranjan Kumar Agri / Quality engineering"),
+    h("h1", {}, "Test execution dashboard"), h("p", { class: "lead" }, "Your automation, at a glance. Pick a project. Explore the results.")),
+    h("a", { class: "portfolio-return", href: "https://niranjankagri.github.io/projects.html" }, "← Back to my projects")),
+    executionNavigator(options),
+    h("div", { class: "dashboard-heading" }, h("div", {}, h("p", { class: "eyebrow" }, "Execution insights"), h("h2", {}, scope),
+      h("p", { class: "sub" }, `${params.get("since") || "First recorded run"} → ${params.get("until") || "Latest recorded run"} · UTC`)),
+      h("div", { class: "dashboard-actions" }, dateButtons, advanced)), cards,
     d.executions === 0 ? h("p", { class: "empty", role: "status" }, "No recorded executions match these filters. Clear filters or collect test reports.") : null,
-    h("section", { class: "execution-panel" }, h("h2", {}, "Executions per recorded day"),
-      chartFigure("Daily execution results", stackedBars(days, series, "", days.map((day) => link("/runs", { since: day, until: day })), days.map(shortDay)), series, days,
-        `UTC run start dates; all imported executions, not daily snapshots. ${d.undated_executions} undated executions are excluded from this chart. Days without recorded runs are omitted; each bar opens that day's runs.`)),
-    h("div", { class: "execution-grid" }, executionDistribution(d), executionRanking(`Top ${limit} longest-running tests`, d.slowest, "duration")),
-    h("div", { class: "execution-grid execution-equal" }, executionRanking(`Top ${limit} test failures`, d.failures, "failed"), executionRanking(`Top ${limit} test errors`, d.errors, "error")),
-    h("p", { class: "sub" }, "Rankings keep repository, job, suite and browser/environment/platform contexts separate. Average and maximum use recorded durations only; test links open history in the selected repository/job/browser scope. These findings do not change release gates.")];
+    h("div", { class: "execution-grid execution-equal chart-overview" }, executionDistribution(d),
+      h("section", { class: "execution-panel" }, h("h2", {}, "Executions per recorded day"),
+        chartFigure("Daily execution results", stackedBars(days, series, "", days.map((day) => link("/executions", { since: day, until: day, kind, suite, limit })), days.map(shortDay)), series, days,
+          `UTC run dates · ${d.undated_executions} undated executions omitted. Select a day to focus this dashboard.`))),
+    h("div", { class: "toolbar ranking-options" }, h("label", { for: "execution-suite" }, "Suite", suiteSelect), h("label", { for: "execution-limit" }, "Ranking size", limitSelect)),
+    h("div", { class: "execution-grid ranking-grid" }, executionRanking(`Top ${limit} longest-running tests`, d.slowest, "duration"), executionRanking(`Top ${limit} test failures`, d.failures, "failed"), executionRanking(`Top ${limit} test errors`, d.errors, "error")),
+    h("details", { class: "dashboard-notes" }, h("summary", {}, "About these results"),
+      h("p", {}, "Test families use recorded job naming conventions, not catalog coverage. Ambiguous jobs stay under Other. All dates includes every imported attempt; these are historical counts, not current release readiness."),
+      h("p", {}, "Duration is the sum of recorded test times, not elapsed pipeline time. Missing durations remain unknown. Rankings keep repository, job, suite and execution contexts separate."),
+      h("a", { href: link("/pipelines") }, "Inspect pipeline status and missing reports"), " · ", h("a", { href: link("/coverage") }, "View requirement coverage & release readiness"))];
 }
 
 async function trendsView() {
@@ -1840,7 +1956,8 @@ function executionComparison(executions) {
 }
 
 const VIEWS = {
-  "": overview,
+  "": executionsView,
+  coverage: overview,
   search: searchView,
   attention: attentionView,
   requirements: requirementsView,
@@ -1867,10 +1984,21 @@ async function render() {
   const current = ++renderCount;
   const { parts } = route();
   const name = parts[0] ?? "";
-  const section = { requirement: "requirements", test: "tests", run: "runs", "": "overview" }[name] ?? name;
+  const dashboardMode = name === "executions";
+  const enteringDashboard = dashboardMode && !document.body.classList.contains("dashboard-mode");
+  document.body.classList.toggle("dashboard-mode", dashboardMode);
+  if (enteringDashboard) { mobileNavigation.open = false; filterPanel.open = false; document.body.classList.remove("dashboard-advanced"); }
+  if (!dashboardMode && document.body.dataset.previousView === "executions") { mobileNavigation.open = !window.matchMedia("(max-width: 720px)").matches; filterPanel.open = !window.matchMedia("(max-width: 720px)").matches; }
+  document.body.dataset.previousView = name;
+  document.querySelectorAll(".primary-nav a").forEach((anchor) => {
+    if (anchor.dataset.primary) anchor.setAttribute("href", link(`/${anchor.dataset.primary}`));
+    if (anchor.dataset.primary === name) anchor.setAttribute("aria-current", "page");
+    else anchor.removeAttribute("aria-current");
+  });
+  const section = { requirement: "requirements", test: "tests", run: "runs", coverage: "overview", "": "executions" }[name] ?? name;
   for (const a of document.querySelectorAll(".section-nav a[data-nav]")) {
     // Section links keep the active filters, like every other link on the page
-    a.setAttribute("href", link(a.dataset.nav === "overview" ? "/" : `/${a.dataset.nav}`));
+    a.setAttribute("href", link(a.dataset.nav === "overview" ? "/coverage" : `/${a.dataset.nav}`));
     if (a.dataset.nav === section) a.setAttribute("aria-current", "page");
     else a.removeAttribute("aria-current");
   }
@@ -1889,6 +2017,11 @@ async function render() {
     // Views may leave empty slots (cond ? node : null); they must not show up as "null"
     view.replaceChildren(...[content].flat(3).filter((node) => node != null));
     statusLine.textContent = "";
+    // Keep a selected project visible even when it is far along the horizontal repository bar.
+    view.querySelectorAll(".scope-choices").forEach((rail) => {
+      const selected = rail.querySelector('[aria-pressed="true"]');
+      if (selected) rail.scrollLeft = Math.max(0, selected.offsetLeft - rail.offsetLeft - (rail.clientWidth - selected.clientWidth) / 2);
+    });
     view.removeAttribute("aria-busy");
     document.title = `${document.querySelector("#view h1")?.textContent ?? "Overview"} · Quality Intelligence`;
     const path = parts.join("/");

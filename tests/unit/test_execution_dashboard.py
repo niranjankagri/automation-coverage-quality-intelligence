@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 
 from qualityintel.dashboard.app import create_app
 from qualityintel.models.enums import Outcome
-from qualityintel.models.results import PipelineJob
+from qualityintel.models.results import PipelineJob, RunContext
 from qualityintel.traceability.report import RunFilters
 from qualityintel.workspace import Scope, Workspace
 
@@ -116,3 +116,71 @@ def test_execution_dashboard_api_filters_and_validation() -> None:
         assert body["slowest"][0]["average_seconds"] == 4
         assert client.get("/api/executions?limit=101").status_code == 422
         assert client.get("/api/executions?since=2026-10-20&until=2026-10-19").status_code == 422
+
+
+@pytest.mark.parametrize(
+    ("job", "framework", "browser", "expected"),
+    [
+        ("api", "pytest", "chrome", "api"),
+        ("checks-api-local", "node-test", None, "api"),
+        ("unit", "testng", None, "unit"),
+        ("checks-service-unit", "node-test", None, "unit"),
+        ("component", "cypress", "electron", "component"),
+        ("ui-chrome", "testng", "chrome", "ui"),
+        ("e2e-firefox", "pytest", "firefox", "ui"),
+        ("smoke-edge", "testng", "edge", "ui"),
+        ("visual", "playwright", "chromium", "visual"),
+        ("a11y-chromium", "playwright", "chromium", "accessibility"),
+        ("android", "testng", None, "mobile"),
+        ("consumer", "node-test", None, "contract"),
+        ("integration", "junit5", None, "integration"),
+        ("smoke", "k6", None, "performance"),
+        ("smoke", "pytest", None, "other"),
+        ("ambiguous", "playwright", "chromium", "other"),
+    ],
+)
+def test_navigation_family_uses_explicit_job_conventions(
+    job: str, framework: str, browser: str | None, expected: str
+) -> None:
+    """A browser must never turn an API or ambiguous job into a UI classification."""
+    from qualityintel.workspace import execution_kind
+
+    source = run(result("A")).model_copy(
+        update={
+            "pipeline": PipelineJob(pipeline_id="p", repository="owner/repo", job=job),
+            "context": RunContext(framework=framework, browser=browser),
+        }
+    )
+    assert execution_kind(source) == expected
+
+
+def test_navigation_options_and_family_filter_share_the_same_evidence() -> None:
+    """Every result has one family, including unassigned runs; family totals reconcile."""
+    w = execution_workspace()
+    options = w.execution_options()
+    assert sum(o.executions for o in options) == w.execution_dashboard().executions
+    assert {o.kind for o in options} == {"ui", "other"}
+    assert w.execution_dashboard(kind="ui").executions == 5
+    assert w.execution_dashboard(kind="other").counts[Outcome.ERROR] == 1
+    assert w.execution_dashboard(kind="api").executions == 0
+    with TestClient(create_app(w)) as client:
+        assert client.get("/api/execution-options").status_code == 200
+        assert client.get("/api/executions?kind=other").json()["executions"] == 1
+        assert (
+            client.get("/api/executions?kind=ui&repository=owner/two&browser=chrome").json()["executions"]
+            == 0
+        )
+        assert (
+            client.get("/api/executions?kind=ui&repository=owner/two&browser=firefox").json()["executions"]
+            == 1
+        )
+        assert client.get("/api/executions?kind=unknown").json()["executions"] == 0
+
+
+def test_dashboard_assets_revalidate_after_deployment() -> None:
+    """The page and unversioned bundle cannot silently remain fresh across a deployment."""
+    with TestClient(create_app(execution_workspace())) as client:
+        for path in ("/", "/static/app.js", "/static/style.css", "/api/execution-options"):
+            response = client.get(path)
+            assert response.status_code == 200
+            assert response.headers["cache-control"] == "no-cache"

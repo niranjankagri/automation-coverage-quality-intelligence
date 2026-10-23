@@ -18,7 +18,7 @@ TEST_KEY = "com.enterprise.automation.tests.ui.CustomerManagementTest::adminEdit
 
 def test_the_header_search_finds_a_test_and_opens_its_history(page: Page) -> None:
     """Keyboard only: focus the header search, type, Enter; the result opens the test's page."""
-    page.goto("/")
+    page.goto("/#/coverage")
     expect(page.get_by_role("heading", name="Overview", exact=True)).to_be_visible()
     page.get_by_role("searchbox", name=re.compile("^Search tests, requirements")).focus()
     page.keyboard.type("adminEditsACustomer")
@@ -53,7 +53,7 @@ def test_search_follows_typing_keeps_the_query_in_the_address_and_explains_no_re
 
 def test_search_highlight_maps_unicode_lowercase_expansion_to_original_text(page: Page) -> None:
     """Lowercasing U+0130 adds a code point; the highlight must still cover the original letter."""
-    page.goto("/")
+    page.goto("/#/coverage")
     highlighted = page.evaluate(
         """() => {
           const wrapper = document.createElement('span');

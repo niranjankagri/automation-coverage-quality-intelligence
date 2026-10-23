@@ -157,7 +157,9 @@ name) to the runs of that day; every chart keeps its table of numbers.
 
 | | |
 |---|---|
-| ![Overview](images/dashboard-overview.png) | ![Requirements, critical only](images/dashboard-requirements.png) |
+| ![Test execution dashboard, the landing page](images/dashboard-executions.png) | ![Test execution dashboard, dark theme](images/dashboard-executions-dark.png) |
+| ![Test execution dashboard on a phone](images/dashboard-executions-phone.png) | |
+| ![Coverage and release overview (#/coverage)](images/dashboard-overview.png) | ![Requirements, critical only](images/dashboard-requirements.png) |
 | ![History of the test that failed on 13 Oct](images/dashboard-test-history.png) | ![Runs, dark theme](images/dashboard-run.png) |
 | ![Trends](images/dashboard-trends.png) | ![Stability](images/dashboard-stability.png) |
 | ![Pipelines: the cancelled TaskBoard run is incomplete](images/dashboard-pipelines.png) | |
@@ -260,3 +262,37 @@ filters (feature, owner, criticality and test type) do not narrow raw execution 
 API: `GET /api/executions`, with the shared run filters plus `suite` and `limit` (1–100,
 default 10). Values are calculated in Workspace and cached for each immutable data snapshot.
 The dashboard displays them without changing coverage calculations or release gates.
+
+### Portfolio-style execution dashboard
+
+The default landing page (`/` or `#/`) and `#/executions` open the visual dashboard.
+The original release/coverage overview remains at `#/coverage` and **Coverage & release**.
+The warm background, teal accents, typography and brand links follow Niranjan's portfolio;
+light/dark/system preferences and reduced-motion support remain available.
+
+Start with the horizontally scrollable repository bar, choose a test family, then a browser
+(or a recorded job for non-browser families). Options come from `/api/execution-options` and
+contain only observed combinations. Changing the repository clears family and context selections;
+changing family clears browser/job/suite selections. Dates remain selected. The URL stores the
+scope for reload, sharing, back/forward and returning from test history. Every choice updates
+all counts and charts; empty scopes stay explicitly empty.
+
+Families are navigation labels derived from explicit job conventions (API, UI/e2e, unit,
+component, mobile, visual, accessibility, integration, contract; k6 is performance). Unknown or
+ambiguous jobs are **Other**, including jobs with only a browser but no recognised family name.
+These families are not the catalog's `test_type` and do not imply requirement coverage. The
+optional `/api/executions?kind=ui` filter uses the same classifier as the options endpoint.
+
+Select a donut segment or keyboard-accessible legend button for its exact count and share.
+Select a daily bar to focus the same repository/family/browser dashboard on that UTC day.
+Visual rankings link to scoped test history. Full searchable, sortable tables and CSV export
+are under **Explore all tests & export**; the twelve-field filter panel is under **Advanced
+filters**, with irrelevant catalog-only controls hidden. Low nonzero shares display `<0.1%`,
+not `0.0%`. No metrics or release rules were weakened by this presentation change.
+
+Unversioned HTML/CSS/JavaScript now explicitly revalidate with `Cache-Control: no-cache` (or
+`private, no-store` when authentication is enabled), preventing silent reuse across future
+deployments. Smoke checks include execution-count reconciliation, navigation availability,
+and cache headers for the page and both assets. Browser tests cover the progressive picker,
+reset behavior, reload/history, chart interaction, collapsed detail tables, default entry,
+responsive geometry and accessibility.
