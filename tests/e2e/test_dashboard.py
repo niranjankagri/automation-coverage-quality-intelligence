@@ -522,7 +522,8 @@ def test_theme_and_density_are_remembered(page: Page) -> None:
 
     expect(page.locator("html")).to_have_attribute("data-theme", "dark")
     expect(page.locator("body")).to_have_class(re.compile("compact"))
-    assert page.evaluate("getComputedStyle(document.body).backgroundColor") == "rgb(18, 22, 28)"
+    # The portfolio palette's dark background (--bg: #111918 in style.css)
+    assert page.evaluate("getComputedStyle(document.body).backgroundColor") == "rgb(17, 25, 24)"
 
 
 def test_moving_to_another_page_puts_the_focus_on_its_heading(page: Page) -> None:

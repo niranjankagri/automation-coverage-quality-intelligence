@@ -1309,6 +1309,9 @@ function chartFigure(title, svg, series, labels, summary, format = (v) => v, dra
 const shortDay = (iso) => iso.slice(5);
 
 const EXECUTION_KINDS = { api: "API", ui: "UI", unit: "Unit", component: "Component", mobile: "Mobile", performance: "Performance", contract: "Contract", integration: "Integration", accessibility: "Accessibility", visual: "Visual", other: "Other" };
+// Families whose third step is a browser; "other" keeps browsers because a job with only a
+// browser and no recognised name is classified Other (docs/dashboard.md)
+const BROWSER_KINDS = new Set(["ui", "component", "mobile", "accessibility", "visual", "other"]);
 const formatPercent = (value) => value === null ? "n/a" : value > 0 && value < 0.1 ? "<0.1%" : `${value.toFixed(1)}%`;
 const prettyRepo = (value) => value ? value.split("/").at(-1).replaceAll("-", " ") : "Unassigned repository";
 
@@ -1334,12 +1337,17 @@ function executionNavigator(options) {
   const inRepo = options.filter((item) => !repository || item.repository === repository);
   const kinds = [...new Set(inRepo.map((item) => item.kind))];
   const inKind = inRepo.filter((item) => !kind || item.kind === kind);
-  const browsers = [...new Set(inKind.map((item) => item.browser).filter(Boolean))];
+  // A browser is only a meaningful choice for browser families: Cypress records "electron" for its
+  // API job too, and API, unit, contract ... are chosen by their recorded job (docs/dashboard.md)
+  const browserFamily = !kind || BROWSER_KINDS.has(kind);
+  const browsers = browserFamily ? [...new Set(inKind.map((item) => item.browser).filter(Boolean))] : [];
   const jobs = [...new Set(inKind.map((item) => item.job).filter(Boolean))];
   const resetContext = { browser: null, job: null, framework: null, environment: null, build: null, suite: null };
   const step = (number, title, controls, hint) => h("section", { class: "scope-step", "aria-label": title },
     h("div", { class: "scope-step-heading" }, h("span", { class: "step-number", "aria-hidden": "true" }, number), h("h2", {}, title)),
-    h("div", { class: "scope-choices" }, controls), hint ? h("p", { class: "sub" }, hint) : null);
+    // Spread: controls is [allButton, [choiceButtons]] and h() flattens children one level only,
+    // so passing it whole turned the recorded choices into "[object HTMLButtonElement]" text
+    h("div", { class: "scope-choices" }, ...controls), hint ? h("p", { class: "sub" }, hint) : null);
   return h("div", { class: "execution-navigator" },
     step("01", "Choose a repository", [choice("All repositories", !repository, { repository: null, kind: null, ...resetContext }),
       repos.map((repo) => choice(prettyRepo(repo), repo === repository, { repository: repo, kind: null, ...resetContext }, repo))], "Choose a project, then narrow its recorded tests."),
@@ -1421,7 +1429,7 @@ function executionRanking(title, rows, kind) {
     const value = duration ? row.average_seconds : row[kind === "failed" ? "failed" : "errors"];
     const anchor = executionTestLink(row).querySelector("a");
     anchor.classList.add("ranking-label");
-    const meter = h("span", { class: "ranking-track", "aria-hidden": "true" }, h("span", { class: `ranking-fill ${kind}` }));
+    const meter = h("span", { class: "ranking-track", "aria-hidden": "true" }, h("span", { class: `ranking-fill ranking-fill-${kind}` }));
     meter.firstElementChild.style.width = `${100 * value / max}%`;
     return h("div", { class: "ranking-bar" }, anchor, h("strong", {}, duration ? formatSeconds(value) : value), meter,
       h("span", { class: "sub" }, `${prettyRepo(row.repository)} · ${row.job || row.suite || "Unassigned job"}`));
