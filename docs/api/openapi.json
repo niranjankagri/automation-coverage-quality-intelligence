@@ -1547,6 +1547,13 @@
             "title": "Rules",
             "type": "array"
           },
+          "scorecard": {
+            "items": {
+              "$ref": "#/components/schemas/ScorecardRow"
+            },
+            "title": "Scorecard",
+            "type": "array"
+          },
           "state": {
             "title": "State",
             "type": "string"
@@ -1557,6 +1564,7 @@
           "reasons",
           "gate_name",
           "rules",
+          "scorecard",
           "executions",
           "pass_rate",
           "requirement_coverage",
@@ -2322,6 +2330,70 @@
           "pass_rate"
         ],
         "title": "RunView",
+        "type": "object"
+      },
+      "ScorecardRow": {
+        "description": "One criterion of the release status with its evidence page (docs/readiness.md, Scorecard).",
+        "properties": {
+          "effect": {
+            "title": "Effect",
+            "type": "string"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "measured": {
+            "title": "Measured",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "params": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Params",
+            "type": "object"
+          },
+          "result": {
+            "title": "Result",
+            "type": "string"
+          },
+          "route": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "threshold": {
+            "title": "Threshold",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "source",
+          "measured",
+          "threshold",
+          "result",
+          "effect",
+          "explanation",
+          "route",
+          "params"
+        ],
+        "title": "ScorecardRow",
         "type": "object"
       },
       "SearchHit": {

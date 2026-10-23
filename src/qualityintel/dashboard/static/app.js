@@ -442,16 +442,6 @@ function readinessEvidence(reason) {
   return null;
 }
 
-function gateRuleEvidence(name) {
-  const text = name.toLowerCase();
-  if (text.includes("critical") && text.includes("fail")) return link("/requirements", { criticality: "critical", execution_status: "failing" });
-  if (text.includes("critical") && (text.includes("automation") || text.includes("gap"))) return link("/attention", { kind: "critical gap" });
-  if (text.includes("coverage")) return link("/requirements", { coverage_status: "no tests" });
-  if (text.includes("pass rate") || text.includes("execution")) return link("/tests", { outcome: "failed" });
-  if (text.includes("pipeline") || text.includes("collection")) return link("/pipelines", { status: "incomplete" });
-  return null;
-}
-
 function readinessPanel(r) {
   return h(
     "section",
@@ -459,18 +449,24 @@ function readinessPanel(r) {
     h("h2", { id: "readiness-title" }, "Release status: ", badge(STATE_TEXT[r.state] ?? r.state)),
     h("p", { class: "sub" }, r.gate_name ? `Readiness engine result from the "${r.gate_name}" gate and the documented warnings it does not measure (docs/readiness.md).` : "No release gate is configured for this dashboard; readiness is unknown without a gate."),
     h("ul", { class: "reasons" }, r.reasons.map((reason) => h("li", {}, reason, readinessEvidence(reason) ? [" ", readinessEvidence(reason)] : null))),
-    r.rules.length
-      ? h(
-          "details",
-          {},
-          h("summary", {}, `Gate rules (${r.rules.filter((x) => x.fails_gate).length} failing of ${r.rules.length})`),
-          table(
-            ["Rule", "Actual", "Expected", "Result"],
-            r.rules.map((x) => h("tr", { class: x.fails_gate ? "failing-rule" : null }, h("td", {}, x.name, h("span", { class: "sub" }, x.explanation), x.fails_gate && gateRuleEvidence(x.name) ? h("a", { class: "sub", href: gateRuleEvidence(x.name) }, "View supporting evidence") : null), h("td", {}, x.actual), h("td", {}, x.expected), h("td", {}, x.fails_gate ? "fail" : x.status))),
-            "",
-          ),
-        )
-      : null,
+    // Every criterion the status was derived from, computed server-side (docs/readiness.md, Scorecard)
+    h(
+      "details",
+      {},
+      h("summary", {}, `Scorecard: ${r.scorecard.length} criteria, ${r.scorecard.filter((x) => x.effect !== "none").length} affect the status`),
+      table(
+        ["Criterion", "Source", "Measured", "Threshold", "Result", "Effect on status"],
+        r.scorecard.map((x) => h("tr", { class: x.effect !== "none" ? "failing-rule" : null },
+          h("td", {}, x.name, h("span", { class: "sub" }, x.explanation), x.route ? h("a", { class: "sub", href: link(x.route, x.params) }, "View supporting evidence") : null),
+          h("td", {}, x.source),
+          h("td", {}, x.measured),
+          h("td", {}, x.threshold),
+          h("td", {}, x.result),
+          h("td", {}, x.effect),
+        )),
+        "",
+      ),
+    ),
     h(
       "div",
       { class: "cards" },

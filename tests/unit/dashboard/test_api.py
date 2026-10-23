@@ -318,6 +318,64 @@ def test_readiness_on_the_real_samples(gate: str | None, state: str, reason: str
     assert body["flaky_candidates"] == 4
 
 
+@pytest.mark.parametrize("gate", sorted(p.name for p in (SAMPLES / "gates").glob("*.toml")))
+def test_every_scorecard_row_of_the_sample_gates_links_its_evidence(gate: str) -> None:
+    """Each criterion has an evidence page (only "release gate configured" points to the docs)."""
+    from qualityintel.gates.config import load_gate_config
+
+    workspace, _ = Workspace.load(SAMPLES / "catalog.toml", [SAMPLES / "results"])
+    workspace.gate = load_gate_config(SAMPLES / "gates" / gate)
+    rows = TestClient(create_app(workspace)).get("/api/readiness").json()["scorecard"]
+
+    missing = [r["name"] for r in rows if r["route"] is None and r["name"] != "release gate configured"]
+    assert missing == []
+    assert {r["source"] for r in rows} == {"gate", "policy"}
+
+
+def test_every_gate_rule_the_evaluator_can_produce_has_an_evidence_page() -> None:
+    """A gate with every rule enabled: a new or renamed rule fails here, not silently in the page."""
+    from qualityintel.gates.config import GateConfig
+
+    every_rule = GateConfig.model_validate(
+        {
+            "coverage": {
+                "min_requirement_coverage": 1,
+                "min_automation_coverage": 1,
+                "min_automated_requirement_coverage": 1,
+                "max_uncovered_critical": 9,
+                "max_requirements_without_tests": 9,
+            },
+            "execution": {
+                "min_pass_rate": 1,
+                "max_failing_critical": 9,
+                "max_failing_requirements": 9,
+                "max_failed_tests": 9,
+                "min_results": 1,
+                "max_automated_cases_without_results": 9,
+            },
+        }
+    )
+    workspace, _ = Workspace.load(SAMPLES / "catalog.toml", [SAMPLES / "results"])
+    workspace.gate = every_rule
+    rows = TestClient(create_app(workspace)).get("/api/readiness").json()["scorecard"]
+
+    assert len([r for r in rows if r["source"] == "gate"]) == 2 + 11  # presence, inputs, 11 rules
+    assert [r["name"] for r in rows if r["route"] is None] == ["release gate configured"]
+
+
+def test_the_release_scorecard_names_the_blocking_rule_and_the_flaky_warning() -> None:
+    """The release gate's verdict can be read from its rows: one rule blocks, flaky puts at risk."""
+    from qualityintel.gates.config import load_gate_config
+
+    workspace, _ = Workspace.load(SAMPLES / "catalog.toml", [SAMPLES / "results"])
+    workspace.gate = load_gate_config(SAMPLES / "gates" / "release.toml")
+    rows = {r["name"]: r for r in TestClient(create_app(workspace)).get("/api/readiness").json()["scorecard"]}
+
+    blocking = rows["critical requirements without automation"]
+    assert (blocking["measured"], blocking["effect"], blocking["route"]) == ("2", "blocks", "/attention")
+    assert rows["flaky candidates"]["effect"] == "at risk"
+
+
 def test_readiness_follows_the_chosen_scope(client: TestClient) -> None:
     """Numbers are for the scope in the query, like every other endpoint."""
     body = client.get("/api/readiness", params={"framework": "robot-framework"}).json()

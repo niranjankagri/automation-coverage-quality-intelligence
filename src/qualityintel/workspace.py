@@ -496,6 +496,20 @@ class GateRuleView(View):
     explanation: str
 
 
+class ScorecardRow(View):
+    """One criterion of the release status with its evidence page (docs/readiness.md, Scorecard)."""
+
+    name: str
+    source: str
+    measured: str
+    threshold: str
+    result: str
+    effect: str
+    explanation: str
+    route: str | None
+    params: dict[str, str]
+
+
 class ReadinessView(View):
     """The overview's release status and its headline numbers (docs/readiness.md)."""
 
@@ -503,6 +517,7 @@ class ReadinessView(View):
     reasons: tuple[str, ...]
     gate_name: str | None
     rules: tuple[GateRuleView, ...]
+    scorecard: tuple[ScorecardRow, ...]
     executions: int
     pass_rate: RatioView
     requirement_coverage: RatioView
@@ -654,6 +669,28 @@ EVERYTHING = Scope()
 MAX_CACHED_VIEWS = 64
 # Newest supporting runs a recurring failure links to (its run count covers all of them)
 RECURRING_RUNS_LISTED = 10
+# Where each readiness criterion's evidence is shown (route, filters); every gate rule and policy
+# warning has an entry (tests/unit/dashboard/test_api.py checks it on the sample gates)
+CRITERION_EVIDENCE: dict[str, tuple[str, dict[str, str]]] = {
+    "gate inputs complete": ("/collection", {}),
+    "requirement coverage": ("/requirements", {"coverage_status": "no tests"}),
+    "requirements without tests": ("/requirements", {"coverage_status": "no tests"}),
+    "automation coverage": ("/requirements", {"coverage_status": "not automated"}),
+    "automated requirement coverage": ("/requirements", {"coverage_status": "not automated"}),
+    "critical requirements without automation": ("/attention", {"kind": "critical gap"}),
+    "execution pass rate": ("/tests", {"outcome": "failed"}),
+    "failed tests": ("/tests", {"outcome": "failed"}),
+    "executed tests": ("/tests", {}),
+    "failing critical requirements": (
+        "/requirements",
+        {"criticality": "critical", "execution_status": "failing"},
+    ),
+    "failing requirements": ("/requirements", {"execution_status": "failing"}),
+    "automated test cases without results": ("/requirements", {"execution_status": "not run"}),
+    "flaky candidates": ("/stability", {}),
+    "incomplete pipeline collections (7 days)": ("/pipelines", {"status": "incomplete"}),
+    "data freshness": ("/collection", {}),
+}
 T = TypeVar("T")
 
 
@@ -762,6 +799,20 @@ class Workspace:
                     explanation=rule.explanation,
                 )
                 for rule in rules
+            ),
+            scorecard=tuple(
+                ScorecardRow(
+                    name=c.name,
+                    source=c.source,
+                    measured=c.measured,
+                    threshold=c.threshold,
+                    result=c.result,
+                    effect=c.effect,
+                    explanation=c.explanation,
+                    route=CRITERION_EVIDENCE[c.name][0] if c.name in CRITERION_EVIDENCE else None,
+                    params=CRITERION_EVIDENCE[c.name][1] if c.name in CRITERION_EVIDENCE else {},
+                )
+                for c in decision.criteria
             ),
             executions=sum(report.outcome_counts.values()),
             pass_rate=RatioView.of(report.pass_rate),
