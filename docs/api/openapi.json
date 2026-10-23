@@ -2529,6 +2529,206 @@
         "title": "RegressionsView",
         "type": "object"
       },
+      "ReportCategory": {
+        "description": "Failures of the snapshot that share one cause (failure signature).",
+        "properties": {
+          "outcome": {
+            "$ref": "#/components/schemas/Outcome"
+          },
+          "results": {
+            "title": "Results",
+            "type": "integer"
+          },
+          "signature": {
+            "title": "Signature",
+            "type": "string"
+          },
+          "tests": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tests",
+            "type": "array"
+          }
+        },
+        "required": [
+          "signature",
+          "outcome",
+          "results",
+          "tests"
+        ],
+        "title": "ReportCategory",
+        "type": "object"
+      },
+      "ReportOverview": {
+        "description": "The Allure-style overview of the scope (docs/report-ui.md): the latest snapshot in figures.",
+        "properties": {
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/ReportCategory"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/Outcome"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "environment": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Environment",
+            "type": "object"
+          },
+          "first_started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Started At"
+          },
+          "latest_started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Started At"
+          },
+          "pass_rate": {
+            "$ref": "#/components/schemas/RatioView"
+          },
+          "runs": {
+            "title": "Runs",
+            "type": "integer"
+          },
+          "suites": {
+            "items": {
+              "$ref": "#/components/schemas/ReportSuite"
+            },
+            "title": "Suites",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          },
+          "trend": {
+            "items": {
+              "$ref": "#/components/schemas/ReportTrendPoint"
+            },
+            "title": "Trend",
+            "type": "array"
+          }
+        },
+        "required": [
+          "counts",
+          "total",
+          "pass_rate",
+          "runs",
+          "first_started_at",
+          "latest_started_at",
+          "suites",
+          "categories",
+          "trend",
+          "environment"
+        ],
+        "title": "ReportOverview",
+        "type": "object"
+      },
+      "ReportSuite": {
+        "description": "One group of the report overview: a repository, or a framework for uncollected files.",
+        "properties": {
+          "collected": {
+            "title": "Collected",
+            "type": "boolean"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/Outcome"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "latest_started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Started At"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "runs": {
+            "title": "Runs",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "collected",
+          "counts",
+          "runs",
+          "latest_started_at"
+        ],
+        "title": "ReportSuite",
+        "type": "object"
+      },
+      "ReportTrendPoint": {
+        "description": "Outcome counts of one day's snapshot.",
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/Outcome"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          }
+        },
+        "required": [
+          "day",
+          "counts"
+        ],
+        "title": "ReportTrendPoint",
+        "type": "object"
+      },
       "RepositoryHealth": {
         "description": "Collection of one repository over the last 7 days.",
         "properties": {
@@ -7276,6 +7476,188 @@
         "summary": "Regressions",
         "tags": [
           "history"
+        ]
+      }
+    },
+    "/api/report/overview": {
+      "get": {
+        "description": "The latest snapshot as the report overview: totals, suites, failure causes, trend.",
+        "operationId": "report_overview_api_report_overview_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "framework",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Framework"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment"
+            }
+          },
+          {
+            "in": "query",
+            "name": "browser",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Browser"
+            }
+          },
+          {
+            "in": "query",
+            "name": "build",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Build"
+            }
+          },
+          {
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "in": "query",
+            "name": "until",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Until"
+            }
+          },
+          {
+            "in": "query",
+            "name": "repository",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repository"
+            }
+          },
+          {
+            "in": "query",
+            "name": "job",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOverview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Report Overview",
+        "tags": [
+          "report"
         ]
       }
     },

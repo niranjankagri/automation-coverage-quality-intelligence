@@ -188,6 +188,7 @@ def test_openapi_documentation_lists_every_route(client: TestClient) -> None:
         "/api/digest",
         "/api/digest/summary",
         "/api/issue-suggestions",
+        "/api/report/overview",
     }
 
 
@@ -536,6 +537,63 @@ def test_the_samples_have_no_recurring_failure_to_draft(client: TestClient) -> N
 
     assert body["drafts"] == []
     assert "creates no issue" in body["notes"][0]
+
+
+def test_the_report_overview_agrees_with_the_coverage_page(client: TestClient) -> None:
+    """Same snapshot as /api/summary: 221 passed in 5 runs; suites per framework (no repository)."""
+    body = client.get("/api/report/overview").json()
+    summary = client.get("/api/summary").json()
+
+    assert body["counts"] == summary["outcome_counts"]
+    assert (body["total"], body["runs"], body["pass_rate"]["text"]) == (221, 5, "100.0 % (221/221)")
+    assert [(s["name"], s["collected"], s["runs"]) for s in body["suites"]] == [
+        ("playwright (not collected)", False, 1),
+        ("pytest (not collected)", False, 2),
+        ("robot-framework (not collected)", False, 1),
+        ("testng (not collected)", False, 1),
+    ]
+    assert body["categories"] == []
+    assert len(body["trend"]) == 13
+    assert body["environment"]["frameworks"] == ["playwright", "pytest", "robot-framework", "testng"]
+
+
+def test_the_report_overview_groups_failures_by_cause_and_collected_runs_by_repository() -> None:
+    """A collected repository is its own suite; two tests failing with one cause are one category."""
+    from qualityintel.models.enums import Outcome
+    from qualityintel.models.results import PipelineJob
+
+    from ..traceability.helpers import result, run
+
+    timeout = {"message": "Timeout 30000ms exceeded.", "type": "TimeoutError"}
+    collected = run(
+        result("a", Outcome.FAILED, failure=timeout),
+        result("b", Outcome.FAILED, failure={"message": "Timeout 5000ms exceeded.", "type": "TimeoutError"}),
+        result("c", Outcome.ERROR, failure={"message": "boom", "type": "IOError"}),
+        result("d"),
+        day=19,
+    ).model_copy(update={"pipeline": PipelineJob(pipeline_id="r#1", job="ui", repository="o/r")})
+    samples, _ = Workspace.load(SAMPLES / "catalog.toml", [])
+    body = TestClient(create_app(Workspace(samples.catalog, [collected]))).get("/api/report/overview").json()
+
+    assert [(s["name"], s["collected"], s["counts"]["failed"]) for s in body["suites"]] == [("o/r", True, 2)]
+    assert [(c["signature"], c["outcome"], c["tests"]) for c in body["categories"]] == [
+        ("TimeoutError: Timeout <n>ms exceeded.", "failed", ["suite::a", "suite::b"]),
+        ("IOError: boom", "error", ["suite::c"]),
+    ]
+    assert body["environment"]["repositories"] == ["o/r"]
+
+
+def test_the_report_page_is_served_beside_the_classic_one(client: TestClient) -> None:
+    """/next/ serves the new page with the strict policy and revalidation; /next redirects to it."""
+    page = client.get("/next/")
+    redirect = client.get("/next", follow_redirects=False)
+
+    assert page.status_code == 200
+    assert "Quality Intelligence report" in page.text
+    assert page.headers["Cache-Control"] == "no-cache"
+    assert page.headers["Content-Security-Policy"].startswith("default-src 'self'")
+    assert (redirect.status_code, redirect.headers["location"]) == (308, "/next/")
+    assert client.get("/static/next/js/main.js").status_code == 200
 
 
 def test_readiness_follows_the_chosen_scope(client: TestClient) -> None:

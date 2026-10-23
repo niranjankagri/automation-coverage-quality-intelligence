@@ -34,6 +34,7 @@ from qualityintel.history.analysis import (
     HistorySettings,
     Stability,
     duration_regressions,
+    failure_signature,
     recurring_failures,
     stability_report,
     timelines,
@@ -677,6 +678,47 @@ class TrendsView(View):
     runs: dict[str, tuple[RunTrendView, ...]]
     coverage: tuple[CoverageView, ...]
     notes: tuple[str, ...]
+
+
+class ReportSuite(View):
+    """One group of the report overview: a repository, or a framework for uncollected files."""
+
+    name: str
+    collected: bool
+    counts: dict[Outcome, int]
+    runs: int
+    latest_started_at: datetime | None
+
+
+class ReportCategory(View):
+    """Failures of the snapshot that share one cause (failure signature)."""
+
+    signature: str
+    outcome: Outcome
+    results: int
+    tests: tuple[str, ...]
+
+
+class ReportTrendPoint(View):
+    """Outcome counts of one day's snapshot."""
+
+    day: date
+    counts: dict[Outcome, int]
+
+
+class ReportOverview(View):
+    """The Allure-style overview of the scope (docs/report-ui.md): the latest snapshot in figures."""
+
+    counts: dict[Outcome, int]
+    total: int
+    pass_rate: RatioView
+    runs: int
+    first_started_at: datetime | None
+    latest_started_at: datetime | None
+    suites: tuple[ReportSuite, ...]
+    categories: tuple[ReportCategory, ...]
+    trend: tuple[ReportTrendPoint, ...]
+    environment: dict[str, tuple[str, ...]]
 
 
 class GateDayView(View):
@@ -1930,6 +1972,69 @@ class Workspace:
 
         return self._cached(("gate-history", scope), compute)
 
+    def report_overview(self, scope: Scope = EVERYTHING) -> ReportOverview:
+        """The latest snapshot of the scope as the report overview: totals, suites, causes, trend."""
+        return self._cached(("report-overview", scope), lambda: self._compute_report_overview(scope))
+
+    def _compute_report_overview(self, scope: Scope) -> ReportOverview:
+        """Built from the same snapshot and daily trend as the classic pages, so the figures agree."""
+        report = self._report(scope)
+        suites: dict[tuple[str, bool], list[TestRun]] = {}
+        failures: dict[tuple[str, Outcome], set[str]] = {}
+        failure_results: dict[tuple[str, Outcome], int] = {}
+        for run in report.snapshot:
+            repository = run.pipeline.repository if run.pipeline else None
+            name = repository or f"{run.context.framework or 'unknown framework'} (not collected)"
+            suites.setdefault((name, repository is not None), []).append(run)
+            for result in run.results:
+                if result.outcome in (Outcome.FAILED, Outcome.ERROR):
+                    key = (failure_signature(result), result.outcome)
+                    failures.setdefault(key, set()).add(result.key)
+                    failure_results[key] = failure_results.get(key, 0) + 1
+        starts = [r.started_at for r in report.snapshot if r.started_at]
+        return ReportOverview(
+            counts=report.outcome_counts,
+            total=sum(report.outcome_counts.values()),
+            pass_rate=RatioView.of(report.pass_rate),
+            runs=len(report.snapshot),
+            first_started_at=min(starts, default=None),
+            latest_started_at=max(starts, default=None),
+            suites=tuple(
+                ReportSuite(
+                    name=name,
+                    collected=collected,
+                    counts=_outcome_totals(runs),
+                    runs=len(runs),
+                    latest_started_at=max((r.started_at for r in runs if r.started_at), default=None),
+                )
+                for (name, collected), runs in sorted(
+                    suites.items(), key=lambda item: (not item[0][1], item[0][0])
+                )
+            ),
+            categories=tuple(
+                ReportCategory(
+                    signature=sig,
+                    outcome=outcome,
+                    results=failure_results[(sig, outcome)],
+                    tests=tuple(sorted(keys)),
+                )
+                for (sig, outcome), keys in sorted(
+                    failures.items(), key=lambda item: (-len(item[1]), item[0][0])
+                )
+            ),
+            trend=tuple(
+                ReportTrendPoint(day=point.day, counts=point.counts)
+                for point in self.trends(scope).daily[-REPORT_TREND_DAYS:]
+            ),
+            environment={
+                "repositories": _sorted(r.pipeline.repository for r in report.snapshot if r.pipeline),
+                "frameworks": _sorted(r.context.framework for r in report.snapshot),
+                "environments": _sorted(r.context.environment for r in report.snapshot),
+                "browsers": _sorted(r.context.browser for r in report.snapshot),
+                "platforms": _sorted(r.context.platform for r in report.snapshot),
+            },
+        )
+
     def trends(self, scope: Scope = EVERYTHING) -> TrendsView:
         """Cached per snapshot: see :meth:`_compute_trends`."""
         return self._cached(("trends", scope), lambda: self._compute_trends(scope=scope))
@@ -2681,3 +2786,18 @@ def _digest_recurring(upto: Sequence[TestRun], day: date) -> DigestSection:
     if not lines:
         lines = [DigestLine(text="no recurring failure cause was seen on this day", route=None, params={})]
     return DigestSection(title="Recurring failures seen again", lines=tuple(lines))
+
+
+# ---- report overview (docs/report-ui.md) ------------------------------------------------------
+
+# Days of snapshot trend the report overview draws (the Trends page has all of them)
+REPORT_TREND_DAYS = 14
+
+
+def _outcome_totals(runs: Iterable[TestRun]) -> dict[Outcome, int]:
+    """Outcome counts of all results of ``runs``, every outcome present."""
+    counts = dict.fromkeys(Outcome, 0)
+    for run in runs:
+        for outcome, n in run.outcome_counts().items():
+            counts[outcome] += n
+    return counts
