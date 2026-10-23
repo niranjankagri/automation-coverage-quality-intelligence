@@ -51,9 +51,25 @@ SHOTS = [
     ("dashboard-executions.png", "#/executions", 1440, "light", True),
     ("dashboard-executions-dark.png", "#/executions", 1440, "dark", True),
     ("dashboard-executions-phone.png", "#/executions", 390, "light", True),
+    # The report (docs/report-ui.md): every section on a desktop and a phone, the overview also dark
     ("report-overview-light.png", "next/#/overview", 1440, "light", True),
     ("report-overview-dark.png", "next/#/overview", 1440, "dark", True),
     ("report-overview-phone.png", "next/#/overview", 390, "light", True),
+    ("report-results-light.png", "next/#/results?status=passed&q=customer", 1440, "light", True),
+    ("report-results-phone.png", "next/#/results?status=passed&q=customer", 390, "light", True),
+    ("report-failures-light.png", "next/#/failures", 1440, "light", True),
+    ("report-failures-phone.png", "next/#/failures", 390, "light", True),
+    ("report-trends-light.png", "next/#/trends", 1440, "light", True),
+    ("report-trends-phone.png", "next/#/trends", 390, "light", True),
+    ("report-coverage-light.png", "next/#/coverage?product=Toolshop", 1440, "light", True),
+    ("report-coverage-phone.png", "next/#/coverage", 390, "light", True),
+    (
+        "report-test-details.png",
+        "next/#/test?key=com.enterprise.automation.tests.ui.CustomerManagementTest%3A%3AadminEditsACustomer&tab=history",
+        1440,
+        "light",
+        True,
+    ),
     ("dashboard-trends.png", "#/trends", 1280, "light", False),
     ("dashboard-compare.png", "#/compare?framework=testng&base=f5a40d5&head=1d03232", 1280, "light", False),
     ("dashboard-attention.png", "#/attention", 1280, "light", False),
@@ -185,6 +201,8 @@ def capture(
             page = context.new_page()
             page.goto(f"http://127.0.0.1:{port}/{route}")
             page.locator("main h1").wait_for()
+            # The report shows a skeleton first: wait until the section itself is in
+            page.locator("main[aria-busy]").wait_for(state="detached")
             page.wait_for_load_state("networkidle")
             page.evaluate(
                 """() => {

@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- Report UI upgrade (docs/report-ui.md): a filter bar (repository → test type → browser/environment →
+  dates) with recorded choices only, parent resets, chips and freshness; sections renamed to Overview,
+  Test Results, Failures & Stability, Trends, Coverage & Requirements (old addresses still open);
+  four separate headline figures (pass rate, automation coverage, critical gaps, readiness) that open
+  their evidence; clickable donut and trend; browser comparison; feature coverage; needs attention.
+  Test details open the exact execution clicked (a Firefox row opened another browser's run) with
+  tabs for the execution, history, browser comparison and evidence; requirements open inside the
+  report. Load more instead of truncation; skeletons; distinct empty states; data rules (no results
+  is not 100 %, a missing duration is not zero, a failure is not a product defect, recovered is not
+  unstable). API: `kind` run filter, `GET /api/report/options`, run identity per test, browser
+  comparison, `timed_results` per day, branch/commit per repository.
+- Deployment smoke (`deploy-smoke.yml`): after CI passes on main, wait for the new commit to be live
+  (`tools/smoke.py --expect-commit`), then HTTP and browser checks (`tools/report_smoke.py`).
 - Collection: after *Re-run failed jobs* a job's artifact exists twice under one name; the newest upload (the
   latest attempt) is used instead of recording the pipeline incomplete as ambiguous. Equal or missing
   upload times stay ambiguous.
