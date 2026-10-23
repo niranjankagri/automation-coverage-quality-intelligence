@@ -1,7 +1,9 @@
 """Historical execution dashboard interactions against the checked-in result samples."""
 
+from urllib.parse import parse_qs, urlsplit
+
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page, Route, expect
 
 pytestmark = pytest.mark.e2e
 
@@ -51,3 +53,32 @@ def test_mobile_rankings_keep_names_readable(page: Page) -> None:
     assert cell_box is not None
     assert cell_box["width"] >= 260
     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+
+
+@pytest.mark.parametrize("first", ["suite", "limit"])
+def test_quick_filter_changes_keep_current_url_state(page: Page, first: str) -> None:
+    """An old visible select must not erase another filter while the replacement API call waits."""
+    page.goto("/#/executions")
+    expect(page.locator("#view h1")).to_have_text("Test execution dashboard")
+    suite = page.locator("#execution-suite option").nth(1).get_attribute("value")
+    assert suite
+    held: list[Route] = []
+    pattern = "**/api/executions?**"
+    page.route(pattern, lambda route: held.append(route))
+    choices = [("#execution-suite", suite), ("#execution-limit", "25")]
+    if first == "limit":
+        choices.reverse()
+    for selector, value in choices:
+        with page.expect_request(lambda request: "/api/executions?" in request.url):
+            page.locator(selector).select_option(value)
+    # Both controls still belong to the original render: the slow requests have not completed.
+    query = parse_qs(urlsplit(page.url).fragment.partition("?")[2])
+    assert query["suite"] == [suite]
+    assert query["limit"] == ["25"]
+    page.unroute(pattern)
+    for request in held:
+        request.continue_()
+    expect(page.get_by_role("heading", name="Top 25 longest-running tests")).to_be_visible()
+    page.reload()
+    expect(page.locator("#execution-suite")).to_have_value(suite)
+    expect(page.locator("#execution-limit")).to_have_value("25")

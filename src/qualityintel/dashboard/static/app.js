@@ -1359,10 +1359,10 @@ async function executionsView() {
   const suiteSelect = h("select", { id: "execution-suite" }, h("option", { value: "" }, "All suites"),
     d.suites.filter(Boolean).map((value) => h("option", { value }, value)));
   suiteSelect.value = suite ?? "";
-  suiteSelect.addEventListener("change", () => (location.hash = link("/executions", { suite: suiteSelect.value || null, limit })));
+  suiteSelect.addEventListener("change", () => (location.hash = link("/executions", { suite: suiteSelect.value || null, limit: route().params.get("limit") })));
   const limitSelect = h("select", { id: "execution-limit" }, ["10", "25", "100"].map((value) => h("option", { value }, `Top ${value}`)));
   limitSelect.value = limit;
-  limitSelect.addEventListener("change", () => (location.hash = link("/executions", { suite, limit: limitSelect.value })));
+  limitSelect.addEventListener("change", () => (location.hash = link("/executions", { suite: route().params.get("suite"), limit: limitSelect.value })));
   const duration = d.recorded_duration_seconds === null ? "Not recorded" : `${d.recorded_duration_seconds.toFixed(3)} s`;
   const cards = h("div", { class: "cards execution-cards" },
     countCard("Recorded executions", d.executions, null, `${d.unique_tests} test identities · ${d.runs} imported runs`, "All result records in the selected history, not the latest snapshot. A test identity is repository plus result key; parameter rows and browser runs are executions."),
