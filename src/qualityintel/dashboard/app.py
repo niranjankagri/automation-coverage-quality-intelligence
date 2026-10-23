@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
@@ -50,6 +50,7 @@ from qualityintel.workspace import (
     PipelinesView,
     ReadinessView,
     RegressionsView,
+    ReportOverview,
     RepositoryTrendsView,
     RequirementDetail,
     RequirementMatrix,
@@ -176,7 +177,7 @@ class SecurityHeaders(BaseHTTPMiddleware):
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()"
         if request.url.scheme == "https":
             response.headers["Strict-Transport-Security"] = "max-age=31536000"
-        if request.url.path == "/" or request.url.path.startswith(("/api/", "/static/")):
+        if request.url.path in ("/", "/next/") or request.url.path.startswith(("/api/", "/static/")):
             response.headers["Cache-Control"] = "private, no-store" if self.private else "no-cache"
         if not request.url.path.startswith(("/docs", "/openapi.json")):
             response.headers["Content-Security-Policy"] = CONTENT_SECURITY_POLICY
@@ -378,6 +379,21 @@ def create_app(
     def index() -> FileResponse:
         """The single-page front end."""
         return FileResponse(STATIC / "index.html")
+
+    @app.get("/next/", include_in_schema=False)
+    def next_report() -> FileResponse:
+        """The new report-style front end (docs/report-ui.md), served beside the current one."""
+        return FileResponse(STATIC / "next" / "index.html")
+
+    @app.get("/next", include_in_schema=False)
+    def next_report_slash() -> RedirectResponse:
+        """``/next`` without the slash: the page's relative asset links need it."""
+        return RedirectResponse("/next/", status_code=308)
+
+    @app.get("/api/report/overview", tags=["report"])
+    def report_overview(chosen: RunScope) -> ReportOverview:
+        """The latest snapshot as the report overview: totals, suites, failure causes, trend."""
+        return current().report_overview(chosen)
 
     @app.get("/api/health", tags=["meta"])
     def health() -> dict[str, object]:
