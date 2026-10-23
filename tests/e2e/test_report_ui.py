@@ -49,12 +49,12 @@ def test_the_repository_switcher_narrows_the_report_and_keeps_it_in_the_address(
 
 
 def test_a_section_still_to_build_links_its_classic_page(page: Page) -> None:
-    """Graphs is not built yet: it says so and opens the classic Trends page, not a dead end."""
-    page.goto("/next/#/graphs")
+    """Behaviors is not built yet: it says so and opens the classic Coverage page, not a dead end."""
+    page.goto("/next/#/behaviors")
 
-    expect(page.get_by_role("heading", name="Graphs", level=1)).to_be_visible()
+    expect(page.get_by_role("heading", name="Behaviors", level=1)).to_be_visible()
     expect(page.get_by_role("link", name="Open it in the classic dashboard")).to_have_attribute(
-        "href", "/#/trends"
+        "href", "/#/coverage"
     )
 
 
@@ -72,6 +72,24 @@ def test_categories_groups_failures_and_links_each_test_to_suites(page: Page) ->
 
     expect(page).to_have_url(re.compile(r"#/suites\?test="))
     expect(page.locator(".detail-title")).to_have_text(name)
+
+
+def test_graphs_chart_the_history_with_their_numbers(page: Page) -> None:
+    """Samples: 13 days with runs, two tests got slower, no gate; a slow test opens in Suites."""
+    page.goto("/next/#/graphs")
+
+    results = page.locator("section").filter(has=page.get_by_role("heading", name="Results per day"))
+    results.get_by_text("Show the numbers").click()
+    expect(results.locator("tbody tr")).to_have_count(13)
+    slower = page.locator("section").filter(has=page.get_by_role("heading", name="Getting slower"))
+    expect(slower.locator("tbody tr")).to_have_count(2)
+    expect(page.get_by_text("no release gate is configured")).to_be_visible()
+    slowest = page.locator(".rank a").first
+    name = slowest.inner_text()
+    slowest.click()
+
+    separator = " \N{SINGLE RIGHT-POINTING ANGLE QUOTATION MARK} "  # Playwright titles read "Suite > test"
+    expect(page.locator(".detail-title")).to_contain_text(name.split(separator)[-1])
 
 
 def test_suites_lists_the_snapshot_as_a_tree_and_shows_the_selected_test(page: Page) -> None:
@@ -120,7 +138,7 @@ def test_the_theme_button_works_like_the_portfolio(page: Page) -> None:
 
 
 @pytest.mark.parametrize("theme", ["light", "dark"])
-@pytest.mark.parametrize("route", ["#/overview", "#/suites", "#/categories", "#/graphs"])
+@pytest.mark.parametrize("route", ["#/overview", "#/suites", "#/categories", "#/graphs", "#/behaviors"])
 def test_no_wcag_violations_in_the_report(page: Page, route: str, theme: str) -> None:
     """Every built section and one still to come, in both themes."""
     page.goto("/next/")

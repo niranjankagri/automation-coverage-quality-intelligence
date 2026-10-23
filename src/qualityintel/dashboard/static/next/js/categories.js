@@ -43,7 +43,7 @@ export async function categories(state) {
 
     h("section", { class: "card cat-section", "aria-labelledby": "cat-now" },
       h("div", { class: "card-head" }, h("h2", { id: "cat-now" }, "Failing now"),
-        h("span", { class: "card-meta" }, `${n(failingNow.length)} cause(s) in the latest results`)),
+        h("span", { class: "meta" }, `${n(failingNow.length)} cause(s) in the latest results`)),
       failingNow.length
         ? failingNow.map((c) => h("details", { class: `cat cat-${c.outcome}` },
             h("summary", {},
@@ -55,7 +55,7 @@ export async function categories(state) {
 
     h("section", { class: "card cat-section", "aria-labelledby": "cat-unstable" },
       h("div", { class: "card-head" }, h("h2", { id: "cat-unstable" }, "Unstable tests"),
-        h("span", { class: "card-meta" }, `last ${n(stability.window)} verdicts per test and context`)),
+        h("span", { class: "meta" }, `last ${n(stability.window)} verdicts per test and context`)),
       unstableTotal
         ? unstable.filter((kind) => kind.rows.length).map((kind) => h("details", { class: `cat cat-${kind.tone}`, open: kind.tone === "failed" ? "" : null },
             h("summary", {},
@@ -70,7 +70,7 @@ export async function categories(state) {
 
     h("section", { class: "card cat-section", "aria-labelledby": "cat-recurring" },
       h("div", { class: "card-head" }, h("h2", { id: "cat-recurring" }, "Recurring causes"),
-        h("span", { class: "card-meta" }, "the same failure in more than one run")),
+        h("span", { class: "meta" }, "the same failure in more than one run")),
       stability.recurring_failures.length
         ? stability.recurring_failures.map((r) => {
             const draft = drafts.get(r.signature);

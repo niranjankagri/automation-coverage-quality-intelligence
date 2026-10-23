@@ -271,6 +271,31 @@ h3 { margin: 18px 0 8px; font-size: 15px; }
   .cat > summary > :not(:nth-child(1)) { grid-column: 2; }
 }
 
+/* ---- Graphs ---- */
+.fill-accent { fill: var(--accent); }
+.line-accent { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linejoin: round; }
+.dot-accent { fill: var(--surface); stroke: var(--accent); stroke-width: 2; }
+.rank { margin: 0; padding-left: 22px; display: grid; gap: 6px; font-size: 14px; }
+.rank li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+.rank a { overflow-wrap: anywhere; }
+.rank-value, .spread-count { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.spread { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.spread li { display: grid; grid-template-columns: 72px minmax(0, 1fr) 48px; align-items: center; gap: 10px; font-size: 13.5px; }
+.spread-bar { height: 12px; border-radius: 6px; background: var(--surface-2); overflow: hidden; }
+.spread-fill { display: block; height: 100%; background: var(--accent); border-radius: 6px; }
+.spread-count { text-align: right; }
+.table-wrap { overflow-x: auto; }
+/* A minimum width: on a phone the table scrolls inside its card instead of squeezing the names */
+.table-wrap table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 13.5px; }
+.table-wrap th, .table-wrap td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: left; overflow-wrap: break-word; }
+.table-wrap .num { text-align: right; white-space: nowrap; }
+.gate-days { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.gate-day { display: grid; gap: 2px; min-width: 64px; padding: 6px 8px; border-radius: 8px; font-size: 12px; text-align: center; }
+.gate-day strong { font-size: 12px; }
+.gate-passed { background: var(--passed-soft); color: var(--passed); }
+.gate-failed { background: var(--failed-soft); color: var(--failed); }
+.gate-skipped { background: var(--skipped-soft); color: var(--skipped); }
+
 /* ---- Tablet and phone: sidebar becomes a scrollable tab row under the header ---- */
 @media (max-width: 1100px) {
   .span-5, .span-7, .span-6 { grid-column: span 12; }

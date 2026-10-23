@@ -179,7 +179,7 @@ def checks(base: str, collected: bool, max_age_hours: float | None = None) -> li
         "/static/next/report.css": ("text/css",),
         **{
             f"/static/next/js/{name}.js": ("text/javascript", "application/javascript")
-            for name in ("theme", "main", "api", "dom", "overview", "suites", "categories")
+            for name in ("theme", "main", "api", "dom", "overview", "suites", "categories", "graphs")
         },
     }
     for path, media_types in report_assets.items():

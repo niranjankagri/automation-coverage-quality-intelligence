@@ -5,15 +5,15 @@ import { api, scopeQuery } from "./api.js";
 import { h, repoName } from "./dom.js";
 import { overview } from "./overview.js";
 import { categories } from "./categories.js";
+import { graphs } from "./graphs.js";
 import { suites } from "./suites.js";
 
 // Sections still to come: each says so and links the classic page that has the data today
 const COMING = {
-  graphs: { title: "Graphs", what: "results per day, durations, regressions and the release gate over time", classic: "/#/trends" },
   behaviors: { title: "Behaviors", what: "requirements, their test cases and the coverage gaps by owner", classic: "/#/coverage" },
 };
-const PAGES = { overview, categories, suites };
-const TITLES = { overview: "Overview", categories: "Categories", suites: "Suites" };
+const PAGES = { overview, categories, suites, graphs };
+const TITLES = { overview: "Overview", categories: "Categories", suites: "Suites", graphs: "Graphs" };
 
 const main = document.getElementById("main");
 const select = document.getElementById("repository");
