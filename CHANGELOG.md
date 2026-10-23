@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Fix `/next/` returning HTTP 500 in installed/container deployments by including its
+  nested HTML, CSS and JavaScript modules in package data. Verify the actual wheel's
+  asset manifest in CI and smoke-test the report page, every current module and its API.
+
 - **M13, advanced quality intelligence** ([docs/m13-gap-analysis.md](docs/m13-gap-analysis.md)):
   recurring failures ranked by runs in the last 7 days, then all runs, with their supporting runs;
   latest regressions per suite and branch (`/api/regressions`); a release-readiness scorecard with

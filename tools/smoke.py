@@ -138,6 +138,38 @@ def checks(base: str, collected: bool, max_age_hours: float | None = None) -> li
             )
         )
 
+    # This must run against the installed container too: editable source tests have all
+    # files present even if package-data globs forgot the report's nested modules.
+    report_assets = {
+        "/next/": ("text/html",),
+        "/static/next/report.css": ("text/css",),
+        **{
+            f"/static/next/js/{name}.js": ("text/javascript", "application/javascript")
+            for name in ("theme", "main", "api", "dom", "overview")
+        },
+    }
+    for path, media_types in report_assets.items():
+        status, headers, body = get(f"{base}{path}")
+        content_type = headers.get("content-type", "").split(";", 1)[0]
+        results.append(
+            (
+                f"report asset {path}",
+                status == 200 and bool(body) and content_type in media_types,
+                f"HTTP {status}, {content_type}",
+            )
+        )
+    status, _, body = get(f"{base}/api/report/overview")
+    report = json.loads(body) if status == 200 else {}
+    results.append(
+        (
+            "report overview reconciles",
+            status == 200
+            and report.get("total", 0) > 0
+            and sum(report.get("counts", {}).values()) == report.get("total"),
+            f"{report.get('total')} latest results",
+        )
+    )
+
     if collected:
         results.append(
             ("collections recorded", int(state.get("collections") or 0) > 0, str(state.get("collections")))

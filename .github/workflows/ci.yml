@@ -40,6 +40,10 @@ jobs:
         run: ruff format --check .
       - name: mypy (strict)
         run: mypy
+      - name: Build wheel and verify dashboard assets
+        run: |
+          pip wheel . --no-deps --wheel-dir "$RUNNER_TEMP/qi-wheel"
+          python tools/check_wheel_assets.py "$RUNNER_TEMP/qi-wheel"
 
   # Known vulnerabilities in the exact versions installed (docs/security.md). pip-audit runs in
   # its own virtual environment, so its own dependencies are not part of what is audited.
