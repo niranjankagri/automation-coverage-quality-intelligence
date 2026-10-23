@@ -31,6 +31,7 @@ from qualityintel.history.analysis import DEFAULTS, HistorySettings
 from qualityintel.links import dashboard_path
 from qualityintel.live import LiveData
 from qualityintel.models.enums import Criticality, Outcome, TestType
+from qualityintel.reporting.digest import render_digest
 from qualityintel.reporting.investigation import summarise_comparison, summarise_test
 from qualityintel.search import MAX_QUERY, QueryError
 from qualityintel.traceability.coverage import UNSPECIFIED, Filters
@@ -39,6 +40,7 @@ from qualityintel.workspace import (
     AttentionView,
     BuildComparisonView,
     CollectionHealthView,
+    DigestView,
     ExecutionDashboard,
     ExecutionOption,
     Facets,
@@ -614,6 +616,17 @@ def create_app(
     def gate_history(chosen: FullScope) -> GateHistoryView:
         """The release gate on each day's snapshot (last 30 days with runs) and the days it changed."""
         return current().gate_history(chosen)
+
+    @app.get("/api/digest", tags=["history"])
+    def digest(chosen: FullScope, day: date | None = None) -> DigestView:
+        """What one day (default: the newest day with runs) added to the history (docs/digest.md)."""
+        return current().digest(chosen, day)
+
+    @app.get("/api/digest/summary", tags=["history"])
+    def digest_summary(chosen: FullScope, day: date | None = None) -> InvestigationSummary:
+        """The digest as copyable text and Markdown, with dashboard links relative to this site."""
+        made = render_digest(current().digest(chosen, day))
+        return InvestigationSummary(text=made.text, markdown=made.markdown)
 
     @app.get("/api/repository-trends", tags=["history"])
     def repository_trends(

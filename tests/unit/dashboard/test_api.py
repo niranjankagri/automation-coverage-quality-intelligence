@@ -185,6 +185,8 @@ def test_openapi_documentation_lists_every_route(client: TestClient) -> None:
         "/api/gate-history",
         "/api/gaps",
         "/api/repository-trends",
+        "/api/digest",
+        "/api/digest/summary",
     }
 
 
@@ -463,6 +465,31 @@ def test_repository_trends_compare_the_same_two_days_for_every_repository() -> N
     assert (
         TestClient(create_app(workspace)).get("/api/repository-trends", params={"days": 0}).status_code == 422
     )
+
+
+def test_the_digest_of_13_october_names_the_real_firefox_failure(client: TestClient) -> None:
+    """Samples: the 13 Oct nightly's adminEditsACustomer timeout started failing that day."""
+    body = client.get("/api/digest", params={"day": "2026-10-13"}).json()
+
+    assert (body["day"], body["previous_day"]) == ("2026-10-13", "2026-10-12")
+    sections = {s["title"]: s["lines"] for s in body["sections"]}
+    assert list(sections) == ["Runs", "Regressions", "Tests that changed", "Recurring failures seen again"]
+    assert sections["Runs"][0]["text"] == "4 run(s), 197 results, 1 failed or errored"
+    started = [line for line in sections["Tests that changed"] if line["route"] == "/test"]
+    assert [line["params"]["key"] for line in started] == [
+        "com.enterprise.automation.tests.ui.CustomerManagementTest::adminEditsACustomer"
+    ]
+
+
+def test_the_digest_defaults_to_the_newest_day_and_copies_as_text_and_markdown(client: TestClient) -> None:
+    """Newest sample day is 19 Oct; the summary carries relative dashboard links; bad days are 422."""
+    assert client.get("/api/digest").json()["day"] == "2026-10-19"
+    made = client.get("/api/digest/summary", params={"day": "2026-10-13"}).json()
+
+    assert made["text"].startswith("Quality digest 2026-10-13 (compared with 2026-10-12)\n")
+    assert "[/#/runs?since=2026-10-13&until=2026-10-13]" in made["text"]
+    assert made["markdown"].startswith("### Quality digest 2026-10-13")
+    assert client.get("/api/digest", params={"day": "13-10-2026"}).status_code == 422
 
 
 def test_readiness_follows_the_chosen_scope(client: TestClient) -> None:
