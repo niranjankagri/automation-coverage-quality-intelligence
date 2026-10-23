@@ -629,6 +629,243 @@
         "title": "DataStatus",
         "type": "object"
       },
+      "ExecutionDashboard": {
+        "description": "Historical execution counts; deliberately separate from snapshot coverage.",
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/Outcome"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "daily": {
+            "items": {
+              "$ref": "#/components/schemas/ExecutionDay"
+            },
+            "title": "Daily",
+            "type": "array"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/ExecutionRank"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "executions": {
+            "title": "Executions",
+            "type": "integer"
+          },
+          "failures": {
+            "items": {
+              "$ref": "#/components/schemas/ExecutionRank"
+            },
+            "title": "Failures",
+            "type": "array"
+          },
+          "percentages": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/Outcome"
+            },
+            "title": "Percentages",
+            "type": "object"
+          },
+          "recorded_duration_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded Duration Seconds"
+          },
+          "runs": {
+            "title": "Runs",
+            "type": "integer"
+          },
+          "slowest": {
+            "items": {
+              "$ref": "#/components/schemas/ExecutionRank"
+            },
+            "title": "Slowest",
+            "type": "array"
+          },
+          "suites": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Suites",
+            "type": "array"
+          },
+          "timed_executions": {
+            "title": "Timed Executions",
+            "type": "integer"
+          },
+          "undated_executions": {
+            "title": "Undated Executions",
+            "type": "integer"
+          },
+          "unique_tests": {
+            "title": "Unique Tests",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "executions",
+          "unique_tests",
+          "suites",
+          "runs",
+          "counts",
+          "percentages",
+          "recorded_duration_seconds",
+          "timed_executions",
+          "undated_executions",
+          "daily",
+          "slowest",
+          "failures",
+          "errors"
+        ],
+        "title": "ExecutionDashboard",
+        "type": "object"
+      },
+      "ExecutionDay": {
+        "description": "Recorded results grouped by the imported run's UTC start date.",
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/Outcome"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          }
+        },
+        "required": [
+          "day",
+          "counts"
+        ],
+        "title": "ExecutionDay",
+        "type": "object"
+      },
+      "ExecutionRank": {
+        "description": "One test within a repository, job, suite and execution context.",
+        "properties": {
+          "average_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Seconds"
+          },
+          "context": {
+            "$ref": "#/components/schemas/RunContext"
+          },
+          "errors": {
+            "title": "Errors",
+            "type": "integer"
+          },
+          "executions": {
+            "title": "Executions",
+            "type": "integer"
+          },
+          "failed": {
+            "title": "Failed",
+            "type": "integer"
+          },
+          "job": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "max_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Seconds"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "repository": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repository"
+          },
+          "suite": {
+            "title": "Suite",
+            "type": "string"
+          },
+          "timed_executions": {
+            "title": "Timed Executions",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "name",
+          "suite",
+          "repository",
+          "job",
+          "context",
+          "executions",
+          "failed",
+          "errors",
+          "timed_executions",
+          "average_seconds",
+          "max_seconds"
+        ],
+        "title": "ExecutionRank",
+        "type": "object"
+      },
       "ExecutionView": {
         "description": "One execution of one test, with the run it belongs to.",
         "properties": {
@@ -3872,6 +4109,217 @@
         "summary": "Summary Of Comparison",
         "tags": [
           "investigation"
+        ]
+      }
+    },
+    "/api/executions": {
+      "get": {
+        "description": "Historical test-execution dashboard; counts all reports in scope, not the latest snapshot.",
+        "operationId": "execution_dashboard_api_executions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "suite",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Suite"
+            }
+          },
+          {
+            "in": "query",
+            "name": "framework",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Framework"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment"
+            }
+          },
+          {
+            "in": "query",
+            "name": "browser",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Browser"
+            }
+          },
+          {
+            "in": "query",
+            "name": "build",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Build"
+            }
+          },
+          {
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "in": "query",
+            "name": "until",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Until"
+            }
+          },
+          {
+            "in": "query",
+            "name": "repository",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repository"
+            }
+          },
+          {
+            "in": "query",
+            "name": "job",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutionDashboard"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Execution Dashboard",
+        "tags": [
+          "executions"
         ]
       }
     },

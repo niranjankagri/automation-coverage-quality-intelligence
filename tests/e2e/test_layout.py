@@ -23,6 +23,7 @@ PAGES = [
     "#/tests",
     "#/test?key=com.enterprise.automation.tests.ui.CustomerManagementTest%3A%3AadminEditsACustomer",
     "#/runs",
+    "#/executions",
     "#/stability",
     "#/trends",
     "#/compare?framework=testng&base=f5a40d5&head=1d03232",

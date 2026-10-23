@@ -414,3 +414,21 @@ dialog::backdrop { background: rgb(10 15 25 / 58%); }
   .skeleton { animation: none; }
 }
 
+
+
+/* Historical execution analytics: overview cards and responsive investigation panels. */
+.execution-panel { min-width: 0; padding: 20px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); margin-block: 16px; }
+.execution-panel h2 { margin-top: 0; }
+.execution-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 16px; }
+.execution-grid > .execution-panel { margin-block: 0; }
+.execution-equal { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 16px; }
+.execution-cards .value { overflow-wrap: anywhere; }
+.execution-donut { display: block; width: min(100%, 210px); margin: 16px auto; transform: rotate(-90deg); }
+.execution-ring, .execution-slice { fill: none; stroke-width: 18; }
+.execution-ring { stroke: var(--neutral-bg); }
+.execution-slice.passed { stroke: var(--good); }
+.execution-slice.failed { stroke: var(--bad); }
+.execution-slice.error { stroke: var(--warn); }
+.execution-slice.skipped { stroke: var(--muted); }
+.execution-panel .sub, .execution-panel .key { overflow-wrap: anywhere; }
+@media (max-width: 1000px) { .execution-grid, .execution-equal { grid-template-columns: minmax(0, 1fr); } }

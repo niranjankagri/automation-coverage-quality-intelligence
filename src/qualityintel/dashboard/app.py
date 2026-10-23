@@ -39,6 +39,7 @@ from qualityintel.workspace import (
     AttentionView,
     BuildComparisonView,
     CollectionHealthView,
+    ExecutionDashboard,
     Facets,
     PipelinesView,
     ReadinessView,
@@ -530,6 +531,15 @@ def create_app(
             return current().requirement(requirement_id, chosen)
         except KeyError:
             raise HTTPException(status_code=404, detail=f"unknown requirement {requirement_id!r}") from None
+
+    @app.get("/api/executions", tags=["executions"])
+    def execution_dashboard(
+        chosen: RunScope,
+        limit: Annotated[int, Query(ge=1, le=100)] = 10,
+        suite: Annotated[str | None, Query(max_length=500)] = None,
+    ) -> ExecutionDashboard:
+        """Historical test-execution dashboard; counts all reports in scope, not the latest snapshot."""
+        return current().execution_dashboard(chosen, limit, suite)
 
     @app.get("/api/tests", tags=["executions"])
     def tests(chosen: RunScope, outcome: Outcome | None = None) -> tuple[TestRow, ...]:
