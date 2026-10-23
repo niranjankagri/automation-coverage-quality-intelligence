@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Collection: after *Re-run failed jobs* a job's artifact exists twice under one name; the newest upload (the
+  latest attempt) is used instead of recording the pipeline incomplete as ambiguous. Equal or missing
+  upload times stay ambiguous.
+- Report UI at `/next/`: Suites, Categories, Graphs and Behaviors; live smoke checks for every report file.
 - Refresh the report UI with neutral slate surfaces, indigo navigation and chart accents,
   a portfolio-branded header, distinct widget highlights and a bounded keyboard-scrollable
   Suites panel. Keep green for compact success states and preserve all result counts.

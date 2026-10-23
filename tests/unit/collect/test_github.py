@@ -147,6 +147,21 @@ def test_artifacts_are_listed() -> None:
     assert GitHubActions(None, opener=opener).artifacts("o/r", 1) == [Artifact(9, "report-api", 10408, True)]
 
 
+def test_artifact_upload_time_is_read_when_given() -> None:
+    """created_at tells re-run attempts' uploads apart (collector picks the newest)."""
+    item = {
+        "id": 9,
+        "name": "junit",
+        "size_in_bytes": 1,
+        "expired": False,
+        "created_at": "2026-10-23T10:01:59Z",
+    }
+    opener = Opener([("https://api.github.com/repos/o/r/actions/runs/1/artifacts", {"artifacts": [item]})])
+
+    (artifact,) = GitHubActions(None, opener=opener).artifacts("o/r", 1)
+    assert artifact.created_at == datetime(2026, 10, 23, 10, 1, 59, tzinfo=UTC)
+
+
 def test_a_malformed_artifact_row_is_a_retryable_collection_error() -> None:
     """Wrong API field types must not escape as KeyError or make a job look artifact-free."""
     listing = {"artifacts": [{"id": 9, "name": "report-api", "size_in_bytes": 10408, "expired": "false"}]}

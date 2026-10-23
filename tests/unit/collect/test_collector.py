@@ -1,6 +1,7 @@
 """Collection with a fake CI source serving zip files built from the real sample reports."""
 
 import zipfile
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -247,6 +248,48 @@ def test_duplicate_artifact_names_are_not_resolved_by_arbitrary_order(store: His
 
     with store:
         collect(CONFIG, DuplicateArtifacts([run()], good_artifacts()), store, SINCE, now=NOW)
+        (record,) = store.collections()
+
+    assert record.state == "incomplete"
+    assert any("job api: artifact report-api is ambiguous" in problem for problem in record.problems)
+
+
+FIRST_ATTEMPT = datetime(2026, 10, 19, 8, 54, tzinfo=UTC)
+RERUN = datetime(2026, 10, 19, 10, 1, tzinfo=UTC)
+
+
+def test_a_rerun_job_uses_the_newest_upload_of_its_artifact(store: HistoryStore) -> None:
+    """'Re-run failed jobs' uploads the artifact again: the latest attempt's copy is the result."""
+
+    class Rerun(FakeSource):
+        def artifacts(self, repository: str, run_id: int) -> list[Artifact]:
+            current = [replace(a, created_at=RERUN) for a in super().artifacts(repository, run_id)]
+            return [
+                Artifact(id=999, name="report-api", size=1, expired=False, created_at=FIRST_ATTEMPT),
+                *current,
+            ]
+
+        def download(self, repository: str, artifact: Artifact, target: Path) -> Path:
+            assert artifact.id != 999, "the first attempt's copy was downloaded"
+            return super().download(repository, artifact, target)
+
+    with store:
+        collect(CONFIG, Rerun([run()], good_artifacts()), store, SINCE, now=NOW)
+        (record,) = store.collections()
+
+    assert (record.state, record.problems) == ("complete", ())
+
+
+def test_duplicate_artifacts_uploaded_at_the_same_time_stay_ambiguous(store: HistoryStore) -> None:
+    """Equal upload times give no order: still recorded as ambiguous, never guessed."""
+
+    class SameTime(FakeSource):
+        def artifacts(self, repository: str, run_id: int) -> list[Artifact]:
+            current = [replace(a, created_at=RERUN) for a in super().artifacts(repository, run_id)]
+            return [*current, Artifact(id=999, name="report-api", size=1, expired=False, created_at=RERUN)]
+
+    with store:
+        collect(CONFIG, SameTime([run()], good_artifacts()), store, SINCE, now=NOW)
         (record,) = store.collections()
 
     assert record.state == "incomplete"

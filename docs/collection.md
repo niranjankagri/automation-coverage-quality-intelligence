@@ -108,7 +108,7 @@ missing job is incomplete with conclusion `cancelled`: the two never look alike.
 | Re-run of a run (attempt 2) | collected as its own attempt; a pipeline gate uses the job's latest attempt |
 | GitHub repeats a workflow-run row on adjacent API pages | deduplicated by run id and attempt; changing totals during pagination are retried |
 | Job's artifact missing (job cancelled, failed before upload) | recorded incomplete: "artifact X not found" |
-| Several artifacts have the configured name | recorded incomplete as ambiguous; no arbitrary artifact is selected |
+| Several artifacts have the configured name | after *Re-run failed jobs* the job uploads its artifact again under the same name (GitHub allows one per name within an attempt): the newest upload is the latest attempt's and is used. Without upload times, or with equal ones, it is recorded incomplete as ambiguous; no arbitrary artifact is selected |
 | Artifact expired | recorded incomplete |
 | Path missing in the artifact, unsafe or malformed zip, unreadable report | recorded incomplete, with the reason |
 | Duplicate report contents or parser warnings | recorded incomplete and listed so dropped or ambiguous evidence is visible |
