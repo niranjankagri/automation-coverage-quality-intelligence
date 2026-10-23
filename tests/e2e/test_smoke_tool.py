@@ -19,6 +19,9 @@ def test_every_check_passes_on_the_sample_dashboard(
     out = capsys.readouterr().out
     assert "FAIL" not in out
     assert "HSTS" not in out
+    assert "report asset /next/" in out
+    assert "report asset /static/next/js/overview.js" in out
+    assert "report overview reconciles" in out
 
 
 def test_collected_requires_collection_records(base_url: str, collected_url: str) -> None:

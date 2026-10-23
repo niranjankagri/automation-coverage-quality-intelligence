@@ -51,7 +51,13 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 # py.typed tells type checkers that the package ships its own type hints
-qualityintel = ["py.typed", "dashboard/static/*", "reporting/templates/*"]
+qualityintel = [
+    "py.typed",
+    "dashboard/static/*",
+    "dashboard/static/next/*",
+    "dashboard/static/next/js/*",
+    "reporting/templates/*",
+]
 
 # ruff: linter and formatter, run in CI before any test
 [tool.ruff]

@@ -50,3 +50,13 @@ build links its classic page, the theme button like the portfolio's, axe-core WC
 themes, and a phone width without sideways scrolling. API tests in `tests/unit/dashboard/test_api.py`
 check the overview against `/api/summary`, the grouping of failures by cause and of collected runs by
 repository, and how `/next/` is served (policy, revalidation, redirect from `/next`).
+
+
+### Installed deployment guard
+
+The report's files live below `dashboard/static/next/`, so package-data patterns explicitly
+include that directory and `next/js/`. A top-level `dashboard/static/*` pattern alone omits
+them from the wheel: editable source tests pass, but `/next/` raises HTTP 500 after installation.
+CI builds a real wheel and runs `tools/check_wheel_assets.py` against every source dashboard
+asset, including nested folders. The container and live smoke check `/next/`, the CSS, all
+current JavaScript modules and `/api/report/overview`, including MIME types for assets.
