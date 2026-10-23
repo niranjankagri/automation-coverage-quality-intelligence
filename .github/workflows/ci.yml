@@ -141,24 +141,16 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -e ".[dev,e2e]"
-      # Usually about 30 s, but it has hung for many minutes: the apt mirror can crawl (fonts at
-      # 40 kB/s) and the browser download has stalled. Two parts, each time-boxed and retried.
-      # Killing a timed-out "playwright install --with-deps" left its apt-get holding the dpkg lock,
-      # so a retry must clear that first.
+      # Usually about 30 s. Two parts: the system libraries come from the Ubuntu mirror, which can
+      # crawl (fonts at ~40 kB/s, 185 packages for WebKit) but keeps going, so it gets one long try:
+      # killing a slow apt only restarts it and leaves its dpkg lock behind. The browser download
+      # has stalled outright, so it gets 5 minutes a try and three tries.
       - name: Install ${{ matrix.engine }}
-        timeout-minutes: 30
+        timeout-minutes: 45
         env:
           ENGINE: ${{ matrix.engine }}
         run: |
-          for attempt in 1 2; do
-            timeout 600 playwright install-deps "$ENGINE" && break
-            echo "::warning::system libraries for $ENGINE: attempt $attempt failed or timed out"
-            sudo pkill -9 -x apt-get || true
-            sudo pkill -9 -x dpkg || true
-            sudo rm -f /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/cache/apt/archives/lock
-            sudo dpkg --configure -a
-            [ "$attempt" = 2 ] && exit 1
-          done
+          timeout 1800 playwright install-deps "$ENGINE"
           for attempt in 1 2 3; do
             timeout 300 playwright install "$ENGINE" && exit 0
             echo "::warning::$ENGINE download: attempt $attempt failed or timed out"
