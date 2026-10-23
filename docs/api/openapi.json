@@ -770,6 +770,45 @@
         "title": "ExecutionDay",
         "type": "object"
       },
+      "ExecutionOption": {
+        "description": "One recorded context for the guided repository/type/browser picker.",
+        "properties": {
+          "browser": {
+            "title": "Browser",
+            "type": "string"
+          },
+          "executions": {
+            "title": "Executions",
+            "type": "integer"
+          },
+          "framework": {
+            "title": "Framework",
+            "type": "string"
+          },
+          "job": {
+            "title": "Job",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "repository": {
+            "title": "Repository",
+            "type": "string"
+          }
+        },
+        "required": [
+          "repository",
+          "kind",
+          "job",
+          "browser",
+          "framework",
+          "executions"
+        ],
+        "title": "ExecutionOption",
+        "type": "object"
+      },
       "ExecutionRank": {
         "description": "One test within a repository, job, suite and execution context.",
         "properties": {
@@ -4112,6 +4151,32 @@
         ]
       }
     },
+    "/api/execution-options": {
+      "get": {
+        "description": "Recorded repository/type/browser combinations for progressive navigation.",
+        "operationId": "execution_options_api_execution_options_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ExecutionOption"
+                  },
+                  "title": "Response Execution Options Api Execution Options Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Execution Options",
+        "tags": [
+          "executions"
+        ]
+      }
+    },
     "/api/executions": {
       "get": {
         "description": "Historical test-execution dashboard; counts all reports in scope, not the latest snapshot.",
@@ -4144,6 +4209,23 @@
                 }
               ],
               "title": "Suite"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 50,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
             }
           },
           {

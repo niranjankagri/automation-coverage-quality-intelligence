@@ -45,6 +45,7 @@ def test_mobile_rankings_keep_names_readable(page: Page) -> None:
     page.set_viewport_size({"width": 390, "height": 844})
     page.goto("/#/executions")
     expect(page.locator("#view h1")).to_have_text("Test execution dashboard")
+    page.locator(".ranking-details > summary").first.click()
     region = page.get_by_role(
         "region", name="Top 10 longest-running tests data; scroll horizontally on narrow screens"
     )
@@ -82,3 +83,82 @@ def test_quick_filter_changes_keep_current_url_state(page: Page, first: str) -> 
     page.reload()
     expect(page.locator("#execution-suite")).to_have_value(suite)
     expect(page.locator("#execution-limit")).to_have_value("25")
+
+
+def test_guided_repository_family_browser_and_back(collected_page: Page) -> None:
+    """Real imported combinations drive the picker; changing parents clears child choices."""
+    page = collected_page
+    page.goto("/#/executions")
+    repos = page.get_by_role("region", name="Choose a repository", exact=True)
+    repos.get_by_role("button", name="cypress typescript framework", exact=True).click()
+    families = page.get_by_role("region", name="Choose a test family", exact=True)
+    families.get_by_role("button", name="UI", exact=True).click()
+    browsers = page.get_by_role("region", name="Choose a browser", exact=True)
+    browsers.get_by_role("button", name="chrome", exact=True).click()
+    expect(browsers.get_by_role("button", name="chrome", exact=True)).to_have_attribute(
+        "aria-pressed", "true"
+    )
+    page.reload()
+    expect(families.get_by_role("button", name="UI", exact=True)).to_have_attribute("aria-pressed", "true")
+    expect(browsers.get_by_role("button", name="chrome", exact=True)).to_have_attribute(
+        "aria-pressed", "true"
+    )
+    assert "kind=ui" in page.url
+    assert "browser=chrome" in page.url
+    families.get_by_role("button", name="API", exact=True).click()
+    expect(page.get_by_role("region", name="Choose a job", exact=True)).to_be_visible()
+    assert "browser=" not in page.url
+    assert "kind=api" in page.url
+    repos.get_by_role("button", name="All repositories", exact=True).click()
+    expect(families.get_by_role("button", name="All tests", exact=True)).to_have_attribute(
+        "aria-pressed", "true"
+    )
+    assert "kind=" not in page.url
+    page.go_back()
+    expect(families.get_by_role("button", name="API", exact=True)).to_have_attribute("aria-pressed", "true")
+
+
+def test_chart_interaction_and_progressive_details(page: Page) -> None:
+    """Charts are interactive without forcing tables open; detailed evidence stays available."""
+    page.goto("/#/executions")
+    expect(page.locator("#view h1")).to_be_visible()
+    expect(page.locator("#filters")).to_be_hidden()
+    expect(page.locator(".ranking-details").first.locator("table")).to_be_hidden()
+    failed = page.get_by_role("group", name="Explore result status").get_by_role("button", name="failed")
+    failed.click()
+    expect(failed).to_have_attribute("aria-pressed", "true")
+    expect(page.locator(".donut-selection")).to_contain_text("failed")
+    page.get_by_role("button", name="Reset chart", exact=True).click()
+    expect(failed).to_have_attribute("aria-pressed", "false")
+    page.get_by_role("button", name="Advanced filters", exact=True).click()
+    expect(page.locator("#filters")).to_be_visible()
+    page.get_by_role("button", name="Advanced filters", exact=True).click()
+    expect(page.locator("#filters")).to_be_hidden()
+    page.locator(".ranking-details > summary").first.click()
+    expect(page.locator(".ranking-details").first.locator("table")).to_be_visible()
+    expect(page.get_by_role("link", name="← Back to my projects")).to_have_attribute(
+        "href", "https://niranjankagri.github.io/projects.html"
+    )
+
+
+def test_daily_chart_preserves_guided_scope(collected_page: Page) -> None:
+    """Selecting a day never broadens a repository/type/browser selection."""
+    page = collected_page
+    page.goto("/#/executions?repository=niranjankagri%2Fcypress-typescript-framework&kind=ui&browser=chrome")
+    page.get_by_role("group", name="Bars, one link per day").get_by_role("link").first.click()
+    expect(page.locator("#view h1")).to_have_text("Test execution dashboard")
+    query = parse_qs(urlsplit(page.url).fragment.partition("?")[2])
+    assert query["kind"] == ["ui"]
+    assert query["browser"] == ["chrome"]
+    assert query["since"] == query["until"]
+
+
+@pytest.mark.parametrize("path", ["/", "/#/"])
+def test_portfolio_entry_opens_visual_dashboard(page: Page, path: str) -> None:
+    """Both existing portfolio landing URLs enter the simple chart-first experience."""
+    page.goto(path)
+    expect(page.locator("#view h1")).to_have_text("Test execution dashboard")
+    expect(page.locator("#filters")).to_be_hidden()
+    page.get_by_role("link", name="Coverage & release", exact=True).click()
+    expect(page.locator("#view h1")).to_have_text("Overview")
+    expect(page.get_by_role("link", name="Dashboard", exact=True)).to_be_visible()

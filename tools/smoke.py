@@ -111,6 +111,33 @@ def checks(base: str, collected: bool, max_age_hours: float | None = None) -> li
         )
     )
 
+    status, _, body = get(f"{base}/api/executions")
+    execution = json.loads(body) if status == 200 else {}
+    counts = execution.get("counts", {})
+    results.append(
+        (
+            "execution dashboard reconciles",
+            status == 200
+            and execution.get("executions", 0) > 0
+            and sum(counts.values()) == execution.get("executions"),
+            f"{execution.get('executions')} executions",
+        )
+    )
+    status, _, body = get(f"{base}/api/execution-options")
+    options = json.loads(body) if status == 200 else []
+    results.append(
+        ("guided navigation available", status == 200 and bool(options), f"{len(options)} recorded contexts")
+    )
+    for path in ("/", "/static/app.js", "/static/style.css"):
+        status, headers, _ = get(f"{base}{path}")
+        results.append(
+            (
+                f"{path} revalidates",
+                status == 200 and "no-" in headers.get("cache-control", ""),
+                headers.get("cache-control", ""),
+            )
+        )
+
     if collected:
         results.append(
             ("collections recorded", int(state.get("collections") or 0) > 0, str(state.get("collections")))

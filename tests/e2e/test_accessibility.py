@@ -14,7 +14,7 @@ pytestmark = pytest.mark.e2e
 AXE = Axe()
 TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]
 PAGES = [
-    "#/",
+    "#/coverage",
     "#/requirements",
     "#/requirement/SHOP-006",
     "#/tests",
@@ -46,7 +46,7 @@ def violations(page: Page) -> list[str]:
 @pytest.mark.parametrize("route", PAGES)
 def test_no_wcag_violations(page: Page, route: str, theme: str) -> None:
     """Every page, both themes: no violation of the WCAG 2.2 A/AA rules axe-core checks."""
-    page.goto("/")
+    page.goto("/#/coverage")
     page.evaluate(f"localStorage.setItem('qi-theme', '{theme}')")
     page.goto(f"/{route}")
     expect(page.locator("#view h1")).to_be_visible()
@@ -59,9 +59,9 @@ def test_no_wcag_violations(page: Page, route: str, theme: str) -> None:
 def test_mobile_overview_has_no_wcag_violations(page: Page, theme: str) -> None:
     """The collapsed phone navigation and filters stay accessible in either theme."""
     page.set_viewport_size({"width": 390, "height": 844})
-    page.goto("/")
+    page.goto("/#/coverage")
     page.evaluate(f"localStorage.setItem('qi-theme', '{theme}')")
-    page.goto("/#/")
+    page.goto("/#/coverage")
     expect(page.locator("#view h1")).to_be_visible()
     expect(page.locator(".mobile-nav > summary")).to_be_visible()
 
@@ -83,7 +83,7 @@ def test_no_wcag_violations_with_pipelines_and_test_investigation(collected_page
 
 def test_guide_dialog_has_no_wcag_violations(page: Page) -> None:
     """The keyboard-accessible first-use guide stays accessible when opened."""
-    page.goto("/")
+    page.goto("/#/coverage")
     page.get_by_role("button", name="Guide and glossary").click()
 
     assert violations(page) == []
