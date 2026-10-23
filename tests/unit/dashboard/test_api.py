@@ -182,6 +182,7 @@ def test_openapi_documentation_lists_every_route(client: TestClient) -> None:
         "/api/trends",
         "/api/gate-history",
         "/api/gaps",
+        "/api/repository-trends",
     }
 
 
@@ -433,6 +434,33 @@ def test_gaps_on_the_samples_put_the_two_release_blockers_first(client: TestClie
     ]
     filtered = client.get("/api/gaps", params={"owner": "Storefront team"}).json()
     assert [g["requirement_id"] for o in filtered["owners"] for g in o["gaps"]] == ["SAUCE-008"]
+
+
+def test_repository_trends_compare_the_same_two_days_for_every_repository() -> None:
+    """Collected runs record their repository; hand-imported sample files do not (noted)."""
+    from qualityintel.models.enums import Outcome
+    from qualityintel.models.results import PipelineJob, TestRun
+
+    from ..traceability.helpers import result, run
+
+    def collected(day: int, outcome: Outcome) -> TestRun:
+        """A run of job 'test' in repository o/a on 2026-10-<day>."""
+        job = PipelineJob(pipeline_id=f"o-a-{day}", job="test", repository="o/a")
+        return run(result("t", outcome), day=day).model_copy(update={"pipeline": job})
+
+    samples, _ = Workspace.load(SAMPLES / "catalog.toml", [SAMPLES / "results"])
+    extra = [collected(12, Outcome.PASSED), collected(19, Outcome.FAILED)]
+    workspace = Workspace(samples.catalog, [*samples.runs, *extra])
+    body = TestClient(create_app(workspace)).get("/api/repository-trends").json()
+
+    assert body["day"] == "2026-10-19"
+    ((trend),) = body["repositories"]
+    assert (trend["repository"], trend["before"]["day"], trend["now"]["failed"]) == ("o/a", "2026-10-12", 1)
+    assert trend["newly_failing"] == ["suite::t"]
+    assert any("43 run(s) without a recorded repository" in n for n in body["notes"])
+    assert (
+        TestClient(create_app(workspace)).get("/api/repository-trends", params={"days": 0}).status_code == 422
+    )
 
 
 def test_readiness_follows_the_chosen_scope(client: TestClient) -> None:

@@ -2199,6 +2199,140 @@
         "title": "RepositoryMatrixRow",
         "type": "object"
       },
+      "RepositorySnapshotView": {
+        "description": "One repository's snapshot at the end of a day.",
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "failed": {
+            "title": "Failed",
+            "type": "integer"
+          },
+          "latest_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Run Id"
+          },
+          "pass_rate": {
+            "$ref": "#/components/schemas/RatioView"
+          },
+          "results": {
+            "title": "Results",
+            "type": "integer"
+          },
+          "suites": {
+            "title": "Suites",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "day",
+          "results",
+          "failed",
+          "pass_rate",
+          "suites",
+          "latest_run_id"
+        ],
+        "title": "RepositorySnapshotView",
+        "type": "object"
+      },
+      "RepositoryTrendView": {
+        "description": "A repository on the newest day against the earlier day (docs/metrics.md, Repository trends).",
+        "properties": {
+          "before": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RepositorySnapshotView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fixed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Fixed",
+            "type": "array"
+          },
+          "newly_failing": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Newly Failing",
+            "type": "array"
+          },
+          "now": {
+            "$ref": "#/components/schemas/RepositorySnapshotView"
+          },
+          "repository": {
+            "title": "Repository",
+            "type": "string"
+          }
+        },
+        "required": [
+          "repository",
+          "now",
+          "before",
+          "newly_failing",
+          "fixed"
+        ],
+        "title": "RepositoryTrendView",
+        "type": "object"
+      },
+      "RepositoryTrendsView": {
+        "description": "Every repository's trend over the same two days.",
+        "properties": {
+          "day": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "repositories": {
+            "items": {
+              "$ref": "#/components/schemas/RepositoryTrendView"
+            },
+            "title": "Repositories",
+            "type": "array"
+          }
+        },
+        "required": [
+          "day",
+          "days",
+          "repositories",
+          "notes"
+        ],
+        "title": "RepositoryTrendsView",
+        "type": "object"
+      },
       "RequirementDetail": {
         "description": "One requirement, its test cases and their latest executions.",
         "properties": {
@@ -5628,6 +5762,200 @@
           }
         },
         "summary": "Regressions",
+        "tags": [
+          "history"
+        ]
+      }
+    },
+    "/api/repository-trends": {
+      "get": {
+        "description": "Each repository's snapshot on the newest day with runs against ``days`` earlier.",
+        "operationId": "repository_trends_api_repository_trends_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 7,
+              "maximum": 90,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "framework",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Framework"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment"
+            }
+          },
+          {
+            "in": "query",
+            "name": "browser",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Browser"
+            }
+          },
+          {
+            "in": "query",
+            "name": "build",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Build"
+            }
+          },
+          {
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "in": "query",
+            "name": "until",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Until"
+            }
+          },
+          {
+            "in": "query",
+            "name": "repository",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repository"
+            }
+          },
+          {
+            "in": "query",
+            "name": "job",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RepositoryTrendsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Repository Trends",
         "tags": [
           "history"
         ]

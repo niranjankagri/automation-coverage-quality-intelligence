@@ -46,7 +46,13 @@ from qualityintel.history.builds import (
     label,
     latest_regressions,
 )
-from qualityintel.history.trends import CoverageSnapshot, coverage_changes, daily_trend
+from qualityintel.history.trends import (
+    CoverageSnapshot,
+    RepositorySnapshot,
+    coverage_changes,
+    daily_trend,
+    repository_trends,
+)
 from qualityintel.ingest.batch import Batch, import_results
 from qualityintel.ingest.catalog_file import load_catalog
 from qualityintel.links import github_run_url
@@ -613,6 +619,36 @@ class GateHistoryView(View):
     gate_name: str | None
     days: tuple[GateDayView, ...]
     changes: tuple[GateChangeView, ...]
+    notes: tuple[str, ...]
+
+
+class RepositorySnapshotView(View):
+    """One repository's snapshot at the end of a day."""
+
+    day: date
+    results: int
+    failed: int
+    pass_rate: RatioView
+    suites: int
+    latest_run_id: str | None
+
+
+class RepositoryTrendView(View):
+    """A repository on the newest day against the earlier day (docs/metrics.md, Repository trends)."""
+
+    repository: str
+    now: RepositorySnapshotView
+    before: RepositorySnapshotView | None
+    newly_failing: tuple[str, ...]
+    fixed: tuple[str, ...]
+
+
+class RepositoryTrendsView(View):
+    """Every repository's trend over the same two days."""
+
+    day: date | None
+    days: int
+    repositories: tuple[RepositoryTrendView, ...]
     notes: tuple[str, ...]
 
 
@@ -1360,6 +1396,49 @@ class Workspace:
             },
             window=settings.window,
         )
+
+    def repository_trends(self, scope: Scope = EVERYTHING, days: int = 7) -> RepositoryTrendsView:
+        """Each repository's snapshot on the newest day with runs against ``days`` earlier."""
+
+        def snapshot(s: RepositorySnapshot | None) -> RepositorySnapshotView | None:
+            if s is None:
+                return None
+            return RepositorySnapshotView(
+                day=s.day,
+                results=s.results,
+                failed=s.failed,
+                pass_rate=RatioView.of(s.pass_rate),
+                suites=s.suites,
+                latest_run_id=s.latest_run_id,
+            )
+
+        def compute() -> RepositoryTrendsView:
+            runs = self._runs(scope)
+            today, trends = repository_trends(runs, days)
+            without = sum(1 for r in runs if not (r.pipeline and r.pipeline.repository))
+            notes = [
+                f"Both columns are end-of-day snapshots: the newest day with runs and {days} days "
+                "before it; a test counts as failing when it fails in any of the repository's suites."
+            ]
+            if without:
+                notes.append(f"{without} run(s) without a recorded repository are not in this table")
+            return RepositoryTrendsView(
+                day=today,
+                days=days,
+                repositories=tuple(
+                    RepositoryTrendView(
+                        repository=t.repository,
+                        now=cast(RepositorySnapshotView, snapshot(t.now)),
+                        before=snapshot(t.before),
+                        newly_failing=t.newly_failing,
+                        fixed=t.fixed,
+                    )
+                    for t in trends
+                ),
+                notes=tuple(notes),
+            )
+
+        return self._cached(("repository-trends", scope, days), compute)
 
     def gaps(self, scope: Scope = EVERYTHING) -> GapsView:
         """Requirements without automated coverage, by criticality, risk and gap type, per owner."""

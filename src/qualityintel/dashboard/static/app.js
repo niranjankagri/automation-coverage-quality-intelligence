@@ -1390,8 +1390,29 @@ function gateHistory(g) {
   ];
 }
 
+// Each repository on the newest day against N days earlier (docs/metrics.md, Repository trends)
+function repositoryTrends(t) {
+  const side = (s) => (s ? [`${s.pass_rate.text} · ${s.failed} failed`, h("span", { class: "sub" }, `${s.day} · ${s.suites} suite(s) · `, s.latest_run_id ? h("a", { href: drillLink(`/run/${s.latest_run_id}`) }, "newest run") : "–")] : "no run yet");
+  const tests = (keys) => (keys.length ? [keys.slice(0, 5).map((k, i) => [i ? ", " : null, h("a", { class: "key", href: drillLink("/test", { key: k }) }, k)]), keys.length > 5 ? ` and ${keys.length - 5} more` : null] : "–");
+  return [
+    h("h2", {}, t.day ? `Repositories: ${t.day} against ${t.days} days earlier` : "Repositories over time"),
+    h("p", { class: "sub" }, `Repositories with new failures first, then the largest drop in pass rate. ${t.notes.join(" ")}`),
+    table(
+      ["Repository", `${t.days} days earlier`, "Newest day", "Started failing", "Stopped failing"],
+      t.repositories.map((r) => h("tr", {},
+        h("td", {}, h("a", { href: link("/trends", { repository: r.repository }) }, r.repository)),
+        h("td", {}, side(r.before)),
+        h("td", {}, side(r.now)),
+        h("td", {}, tests(r.newly_failing)),
+        h("td", {}, tests(r.fixed)),
+      )),
+      "No collected runs with a recorded repository in this scope.",
+    ),
+  ];
+}
+
 async function trendsView() {
-  const [d, g] = await Promise.all([api(`/api/trends${apiQuery(FILTERS)}`), api(`/api/gate-history${apiQuery(FILTERS)}`)]);
+  const [d, g, rt] = await Promise.all([api(`/api/trends${apiQuery(FILTERS)}`), api(`/api/gate-history${apiQuery(FILTERS)}`), api(`/api/repository-trends${apiQuery(RUN_FILTERS)}`)]);
   const days = d.daily.map((p) => p.day);
   const labels = days.map(shortDay);
   const outcomeSeries = [
@@ -1427,6 +1448,7 @@ async function trendsView() {
     );
   }
   content.push(...gateHistory(g));
+  content.push(...repositoryTrends(rt));
   content.push(h("h2", {}, "Runs per context"));
   const contexts = Object.entries(d.runs);
   content.push(

@@ -45,6 +45,7 @@ from qualityintel.workspace import (
     PipelinesView,
     ReadinessView,
     RegressionsView,
+    RepositoryTrendsView,
     RequirementDetail,
     RequirementMatrix,
     RequirementRow,
@@ -596,6 +597,13 @@ def create_app(
     def gate_history(chosen: FullScope) -> GateHistoryView:
         """The release gate on each day's snapshot (last 30 days with runs) and the days it changed."""
         return current().gate_history(chosen)
+
+    @app.get("/api/repository-trends", tags=["history"])
+    def repository_trends(
+        chosen: RunScope, days: Annotated[int, Query(ge=1, le=90)] = 7
+    ) -> RepositoryTrendsView:
+        """Each repository's snapshot on the newest day with runs against ``days`` earlier."""
+        return current().repository_trends(chosen, days)
 
     @app.get("/api/runs", tags=["executions"])
     def runs(chosen: RunScope) -> tuple[RunView, ...]:

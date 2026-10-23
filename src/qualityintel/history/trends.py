@@ -11,6 +11,10 @@ history therefore stores the catalog's three coverage metrics each time ``qi his
 --catalog`` runs with a changed catalog; trends of coverage are drawn only from those records,
 never reconstructed. The catalog applied to past runs in daily snapshots is the current one: a
 requirement added today shows as "not run" on earlier days.
+
+**Repository trends** (:func:`repository_trends`, M13). Per repository, the snapshot at the end
+of the newest day with runs is set against the snapshot ``days`` earlier: results, failed tests,
+pass rate, and the tests that started or stopped failing in between (docs/metrics.md).
 """
 
 from __future__ import annotations
@@ -18,14 +22,14 @@ from __future__ import annotations
 import hashlib
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 from qualityintel.models.catalog import Catalog
 from qualityintel.models.enums import Outcome
-from qualityintel.models.metrics import Ratio
+from qualityintel.models.metrics import Ratio, execution_pass_rate
 from qualityintel.models.results import TestRun
 from qualityintel.traceability.coverage import Filters, analyse_coverage
-from qualityintel.traceability.report import build_report, context_key
+from qualityintel.traceability.report import build_report, context_key, latest_runs
 
 
 @dataclass(frozen=True)
@@ -135,3 +139,99 @@ def _day(run: TestRun) -> date:
     """UTC start date of a run (callers pass dated runs only)."""
     started = run.started_at or datetime.min.replace(tzinfo=UTC)
     return started.astimezone(UTC).date()
+
+
+@dataclass(frozen=True)
+class RepositorySnapshot:
+    """One repository's snapshot at the end of a day: the latest run of each of its suites."""
+
+    day: date
+    results: int
+    failed: int
+    pass_rate: Ratio
+    suites: int
+    latest_run_id: str | None
+
+
+@dataclass(frozen=True)
+class RepositoryTrend:
+    """A repository now and ``days`` earlier, with the tests whose failing state changed.
+
+    Attributes:
+        before: ``None`` when the repository had no run yet at that time.
+        newly_failing: Test keys failing now in any suite that failed in none before.
+        fixed: Test keys failing before in some suite that fail in none now.
+    """
+
+    repository: str
+    now: RepositorySnapshot
+    before: RepositorySnapshot | None
+    newly_failing: tuple[str, ...]
+    fixed: tuple[str, ...]
+
+
+def repository_trends(
+    runs: Iterable[TestRun], days: int = 7
+) -> tuple[date | None, tuple[RepositoryTrend, ...]]:
+    """Each repository's snapshot on the newest day with runs against ``days`` earlier.
+
+    Only dated runs of a pipeline with a recorded repository take part. The newest day is the
+    newest run's UTC date across all of them (the history's, not the clock's), the same for every
+    repository, so the two columns are always the same two days. Repositories with new failures
+    come first, then the largest drop in pass rate, then by name.
+    """
+    chosen = [r for r in runs if r.started_at is not None and r.pipeline and r.pipeline.repository]
+    if not chosen:
+        return None, ()
+    today = max(_day(r) for r in chosen)
+    earlier = today - timedelta(days=days)
+    found = []
+    for repository in sorted({r.pipeline.repository for r in chosen if r.pipeline and r.pipeline.repository}):
+        own = [r for r in chosen if r.pipeline and r.pipeline.repository == repository]
+        now, now_failing = _repository_snapshot(own, today)
+        if now is None:
+            continue
+        before, before_failing = _repository_snapshot(own, earlier)
+        found.append(
+            RepositoryTrend(
+                repository=repository,
+                now=now,
+                before=before,
+                newly_failing=tuple(sorted(now_failing - before_failing)),
+                fixed=tuple(sorted(before_failing - now_failing)),
+            )
+        )
+
+    def drop(trend: RepositoryTrend) -> float:
+        """Pass-rate points lost since ``before`` (0 when either side has no rate)."""
+        if trend.before is None or trend.before.pass_rate.value is None or trend.now.pass_rate.value is None:
+            return 0.0
+        return trend.before.pass_rate.value - trend.now.pass_rate.value
+
+    found.sort(key=lambda t: (not t.newly_failing, -drop(t), t.repository))
+    return today, tuple(found)
+
+
+def _repository_snapshot(runs: Sequence[TestRun], day: date) -> tuple[RepositorySnapshot | None, set[str]]:
+    """The snapshot of these runs at the end of ``day`` and its failing test keys."""
+    snapshot = latest_runs(r for r in runs if _day(r) <= day)
+    if not snapshot:
+        return None, set()
+    counts = dict.fromkeys(Outcome, 0)
+    failing: set[str] = set()
+    for run in snapshot:
+        for outcome, n in run.outcome_counts().items():
+            counts[outcome] += n
+        failing.update(r.key for r in run.results if r.outcome in (Outcome.FAILED, Outcome.ERROR))
+    newest = max(snapshot, key=lambda r: r.started_at or datetime.min.replace(tzinfo=UTC))
+    return (
+        RepositorySnapshot(
+            day=day,
+            results=sum(counts.values()),
+            failed=counts[Outcome.FAILED] + counts[Outcome.ERROR],
+            pass_rate=execution_pass_rate(counts),
+            suites=len(snapshot),
+            latest_run_id=newest.run_id,
+        ),
+        failing,
+    )
