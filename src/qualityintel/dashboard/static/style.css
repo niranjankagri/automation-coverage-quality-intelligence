@@ -432,3 +432,8 @@ dialog::backdrop { background: rgb(10 15 25 / 58%); }
 .execution-slice.skipped { stroke: var(--muted); }
 .execution-panel .sub, .execution-panel .key { overflow-wrap: anywhere; }
 @media (max-width: 1000px) { .execution-grid, .execution-equal { grid-template-columns: minmax(0, 1fr); } }
+
+.execution-ranking table { min-width: 620px; }
+.execution-ranking td:first-child, .execution-ranking th:first-child { min-width: 260px; }
+.execution-scroll-hint { display: none; }
+@media (max-width: 720px) { .execution-scroll-hint { display: block; } }

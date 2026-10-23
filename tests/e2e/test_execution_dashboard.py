@@ -36,3 +36,18 @@ def test_execution_dashboard_empty_scope(page: Page) -> None:
     page.goto("/#/executions?repository=unknown/missing")
     expect(page.get_by_role("status").filter(has_text="No recorded executions")).to_be_visible()
     expect(page.locator(".execution-cards")).to_contain_text("Not recorded")
+
+
+def test_mobile_rankings_keep_names_readable(page: Page) -> None:
+    """Ranking tables scroll internally instead of squeezing test names into word-wide columns."""
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.goto("/#/executions")
+    expect(page.locator("#view h1")).to_have_text("Test execution dashboard")
+    region = page.get_by_role(
+        "region", name="Top 10 longest-running tests data; scroll horizontally on narrow screens"
+    )
+    expect(region).to_have_attribute("tabindex", "0")
+    cell_box = region.locator("td").first.bounding_box()
+    assert cell_box is not None
+    assert cell_box["width"] >= 260
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")

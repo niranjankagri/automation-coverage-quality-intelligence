@@ -1238,10 +1238,10 @@ function frame(labels, max, unit) {
  * Stacked bars. With ``hrefs`` (one per label) every bar is a link, reachable with Tab, whose
  * accessible name lists that bar's numbers (e.g. to the runs of that day).
  */
-function stackedBars(labels, series, unit = "", hrefs = null) {
+function stackedBars(labels, series, unit = "", hrefs = null, axisLabels = labels) {
   const totals = labels.map((_, i) => series.reduce((sum, item) => sum + (item.values[i] ?? 0), 0));
   const max = Math.max(1, ...totals);
-  const f = frame(labels, max, unit);
+  const f = frame(axisLabels, max, unit);
   const barWidth = Math.max(4, Math.min(36, (f.w / labels.length) * 0.6));
   const bars = [];
   labels.forEach((label, i) => {
@@ -1341,9 +1341,14 @@ function executionRanking(title, rows, kind) {
   const body = rows.map((row) => h("tr", {}, h("td", {}, executionTestLink(row)),
     duration ? [h("td", { class: "num" }, row.average_seconds.toFixed(3)), h("td", { class: "num" }, row.max_seconds.toFixed(3)), h("td", { class: "num" }, `${row.timed_executions} / ${row.executions}`)]
       : [h("td", { class: "num" }, row[kind === "failed" ? "failed" : "errors"]), h("td", { class: "num" }, row.executions)]));
-  return h("section", { class: "execution-panel" }, h("h2", {}, title),
-    table(headers, body, duration ? "No recorded durations in this scope." : "No matching results in this scope.",
-      { tools: true, searchLabel: `Search ${title.toLowerCase()}`, searchPlaceholder: "Test or context", name: `execution-${kind}` }));
+  const data = table(headers, body, duration ? "No recorded durations in this scope." : "No matching results in this scope.",
+    { tools: true, searchLabel: `Search ${title.toLowerCase()}`, searchPlaceholder: "Test or context", name: `execution-${kind}` });
+  const scroll = data.querySelector(".table-wrap") ?? data;
+  scroll.setAttribute("tabindex", "0");
+  scroll.setAttribute("role", "region");
+  scroll.setAttribute("aria-label", `${title} data; scroll horizontally on narrow screens`);
+  return h("section", { class: "execution-panel execution-ranking" }, h("h2", {}, title),
+    h("p", { class: "sub execution-scroll-hint" }, "Scroll the table horizontally to compare values."), data);
 }
 
 async function executionsView() {
@@ -1372,7 +1377,7 @@ async function executionsView() {
     h("p", { class: "sub" }, "Cancelled and in-progress are pipeline states, not imported test outcomes. ", h("a", { href: link("/pipelines") }, "Inspect pipeline status and missing reports"), "."),
     d.executions === 0 ? h("p", { class: "empty", role: "status" }, "No recorded executions match these filters. Clear filters or collect test reports.") : null,
     h("section", { class: "execution-panel" }, h("h2", {}, "Executions per recorded day"),
-      chartFigure("Daily execution results", stackedBars(days, series, "", days.map((day) => link("/runs", { since: day, until: day }))), series, days,
+      chartFigure("Daily execution results", stackedBars(days, series, "", days.map((day) => link("/runs", { since: day, until: day })), days.map(shortDay)), series, days,
         `UTC run start dates; all imported executions, not daily snapshots. ${d.undated_executions} undated executions are excluded from this chart. Days without recorded runs are omitted; each bar opens that day's runs.`)),
     h("div", { class: "execution-grid" }, executionDistribution(d), executionRanking(`Top ${limit} longest-running tests`, d.slowest, "duration")),
     h("div", { class: "execution-grid execution-equal" }, executionRanking(`Top ${limit} test failures`, d.failures, "failed"), executionRanking(`Top ${limit} test errors`, d.errors, "error")),
