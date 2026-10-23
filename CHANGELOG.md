@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Make the default dashboard a portfolio-styled visual experience: repository → test family →
+  browser/job navigation, interactive result donut, day drill-downs and visual test rankings.
+  Keep tables/CSV and advanced tools available on demand, and move release coverage to
+  `#/coverage`. Add observed-context API, family filtering and cache revalidation for assets,
+  with browser/API/smoke coverage.
+
 - Add a historical Test execution dashboard with UTC daily outcome charts, status distribution,
   suite and shared run filters, top 10/25/100 duration/failure/error rankings and test-history
   drill-downs. Preserve unknown timings and distinguish summed test time from wall-clock time

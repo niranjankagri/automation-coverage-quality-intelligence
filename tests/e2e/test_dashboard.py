@@ -27,7 +27,7 @@ def card(page: Page, label: str) -> Locator:
 
 def test_overview_shows_coverage_and_pass_rate_separately(page: Page) -> None:
     """Coverage numbers and the execution pass rate are different cards with their counts."""
-    page.goto("/")
+    page.goto("/#/coverage")
 
     expect(page.get_by_role("heading", name="Overview", exact=True)).to_be_visible()
     expect(card(page, "Requirement coverage")).to_contain_text("90.5 %")
@@ -46,7 +46,7 @@ def test_overview_shows_coverage_and_pass_rate_separately(page: Page) -> None:
 
 def test_metric_card_drills_down_to_the_requirements_behind_it(page: Page) -> None:
     """Requirement coverage card -> the four requirements without tests."""
-    page.goto("/")
+    page.goto("/#/coverage")
 
     card(page, "Requirement coverage").click()
 
@@ -57,7 +57,7 @@ def test_metric_card_drills_down_to_the_requirements_behind_it(page: Page) -> No
 
 def test_filter_changes_every_number_and_stays_in_the_url(page: Page) -> None:
     """Criticality critical: 13 requirements; the filter is part of the address."""
-    page.goto("/")
+    page.goto("/#/coverage")
 
     page.get_by_label("Criticality").select_option("critical")
 
@@ -105,7 +105,7 @@ def test_run_detail_lists_failures_first(page: Page) -> None:
 
 def test_empty_scope_has_an_empty_state(page: Page) -> None:
     """A browser with no runs: no snapshot table, an explanation instead."""
-    page.goto("/#/?browser=webkit")
+    page.goto("/#/coverage?browser=webkit")
 
     expect(page.get_by_text("No runs in this scope")).to_be_visible()
     expect(card(page, "Execution pass rate")).to_contain_text("n/a")
@@ -123,7 +123,7 @@ def test_api_error_shows_a_message_and_retry(page: Page) -> None:
             route.continue_()
 
     page.route("**/api/summary*", fail_once)
-    page.goto("/")
+    page.goto("/#/coverage")
 
     expect(page.get_by_role("alert")).to_contain_text("500: database offline")
     page.get_by_role("button", name="Retry").click()
@@ -143,7 +143,7 @@ def test_unknown_page_and_unknown_requirement_show_errors(page: Page) -> None:
 def test_layout_fits_small_screens(page: Page, width: int) -> None:
     """Phone and tablet width: no sideways scrolling of the page; wide tables scroll inside."""
     page.set_viewport_size({"width": width, "height": 800})
-    for path in ("/", "/#/requirements", "/#/tests", "/#/runs", "/#/stability", "/#/trends"):
+    for path in ("/#/coverage", "/#/requirements", "/#/tests", "/#/runs", "/#/stability", "/#/trends"):
         page.goto(path)
         expect(page.locator("#view h1")).to_be_visible()
         overflow = page.evaluate(
@@ -156,7 +156,7 @@ def test_keyboard_users_can_skip_to_the_content(page: Page) -> None:
     """First Tab reaches the skip link; it moves focus to the main region."""
     if ENGINE == "webkit":
         pytest.skip("WebKit, like Safari by default, moves Tab between form controls only")
-    page.goto("/")
+    page.goto("/#/coverage")
     expect(page.get_by_role("heading", name="Overview", exact=True)).to_be_visible()
 
     page.keyboard.press("Tab")
@@ -311,7 +311,7 @@ def test_with_a_login_the_whole_dashboard_works_after_signing_in(browser: Browse
         base_url=secured_url, http_credentials={"username": "qi", "password": "correct horse battery"}
     )
     page = context.new_page()
-    page.goto("/#/")
+    page.goto("/#/coverage")
     expect(page.get_by_role("heading", name="Overview")).to_be_visible()
     expect(page.locator("#data-size")).to_contain_text("42 requirements")
     page.get_by_role("link", name="Trends", exact=True).click()
@@ -381,7 +381,7 @@ def test_the_repository_selection_is_kept_across_pages_and_reloads(pipelines_pag
 
 def test_overview_shows_the_release_status_with_its_reasons(page: Page) -> None:
     """Without a gate the status is Unknown, never Ready; the numbers are the API's."""
-    page.goto("/#/")
+    page.goto("/#/coverage")
     panel = page.get_by_role("region", name="Release status")
     expect(panel).to_contain_text("Unknown")
     expect(panel).to_contain_text("no release gate is configured")
@@ -490,7 +490,7 @@ def test_a_trend_bar_opens_the_runs_of_its_day_with_the_keyboard(page: Page) -> 
 @pytest.mark.parametrize(
     "route",
     [
-        "#/",
+        "#/coverage",
         "#/requirements",
         "#/tests",
         "#/runs",
@@ -515,7 +515,7 @@ def test_no_horizontal_overflow_at_phone_tablet_and_desktop_widths(
 
 def test_theme_and_density_are_remembered(page: Page) -> None:
     """Dark chosen in the page wins over the system setting after a reload; Compact too."""
-    page.goto("/")
+    page.goto("/#/coverage")
     page.get_by_label("Theme").select_option("dark")
     page.get_by_label("Compact").check()
     page.reload()
@@ -527,7 +527,7 @@ def test_theme_and_density_are_remembered(page: Page) -> None:
 
 def test_moving_to_another_page_puts_the_focus_on_its_heading(page: Page) -> None:
     """Keyboard and screen-reader users land on the new page, not on the old link."""
-    page.goto("/")
+    page.goto("/#/coverage")
     expect(page.get_by_role("heading", name="Overview", exact=True)).to_be_visible()
     page.get_by_role("link", name="Runs", exact=True).click()
 
@@ -548,7 +548,7 @@ def test_the_owner_filter_narrows_requirements_and_the_matrix_groups_by_owner(pa
 
 def test_navigation_groups_and_the_collapsible_filter_area(page: Page) -> None:
     """Navigation follows product areas; URL filters stay active while the advanced filters collapse."""
-    page.goto("/#/?criticality=critical")
+    page.goto("/#/coverage?criticality=critical")
 
     expect(page.locator(".section-nav")).to_contain_text("Investigate")
     expect(page.locator(".section-nav")).to_contain_text("Coverage")
@@ -568,7 +568,7 @@ def test_navigation_groups_and_the_collapsible_filter_area(page: Page) -> None:
 def test_mobile_sections_menu_can_collapse_and_reopen(page: Page) -> None:
     """On a phone, the whole grouped navigation can be hidden and reopened."""
     page.set_viewport_size({"width": 390, "height": 844})
-    page.goto("/")
+    page.goto("/#/coverage")
 
     sections = page.locator(".mobile-nav > summary")
     attention = page.get_by_role("link", name="Needs attention", exact=True)
@@ -585,7 +585,7 @@ def test_mobile_sections_menu_can_collapse_and_reopen(page: Page) -> None:
 
 def test_critical_gap_preset_groups_findings_and_returns_to_filtered_results(page: Page) -> None:
     """The critical gap shortcut uses the existing attention API and keeps a back link from detail."""
-    page.goto("/")
+    page.goto("/#/coverage")
     page.get_by_role("button", name="Critical gaps").click()
 
     expect(page).to_have_url(
@@ -606,12 +606,12 @@ def test_critical_gap_preset_groups_findings_and_returns_to_filtered_results(pag
 
 def test_quick_views_and_metric_definitions_are_shareable(page: Page) -> None:
     """Presets keep their route filters in the address and KPI help states the metric limits."""
-    page.goto("/")
+    page.goto("/#/coverage")
     page.get_by_role("button", name="Recent failures").click()
     expect(page).to_have_url(re.compile(r"#/tests\?.*outcome=failed.*since=\d{4}-\d{2}-\d{2}"))
     expect(page.locator("#outcome-filter")).to_have_value("failed")
 
-    page.goto("/")
+    page.goto("/#/coverage")
     help = page.locator(".card-shell").filter(has=page.locator(".label", has_text="Execution pass rate"))
     help.locator(".help-tip > summary").click()
     expect(help.locator(".help-popover")).to_contain_text("Skips are excluded")
@@ -643,7 +643,7 @@ def test_repository_requirement_breakdown_uses_observed_results_and_drills_down(
 
 def test_a_table_that_fits_on_one_page_shows_no_pager(page: Page) -> None:
     """Five snapshot runs: no "Rows 1-5 of 5" and no Previous/Next (the hidden attribute wins)."""
-    page.goto("/")
+    page.goto("/#/coverage")
     expect(page.get_by_role("heading", name="Overview", exact=True)).to_be_visible()
 
     expect(page.locator(".pagerbox").first).to_be_hidden()
@@ -652,7 +652,7 @@ def test_a_table_that_fits_on_one_page_shows_no_pager(page: Page) -> None:
 
 def test_every_page_says_the_requirements_are_synthetic(page: Page) -> None:
     """The sample catalog's notice is visible above every page, not only on the overview."""
-    for route in ("#/", "#/requirements", "#/pipelines"):
+    for route in ("#/coverage", "#/requirements", "#/pipelines"):
         page.goto(f"/{route}")
         expect(page.locator("#view h1")).to_be_visible()
         expect(page.locator("#catalog-notice")).to_contain_text("synthetic sample catalog")
@@ -671,7 +671,7 @@ def test_collection_problems_lead_to_their_pipeline_and_github_run(collected_pag
     problem.get_by_role("link", name=re.compile("pipeline 38842296207 attempt 1")).click()
     expect(page).to_have_url(re.compile(r"#/pipelines\?.*status=incomplete"))
 
-    page.goto("/#/")
+    page.goto("/#/coverage")
     page.locator("#data-fresh").get_by_role("link", name=re.compile("incomplete collection")).click()
     expect(page).to_have_url(re.compile(r"#/pipelines\?status=incomplete"))
     expect(page.locator("#view h1")).to_have_text("Pipelines")
