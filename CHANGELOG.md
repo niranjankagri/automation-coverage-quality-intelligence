@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Refresh the report UI with neutral slate surfaces, indigo navigation and chart accents,
+  a portfolio-branded header, distinct widget highlights and a bounded keyboard-scrollable
+  Suites panel. Keep green for compact success states and preserve all result counts.
+
 - Fix `/next/` returning HTTP 500 in installed/container deployments by including its
   nested HTML, CSS and JavaScript modules in package data. Verify the actual wheel's
   asset manifest in CI and smoke-test the report page, every current module and its API.

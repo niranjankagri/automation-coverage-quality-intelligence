@@ -60,3 +60,17 @@ them from the wheel: editable source tests pass, but `/next/` raises HTTP 500 af
 CI builds a real wheel and runs `tools/check_wheel_assets.py` against every source dashboard
 asset, including nested folders. The container and live smoke check `/next/`, the CSS, all
 current JavaScript modules and `/api/report/overview`, including MIME types for assets.
+
+
+### Report colour balance
+
+The report keeps the portfolio's NA mark, typography, rounded controls and theme button, while
+using neutral slate surfaces and indigo interaction accents. Passed chart segments and their
+legend use the same muted blue; failures stay red, errors amber and skips grey. Green is reserved
+for compact success indicators. Counts and labels remain authoritative; colours do not change
+results or release decisions. Light, dark and system themes use the same layout.
+
+The Overview adds a softly tinted heading, snapshot scope badges and distinct widget markers.
+The Suites panel is vertically bounded with a labelled, keyboard-focusable scroll region; all
+suite rows remain available. CI captures report screenshots in light, dark and phone layouts,
+alongside the existing accessibility and responsive checks.
