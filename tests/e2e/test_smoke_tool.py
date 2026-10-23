@@ -71,8 +71,9 @@ def test_a_deployment_that_does_not_run_the_expected_commit_fails(
     assert "FAIL  deployed commit" in capsys.readouterr().out
 
 
+@pytest.mark.usefixtures("chromium_only")
 def test_the_browser_report_smoke_passes_on_collected_data(collected_url: str) -> None:
-    """tools/report_smoke.py in its own process (it starts its own Chromium)."""
+    """tools/report_smoke.py in its own process; it starts its own Chromium, so only in that job."""
     import subprocess
 
     done = subprocess.run(

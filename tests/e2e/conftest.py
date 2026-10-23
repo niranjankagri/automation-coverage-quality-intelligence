@@ -341,9 +341,9 @@ def browser() -> Iterator[Browser]:
 
 @pytest.fixture
 def chromium_only() -> None:
-    """Skip tests that use Chromium-only features (clipboard permissions) in other engines."""
+    """Skip tests that need Chromium itself (clipboard permissions, a separate Chromium) elsewhere."""
     if ENGINE != "chromium":
-        pytest.skip(f"clipboard permissions are a Chromium feature; engine is {ENGINE}")
+        pytest.skip(f"needs Chromium (only it is installed in the Chromium job); engine is {ENGINE}")
 
 
 @pytest.fixture
