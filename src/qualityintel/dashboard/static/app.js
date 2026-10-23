@@ -1173,9 +1173,42 @@ async function collectionView() {
   ];
 }
 
+// Issue drafts for the top recurring failures: copied, or opened in GitHub's own New issue form;
+// the dashboard creates nothing (docs/issues.md)
+function issueDrafts(s) {
+  return h(
+    "section",
+    { "aria-labelledby": "issue-drafts-title" },
+    h("h2", { id: "issue-drafts-title" }, `Issue drafts for recurring failures (${s.drafts.length})`),
+    h("p", { class: "sub" }, s.notes.join(" ")),
+    s.drafts.length
+      ? s.drafts.map((draft) => {
+          const copy = h("button", { type: "button", class: "ghost" }, "Copy draft");
+          copy.addEventListener("click", async () => {
+            try {
+              await navigator.clipboard.writeText(`${draft.title}\n\n${draft.body}`);
+              copy.textContent = "Copied";
+            } catch (_) {
+              copy.textContent = "Copy unavailable";
+            }
+            setTimeout(() => (copy.textContent = "Copy draft"), 2200);
+          });
+          return h("details", { class: "gap-owner" },
+            h("summary", {}, `#${draft.rank} ${draft.title}`),
+            h("p", { class: "sub" }, `${draft.runs} runs, ${draft.recent_runs} in the last 7 days · `,
+              draft.repository ? `repository ${draft.repository}` : "no single collected repository: copy the draft"),
+            h("textarea", { class: "issue-body", readonly: true, rows: 12, "aria-label": `Draft body for ${draft.title}` }, draft.body),
+            h("p", {}, copy, draft.new_issue_url ? [" ", external(draft.new_issue_url, "Review and submit on GitHub")] : null,
+              draft.shortened ? h("span", { class: "sub" }, " The GitHub form gets a shortened evidence list; the copy is complete.") : null),
+          );
+        })
+      : h("p", { class: "empty" }, "No recurring failure, so nothing to draft."),
+  );
+}
+
 async function stabilityView() {
   const windowSize = route().params.get("window") ?? "10";
-  const d = await api(`/api/stability${apiQuery(RUN_FILTERS, { window: windowSize })}`);
+  const [d, issues] = await Promise.all([api(`/api/stability${apiQuery(RUN_FILTERS, { window: windowSize })}`), api(`/api/issue-suggestions${apiQuery(RUN_FILTERS)}`)]);
   const windowSelect = h("select", { id: "window" }, ["5", "10", "20", "50"].map((v) => h("option", { value: v }, `last ${v} verdicts`)));
   windowSelect.value = windowSize;
   windowSelect.addEventListener("change", () => (location.hash = link("/stability", { window: windowSelect.value })));
@@ -1221,6 +1254,7 @@ async function stabilityView() {
       )),
       "No failure cause appeared in more than one run.",
     ),
+    issueDrafts(issues),
     h("h2", {}, `Duration regressions (${d.duration_regressions.length})`),
     table(
       ["Test", "Context", { label: "Baseline", num: true }, { label: "Latest", num: true }],

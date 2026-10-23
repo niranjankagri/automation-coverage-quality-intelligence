@@ -46,6 +46,7 @@ from qualityintel.workspace import (
     Facets,
     GapsView,
     GateHistoryView,
+    IssueSuggestionsView,
     PipelinesView,
     ReadinessView,
     RegressionsView,
@@ -627,6 +628,14 @@ def create_app(
         """The digest as copyable text and Markdown, with dashboard links relative to this site."""
         made = render_digest(current().digest(chosen, day))
         return InvestigationSummary(text=made.text, markdown=made.markdown)
+
+    @app.get("/api/issue-suggestions", tags=["investigation"])
+    def issue_suggestions(
+        request: Request, chosen: RunScope, limit: Annotated[int, Query(ge=1, le=50)] = 10
+    ) -> IssueSuggestionsView:
+        """Issue drafts for the top recurring failures; drafts only, nothing is created (docs/issues.md)."""
+        # The draft lives on GitHub, so its dashboard links must be absolute: this site's address
+        return current().issue_suggestions(chosen, limit, str(request.base_url))
 
     @app.get("/api/repository-trends", tags=["history"])
     def repository_trends(

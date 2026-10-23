@@ -87,3 +87,17 @@ def test_guide_dialog_has_no_wcag_violations(page: Page) -> None:
     page.get_by_role("button", name="Guide and glossary").click()
 
     assert violations(page) == []
+
+
+@pytest.mark.parametrize("theme", ["light", "dark"])
+def test_an_open_issue_draft_has_no_wcag_violations(recurring_page: Page, theme: str) -> None:
+    """The draft's read-only text box, copy button and GitHub link stay accessible in either theme."""
+    page = recurring_page
+    page.goto("/#/coverage")
+    page.evaluate(f"localStorage.setItem('qi-theme', '{theme}')")
+    page.goto("/#/stability")
+    page.locator("details", has_text="#1 Recurring test failure").locator("summary").click()
+    expect(page.get_by_role("link", name="Review and submit on GitHub")).to_be_visible()
+    page.wait_for_load_state("networkidle")
+
+    assert violations(page) == []

@@ -1648,6 +1648,99 @@
         "title": "InvestigationSummary",
         "type": "object"
       },
+      "IssueDraftView": {
+        "description": "A suggested issue for one recurring failure; nothing is created (docs/issues.md).",
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "new_issue_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Issue Url"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          },
+          "recent_runs": {
+            "title": "Recent Runs",
+            "type": "integer"
+          },
+          "repository": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repository"
+          },
+          "runs": {
+            "title": "Runs",
+            "type": "integer"
+          },
+          "shortened": {
+            "title": "Shortened",
+            "type": "boolean"
+          },
+          "signature": {
+            "title": "Signature",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rank",
+          "signature",
+          "runs",
+          "recent_runs",
+          "repository",
+          "title",
+          "body",
+          "new_issue_url",
+          "shortened"
+        ],
+        "title": "IssueDraftView",
+        "type": "object"
+      },
+      "IssueSuggestionsView": {
+        "description": "Issue drafts for the highest-ranked recurring failures.",
+        "properties": {
+          "drafts": {
+            "items": {
+              "$ref": "#/components/schemas/IssueDraftView"
+            },
+            "title": "Drafts",
+            "type": "array"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "drafts",
+          "notes"
+        ],
+        "title": "IssueSuggestionsView",
+        "type": "object"
+      },
       "MatrixRow": {
         "description": "Requirements of one criticality (or feature) by coverage and execution status.",
         "properties": {
@@ -6274,6 +6367,200 @@
         "summary": "Health",
         "tags": [
           "meta"
+        ]
+      }
+    },
+    "/api/issue-suggestions": {
+      "get": {
+        "description": "Issue drafts for the top recurring failures; drafts only, nothing is created (docs/issues.md).",
+        "operationId": "issue_suggestions_api_issue_suggestions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "framework",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Framework"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment"
+            }
+          },
+          {
+            "in": "query",
+            "name": "browser",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Browser"
+            }
+          },
+          {
+            "in": "query",
+            "name": "build",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Build"
+            }
+          },
+          {
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "in": "query",
+            "name": "until",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Until"
+            }
+          },
+          {
+            "in": "query",
+            "name": "repository",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repository"
+            }
+          },
+          {
+            "in": "query",
+            "name": "job",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssueSuggestionsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Issue Suggestions",
+        "tags": [
+          "investigation"
         ]
       }
     },

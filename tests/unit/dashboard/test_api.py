@@ -187,6 +187,7 @@ def test_openapi_documentation_lists_every_route(client: TestClient) -> None:
         "/api/repository-trends",
         "/api/digest",
         "/api/digest/summary",
+        "/api/issue-suggestions",
     }
 
 
@@ -490,6 +491,51 @@ def test_the_digest_defaults_to_the_newest_day_and_copies_as_text_and_markdown(c
     assert "[/#/runs?since=2026-10-13&until=2026-10-13]" in made["text"]
     assert made["markdown"].startswith("### Quality digest 2026-10-13")
     assert client.get("/api/digest", params={"day": "13-10-2026"}).status_code == 422
+
+
+def test_issue_drafts_link_this_dashboard_and_the_ci_run_and_create_nothing() -> None:
+    """A collected recurring failure: absolute dashboard links, the GitHub run, GitHub's own form."""
+    from datetime import UTC, datetime
+
+    from qualityintel.models.collection import PipelineCollection
+    from qualityintel.models.enums import Outcome
+    from qualityintel.models.results import PipelineJob
+
+    from ..traceability.helpers import result, run
+
+    runs = [
+        run(result("t", Outcome.FAILED, failure={"message": "boom", "type": "E"}), day=day).model_copy(
+            update={"pipeline": PipelineJob(pipeline_id=f"r#{day}", job="test", repository="o/r")}
+        )
+        for day in (18, 19)
+    ]
+    record = PipelineCollection(
+        pipeline_id="r#19",
+        attempt=1,
+        repository="o/r",
+        workflow="CI",
+        conclusion="failure",
+        url="https://github.com/o/r/actions/runs/19",
+        collected_at=datetime(2026, 10, 19, 12, tzinfo=UTC),
+        state="complete",
+    )
+    samples, _ = Workspace.load(SAMPLES / "catalog.toml", [])
+    client = TestClient(create_app(Workspace(samples.catalog, runs, collections=[record])))
+
+    (draft,) = client.get("/api/issue-suggestions").json()["drafts"]
+
+    assert draft["new_issue_url"].startswith("https://github.com/o/r/issues/new?title=Recurring+test+failure")
+    assert f"[dashboard](http://testserver/#/run/{runs[1].run_id})" in draft["body"]
+    assert "[CI run](https://github.com/o/r/actions/runs/19)" in draft["body"]
+    assert client.get("/api/issue-suggestions", params={"limit": 0}).status_code == 422
+
+
+def test_the_samples_have_no_recurring_failure_to_draft(client: TestClient) -> None:
+    """No recurring cause in the samples: no drafts, and the notes still say nothing is created."""
+    body = client.get("/api/issue-suggestions").json()
+
+    assert body["drafts"] == []
+    assert "creates no issue" in body["notes"][0]
 
 
 def test_readiness_follows_the_chosen_scope(client: TestClient) -> None:

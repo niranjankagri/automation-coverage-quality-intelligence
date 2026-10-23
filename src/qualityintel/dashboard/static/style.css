@@ -267,6 +267,11 @@ details.matrix > summary { cursor: pointer; font-weight: 600; }
 /* Owner groups of the prioritised gaps: stacked toggles, each a full 24 px touch target (WCAG 2.5.8) */
 details.gap-owner { margin: 0 0 8px; }
 details.gap-owner > summary { cursor: pointer; font-weight: 600; min-height: 24px; padding: 4px 0; }
+/* Read-only issue draft (Stability page): full width, wraps long test names, follows the theme */
+textarea.issue-body {
+  display: block; width: 100%; box-sizing: border-box; font: 12.5px/1.5 ui-monospace, monospace;
+  color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px;
+}
 .badge.stale { background: var(--warn-bg); color: var(--warn); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 a.bar-link:focus-visible rect, a.bar-link:hover rect { stroke: var(--text); stroke-width: 2; }

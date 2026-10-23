@@ -63,6 +63,7 @@ from qualityintel.models.enums import AutomationStatus, Outcome
 from qualityintel.models.metrics import Ratio, execution_pass_rate
 from qualityintel.models.results import PipelineJob, RunContext, TestResult, TestRun
 from qualityintel.readiness import readiness
+from qualityintel.reporting.issues import Evidence, issue_draft
 from qualityintel.search import build_index, search
 from qualityintel.traceability.coverage import UNSPECIFIED, Filters
 from qualityintel.traceability.gaps import prioritised_gaps
@@ -759,6 +760,27 @@ class DigestView(View):
     day: date | None
     previous_day: date | None
     sections: tuple[DigestSection, ...]
+    notes: tuple[str, ...]
+
+
+class IssueDraftView(View):
+    """A suggested issue for one recurring failure; nothing is created (docs/issues.md)."""
+
+    rank: int
+    signature: str
+    runs: int
+    recent_runs: int
+    repository: str | None
+    title: str
+    body: str
+    new_issue_url: str | None
+    shortened: bool
+
+
+class IssueSuggestionsView(View):
+    """Issue drafts for the highest-ranked recurring failures."""
+
+    drafts: tuple[IssueDraftView, ...]
     notes: tuple[str, ...]
 
 
@@ -1636,6 +1658,54 @@ class Workspace:
             },
             window=settings.window,
         )
+
+    def issue_suggestions(
+        self, scope: Scope = EVERYTHING, limit: int = 10, dashboard_url: str = ""
+    ) -> IssueSuggestionsView:
+        """Issue drafts for the ``limit`` highest-ranked recurring failures (docs/issues.md)."""
+
+        def compute() -> IssueSuggestionsView:
+            runs = self._runs(scope)
+            by_id = {run.run_id: run for run in runs}
+            urls = {c.pipeline_id: c.url for c in self.collections if github_run_url(c.url)}
+            drafts = []
+            for rank, failure in enumerate(recurring_failures(runs)[:limit], start=1):
+                supporting = [by_id[run_id] for run_id in failure.run_ids if run_id in by_id]
+                evidence = [
+                    Evidence(
+                        source=run.source,
+                        started_at=run.started_at,
+                        dashboard_path=f"#/run/{run.run_id}",
+                        github_url=urls.get(run.pipeline.pipeline_id) if run.pipeline else None,
+                    )
+                    for run in supporting
+                ]
+                repositories = [run.pipeline.repository if run.pipeline else None for run in supporting]
+                draft = issue_draft(failure, repositories, evidence, dashboard_url)
+                drafts.append(
+                    IssueDraftView(
+                        rank=rank,
+                        signature=failure.signature,
+                        runs=failure.runs,
+                        recent_runs=failure.recent_runs,
+                        repository=draft.repository,
+                        title=draft.title,
+                        body=draft.body,
+                        new_issue_url=draft.new_issue_url,
+                        shortened=draft.shortened,
+                    )
+                )
+            return IssueSuggestionsView(
+                drafts=tuple(drafts),
+                notes=(
+                    "Drafts only: this dashboard creates no issue and holds no GitHub write access. "
+                    "A person checks the draft and submits it on GitHub.",
+                    "A pre-filled GitHub link exists only when every supporting run belongs to one "
+                    "collected repository; otherwise copy the draft.",
+                ),
+            )
+
+        return self._cached(("issue-suggestions", scope, limit, dashboard_url), compute)
 
     def digest(self, scope: Scope = EVERYTHING, day: date | None = None) -> DigestView:
         """What ``day`` (default: the newest day with runs) added to the history (docs/digest.md)."""

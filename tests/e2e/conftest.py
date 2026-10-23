@@ -141,6 +141,48 @@ def collected_page(browser: Browser, collected_url: str) -> Iterator[Page]:
 
 
 @pytest.fixture(scope="session")
+def recurring_url() -> Iterator[str]:
+    """Synthetic: one test fails with the same cause in two collected runs of o/r (issue drafts)."""
+    runs = []
+    for day in (18, 19):
+        runs.append(
+            TestRun.model_validate(
+                {
+                    "run_id": f"{day:064d}",
+                    "source": f"TEST-checkout-{day}.xml",
+                    "started_at": datetime(2026, 10, day, 9, tzinfo=UTC),
+                    "pipeline": {"pipeline_id": f"r#{day}", "job": "ui", "repository": "o/r"},
+                    "results": [
+                        {
+                            "classname": "checkout",
+                            "name": "pays by card",
+                            "outcome": "failed",
+                            "failure": {"type": "TimeoutError", "message": "Timeout 30000ms exceeded."},
+                        }
+                    ],
+                }
+            )
+        )
+    record = PipelineCollection(
+        pipeline_id="r#19",
+        attempt=1,
+        repository="o/r",
+        workflow="CI",
+        conclusion="failure",
+        url="https://github.com/o/r/actions/runs/19",
+        collected_at=datetime(2026, 10, 19, 12, tzinfo=UTC),
+        state="complete",
+    )
+    yield from _serve(Workspace(load_catalog(SAMPLES / "catalog.toml"), runs, collections=[record]))
+
+
+@pytest.fixture
+def recurring_page(browser: Browser, recurring_url: str) -> Iterator[Page]:
+    """A page on the dashboard with one recurring failure."""
+    yield from _page(browser, recurring_url)
+
+
+@pytest.fixture(scope="session")
 def secured_url() -> Iterator[str]:
     """The sample dashboard with a login (QI_DASHBOARD_PASSWORD set)."""
     workspace, _ = Workspace.load(SAMPLES / "catalog.toml", [SAMPLES / "results"])
