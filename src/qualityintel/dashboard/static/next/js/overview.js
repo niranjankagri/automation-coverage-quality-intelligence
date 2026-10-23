@@ -10,9 +10,14 @@ export async function overview(state) {
     ? `${d.runs} latest run(s), ${formatDate(d.first_started_at)} to ${formatDate(d.latest_started_at)}`
     : "no dated runs";
   return [
-    h("p", { class: "eyebrow" }, `Report · ${repoName(state.repository)}`),
-    h("h1", {}, "Overview"),
-    h("p", { class: "lead" }, `The latest result of every suite: ${period}.`),
+    h("div", { class: "report-heading" },
+      h("div", { class: "report-heading-copy" },
+        h("p", { class: "eyebrow" }, `Report · ${repoName(state.repository)}`),
+        h("h1", {}, "Overview"),
+        h("p", { class: "lead" }, `The latest result of every suite: ${period}.`)),
+      h("div", { class: "report-highlights", role: "group", "aria-label": "Snapshot scope" },
+        h("div", { class: "report-highlight" }, h("strong", {}, n(d.suites.length)), h("span", {}, "suite groups")),
+        h("div", { class: "report-highlight" }, h("strong", {}, n(d.runs)), h("span", {}, "latest runs")))),
     d.total === 0 ? h("p", { class: "empty" }, "No test results in this scope yet.") : null,
     h(
       "div",
@@ -41,7 +46,7 @@ function summaryCard(d) {
   const rate = d.pass_rate.percent === null ? "n/a" : `${d.pass_rate.percent.toFixed(d.pass_rate.percent % 1 ? 1 : 0)}%`;
   return h(
     "section",
-    { class: "card span-5", "aria-labelledby": "summary-title" },
+    { class: "card span-5 summary-card", "aria-labelledby": "summary-title" },
     h("div", { class: "card-head" }, h("h2", { id: "summary-title" }, "Summary"), h("span", { class: "meta" }, `${d.runs} run(s)`)),
     h(
       "div",
@@ -86,7 +91,7 @@ function trendCard(points) {
   });
   return h(
     "section",
-    { class: "card span-7", "aria-labelledby": "trend-title" },
+    { class: "card span-7 trend-card", "aria-labelledby": "trend-title" },
     h("div", { class: "card-head" }, h("h2", { id: "trend-title" }, "Trend"), h("span", { class: "meta" }, `last ${points.length} day(s) with runs`)),
     points.length
       ? [
@@ -107,10 +112,10 @@ function trendCard(points) {
 function suitesCard(suites, state) {
   return h(
     "section",
-    { class: "card span-6", "aria-labelledby": "suites-title" },
+    { class: "card span-6 suites-card", "aria-labelledby": "suites-title" },
     h("div", { class: "card-head" }, h("h2", { id: "suites-title" }, "Suites"), h("span", { class: "meta" }, `${suites.length} in this scope`)),
     suites.length
-      ? h("ul", { class: "suites" }, suites.map((suite) => {
+      ? h("div", { class: "suite-scroll", role: "region", "aria-label": "Suite results", tabindex: "0" }, h("ul", { class: "suites" }, suites.map((suite) => {
           const total = OUTCOMES.reduce((sum, o) => sum + suite.counts[o], 0);
           const label = suite.collected ? repoName(suite.name) : suite.name;
           const name = suite.collected && !state.repository
@@ -126,7 +131,7 @@ function suitesCard(suites, state) {
                 return part;
               })),
           );
-        }))
+        })))
       : h("p", { class: "empty" }, "No suites in this scope."),
   );
 }
@@ -136,7 +141,7 @@ function categoriesCard(categories) {
   const shown = categories.slice(0, 6);
   return h(
     "section",
-    { class: "card span-6", "aria-labelledby": "categories-title" },
+    { class: "card span-6 categories-card", "aria-labelledby": "categories-title" },
     h("div", { class: "card-head" }, h("h2", { id: "categories-title" }, "Categories"), h("span", { class: "meta" }, `${categories.length} failure cause(s)`)),
     shown.length
       ? h("ul", { class: "categories" }, shown.map((c) => h("li", { class: "category" },
@@ -144,7 +149,7 @@ function categoriesCard(categories) {
           h("code", {}, c.signature),
           h("span", { class: "count", title: `${c.tests.length} test(s), ${c.results} result(s)` }, n(c.tests.length)),
         )))
-      : h("p", { class: "empty" }, "No failures in the latest results."),
+      : h("div", { class: "empty-state" }, h("span", { class: "empty-mark", "aria-hidden": "true" }, "✓"), h("p", {}, "No failures in the latest results.")),
   );
 }
 
@@ -160,7 +165,7 @@ function environmentCard(env, latest) {
   ];
   return h(
     "section",
-    { class: "card span-12", "aria-labelledby": "environment-title" },
+    { class: "card span-12 environment-card", "aria-labelledby": "environment-title" },
     h("div", { class: "card-head" }, h("h2", { id: "environment-title" }, "Environment")),
     h("dl", { class: "env" }, rows.map(([k, v]) => [h("dt", {}, k), h("dd", {}, v)])),
   );

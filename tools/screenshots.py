@@ -51,6 +51,9 @@ SHOTS = [
     ("dashboard-executions.png", "#/executions", 1440, "light", True),
     ("dashboard-executions-dark.png", "#/executions", 1440, "dark", True),
     ("dashboard-executions-phone.png", "#/executions", 390, "light", True),
+    ("report-overview-light.png", "next/#/overview", 1440, "light", True),
+    ("report-overview-dark.png", "next/#/overview", 1440, "dark", True),
+    ("report-overview-phone.png", "next/#/overview", 390, "light", True),
     ("dashboard-trends.png", "#/trends", 1280, "light", False),
     ("dashboard-compare.png", "#/compare?framework=testng&base=f5a40d5&head=1d03232", 1280, "light", False),
     ("dashboard-attention.png", "#/attention", 1280, "light", False),
@@ -181,7 +184,7 @@ def capture(
             )
             page = context.new_page()
             page.goto(f"http://127.0.0.1:{port}/{route}")
-            page.locator("#view h1").wait_for()
+            page.locator("main h1").wait_for()
             page.wait_for_load_state("networkidle")
             page.evaluate(
                 """() => {

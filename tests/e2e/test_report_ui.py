@@ -59,7 +59,7 @@ def test_a_section_still_to_build_links_its_classic_page(page: Page) -> None:
 
 
 def test_the_theme_button_works_like_the_portfolio(page: Page) -> None:
-    """One button switches light/dark, remembered as na-theme, with the portfolio's dark background."""
+    """One button switches light/dark, remembered as na-theme, with the report's neutral dark background."""
     page.emulate_media(color_scheme="light")
     page.goto("/next/")
     page.get_by_role("button", name="Use dark theme").click()
@@ -67,7 +67,7 @@ def test_the_theme_button_works_like_the_portfolio(page: Page) -> None:
 
     expect(page.locator("html")).to_have_attribute("data-theme", "dark")
     expect(page.get_by_role("button", name="Use light theme")).to_be_visible()
-    assert page.evaluate("getComputedStyle(document.body).backgroundColor") == "rgb(17, 25, 24)"
+    assert page.evaluate("getComputedStyle(document.body).backgroundColor") == "rgb(20, 24, 39)"
 
 
 @pytest.mark.parametrize("theme", ["light", "dark"])
