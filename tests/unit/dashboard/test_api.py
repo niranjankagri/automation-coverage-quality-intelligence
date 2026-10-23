@@ -189,6 +189,7 @@ def test_openapi_documentation_lists_every_route(client: TestClient) -> None:
         "/api/digest/summary",
         "/api/issue-suggestions",
         "/api/report/overview",
+        "/api/report/suites",
     }
 
 
@@ -581,6 +582,22 @@ def test_the_report_overview_groups_failures_by_cause_and_collected_runs_by_repo
         ("IOError: boom", "error", ["suite::c"]),
     ]
     assert body["environment"]["repositories"] == ["o/r"]
+
+
+def test_the_report_suites_tree_holds_every_test_of_the_snapshot(client: TestClient) -> None:
+    """Group > job > class > test: the leaves are the snapshot's 221 results, counts add up per level."""
+    body = client.get("/api/report/suites").json()
+    overview = client.get("/api/report/overview").json()
+
+    assert body["total"] == overview["total"] == 221
+    assert [g["name"] for g in body["groups"]] == [s["name"] for s in overview["suites"]]
+    for group in body["groups"]:
+        leaves = [t for j in group["jobs"] for c in j["classes"] for t in c["tests"]]
+        assert len(leaves) == sum(group["counts"].values())
+        for job in group["jobs"]:
+            assert sum(sum(c["counts"].values()) for c in job["classes"]) == sum(job["counts"].values())
+    pytest_jobs = [j["name"] for j in body["groups"][1]["jobs"]]
+    assert pytest_jobs == ["pytest/ci/-/linux", "pytest/ci/chromium/linux"]
 
 
 def test_the_report_page_is_served_beside_the_classic_one(client: TestClient) -> None:

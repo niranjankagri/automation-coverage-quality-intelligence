@@ -51,6 +51,7 @@ from qualityintel.workspace import (
     ReadinessView,
     RegressionsView,
     ReportOverview,
+    ReportSuites,
     RepositoryTrendsView,
     RequirementDetail,
     RequirementMatrix,
@@ -394,6 +395,11 @@ def create_app(
     def report_overview(chosen: RunScope) -> ReportOverview:
         """The latest snapshot as the report overview: totals, suites, failure causes, trend."""
         return current().report_overview(chosen)
+
+    @app.get("/api/report/suites", tags=["report"])
+    def report_suites(chosen: RunScope) -> ReportSuites:
+        """The latest snapshot as a tree: repository (or framework) > job > class > test."""
+        return current().report_suites(chosen)
 
     @app.get("/api/health", tags=["meta"])
     def health() -> dict[str, object]:
