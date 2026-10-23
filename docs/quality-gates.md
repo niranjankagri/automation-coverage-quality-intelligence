@@ -88,6 +88,26 @@ The CI job `quality-gate` runs all four on every push and asserts each exit code
 made a broken input pass, or a real gap disappear, would fail the build. Its reports are kept as the
 `quality-gate-reports` artifact and summarised on the run page.
 
+## Gate history
+
+`qualityintel/gates/history.py`, the **Trends** page ("Release gate over time") and
+`GET /api/gate-history` (M13): the dashboard's release gate evaluated on **each day's snapshot**
+of the last 30 days with runs.
+
+- A day's snapshot is the Trends page's: the latest run of every suite started on or before that
+  day (UTC). Undated runs are left out. The gate is applied exactly as `qi gate` applies it; the
+  readiness warnings (flaky candidates, collections, freshness) are not part of the gate.
+- A **change** is a day whose verdict differs from the previous day's, **or** whose set of failing
+  rules differs: a gate can stay failed while its reason changes. Each change names the rules
+  that started and stopped failing and links that day's runs; each day links its newest run.
+- The **catalog is today's**: a requirement added later counts as a gap on earlier days too. The
+  history answers "what would today's gate have said each day", not what an older gate said.
+
+On the sample data the release gate fails on all 13 days because of the two critical gaps; on
+17 Oct the snapshot reaches 221 results (the gate needs 200) and every automated case has results,
+so *executed tests* and *automated test cases without results* stop failing. The nightly gate
+passes on every day.
+
 ## Using it in another pipeline
 
 GitHub Actions, after the test step (which may itself fail):

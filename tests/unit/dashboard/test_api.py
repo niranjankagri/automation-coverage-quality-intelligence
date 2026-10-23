@@ -180,6 +180,7 @@ def test_openapi_documentation_lists_every_route(client: TestClient) -> None:
         "/api/regressions",
         "/api/stability",
         "/api/trends",
+        "/api/gate-history",
     }
 
 
@@ -374,6 +375,36 @@ def test_the_release_scorecard_names_the_blocking_rule_and_the_flaky_warning() -
     blocking = rows["critical requirements without automation"]
     assert (blocking["measured"], blocking["effect"], blocking["route"]) == ("2", "blocks", "/attention")
     assert rows["flaky candidates"]["effect"] == "at risk"
+
+
+def test_gate_history_on_the_samples_finds_the_day_two_release_rules_stopped_failing() -> None:
+    """Release gate: failed on all 13 days; on 17 Oct two rules stopped failing.
+
+    The snapshot reached 221 results (the gate needs 200) and every automated case had results;
+    the critical gap stays.
+    """
+    from qualityintel.gates.config import load_gate_config
+
+    workspace, _ = Workspace.load(SAMPLES / "catalog.toml", [SAMPLES / "results"])
+    workspace.gate = load_gate_config(SAMPLES / "gates" / "release.toml")
+    body = TestClient(create_app(workspace)).get("/api/gate-history").json()
+
+    assert body["gate_name"] == "release gate"
+    assert len(body["days"]) == 13
+    assert {d["status"] for d in body["days"]} == {"failed"}
+    (change,) = body["changes"]
+    assert (change["day"], change["previous"], change["status"]) == ("2026-10-17", "failed", "failed")
+    assert change["stopped_failing"] == ["executed tests", "automated test cases without results"]
+    assert body["days"][-1]["failed_rules"] == ["critical requirements without automation"]
+    assert body["days"][-1]["results"] == 221
+
+
+def test_gate_history_without_a_gate_says_so(client: TestClient) -> None:
+    """No gate configured: no days, and a note instead of an empty chart."""
+    body = client.get("/api/gate-history").json()
+
+    assert (body["gate_name"], body["days"], body["changes"]) == (None, [], [])
+    assert "no release gate" in body["notes"][0]
 
 
 def test_readiness_follows_the_chosen_scope(client: TestClient) -> None:

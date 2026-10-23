@@ -1327,8 +1327,44 @@ function chartFigure(title, svg, series, labels, summary, format = (v) => v, dra
 
 const shortDay = (iso) => iso.slice(5);
 
+// The release gate on each day's snapshot and the days it changed (docs/quality-gates.md, Gate history)
+function gateHistory(g) {
+  const dayRuns = (day) => link("/runs", { since: day, until: day });
+  if (!g.gate_name) return [h("h2", {}, "Release gate over time"), h("p", { class: "empty" }, g.notes.join(" "))];
+  return [
+    h("h2", {}, `Release gate over time: "${g.gate_name}"`),
+    h("p", { class: "sub" }, g.notes.join(" ")),
+    h("h3", {}, `Days the verdict or its reasons changed (${g.changes.length})`),
+    table(
+      ["Day", "Verdict", "Started failing", "Stopped failing", "Evidence"],
+      g.changes.map((c) => h("tr", {},
+        h("td", { class: "nowrap" }, c.day),
+        h("td", { class: "nowrap" }, c.previous === c.status ? `${c.status} (reasons changed)` : `${c.previous} → ${c.status}`),
+        h("td", {}, c.started_failing.join(", ") || "–"),
+        h("td", {}, c.stopped_failing.join(", ") || "–"),
+        h("td", {}, h("a", { href: dayRuns(c.day) }, "runs of that day")),
+      )),
+      g.days.length ? "The verdict and its failing rules did not change on any listed day." : "No dated runs in this scope.",
+    ),
+    h("details", {},
+      h("summary", {}, `Verdict per day (${g.days.length} days)`),
+      table(
+        ["Day", "Verdict", "Failing rules", { label: "Results", num: true }, "Newest run"],
+        g.days.map((d) => h("tr", {},
+          h("td", { class: "nowrap" }, d.day),
+          h("td", {}, d.status),
+          h("td", {}, [d.failed_rules.join(", "), d.input_problems.length ? ` (cannot decide: ${d.input_problems.join("; ")})` : ""].join("") || "–"),
+          h("td", { class: "num" }, d.results),
+          h("td", {}, d.latest_run_id ? h("a", { href: drillLink(`/run/${d.latest_run_id}`) }, "newest run") : "–"),
+        )),
+        "",
+      ),
+    ),
+  ];
+}
+
 async function trendsView() {
-  const d = await api(`/api/trends${apiQuery(FILTERS)}`);
+  const [d, g] = await Promise.all([api(`/api/trends${apiQuery(FILTERS)}`), api(`/api/gate-history${apiQuery(FILTERS)}`)]);
   const days = d.daily.map((p) => p.day);
   const labels = days.map(shortDay);
   const outcomeSeries = [
@@ -1363,6 +1399,7 @@ async function trendsView() {
         : null,
     );
   }
+  content.push(...gateHistory(g));
   content.push(h("h2", {}, "Runs per context"));
   const contexts = Object.entries(d.runs);
   content.push(

@@ -27,6 +27,7 @@ from qualityintel.attention import (
     recurring_state,
 )
 from qualityintel.gates.config import GateConfig
+from qualityintel.gates.history import gate_history
 from qualityintel.history.analysis import (
     DEFAULTS,
     HistorySettings,
@@ -581,6 +582,36 @@ class TrendsView(View):
     daily: tuple[DailyView, ...]
     runs: dict[str, tuple[RunTrendView, ...]]
     coverage: tuple[CoverageView, ...]
+    notes: tuple[str, ...]
+
+
+class GateDayView(View):
+    """The release gate's verdict on one day's snapshot."""
+
+    day: date
+    status: str
+    failed_rules: tuple[str, ...]
+    input_problems: tuple[str, ...]
+    results: int
+    latest_run_id: str | None
+
+
+class GateChangeView(View):
+    """A day on which the gate's verdict or its failing rules changed."""
+
+    day: date
+    previous: str
+    status: str
+    started_failing: tuple[str, ...]
+    stopped_failing: tuple[str, ...]
+
+
+class GateHistoryView(View):
+    """The release gate over time (docs/quality-gates.md, "Gate history")."""
+
+    gate_name: str | None
+    days: tuple[GateDayView, ...]
+    changes: tuple[GateChangeView, ...]
     notes: tuple[str, ...]
 
 
@@ -1301,6 +1332,50 @@ class Workspace:
             },
             window=settings.window,
         )
+
+    def gate_history(self, scope: Scope = EVERYTHING) -> GateHistoryView:
+        """The release gate on each day's snapshot of the last 30 days with runs, and its changes."""
+
+        def compute() -> GateHistoryView:
+            if self.gate is None:
+                return GateHistoryView(
+                    gate_name=None,
+                    days=(),
+                    changes=(),
+                    notes=("no release gate is configured, so there is no gate history",),
+                )
+            days, changes = gate_history(self._runs(scope), self.catalog, self.gate, scope.filters)
+            return GateHistoryView(
+                gate_name=self.gate.name,
+                days=tuple(
+                    GateDayView(
+                        day=d.day,
+                        status=d.status.value,
+                        failed_rules=d.failed_rules,
+                        input_problems=d.input_problems,
+                        results=d.results,
+                        latest_run_id=d.latest_run_id,
+                    )
+                    for d in days
+                ),
+                changes=tuple(
+                    GateChangeView(
+                        day=c.day,
+                        previous=c.previous.value,
+                        status=c.status.value,
+                        started_failing=c.started_failing,
+                        stopped_failing=c.stopped_failing,
+                    )
+                    for c in changes
+                ),
+                notes=(
+                    "Each day is the end-of-day snapshot of the Trends page, judged by the gate alone "
+                    "(the readiness warnings are not part of the gate).",
+                    "The catalog is today's: a requirement added later counts as a gap on earlier days too.",
+                ),
+            )
+
+        return self._cached(("gate-history", scope), compute)
 
     def trends(self, scope: Scope = EVERYTHING) -> TrendsView:
         """Cached per snapshot: see :meth:`_compute_trends`."""

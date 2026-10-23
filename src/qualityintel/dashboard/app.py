@@ -40,6 +40,7 @@ from qualityintel.workspace import (
     BuildComparisonView,
     CollectionHealthView,
     Facets,
+    GateHistoryView,
     PipelinesView,
     ReadinessView,
     RegressionsView,
@@ -584,6 +585,11 @@ def create_app(
     def trends(chosen: FullScope) -> TrendsView:
         """Daily execution snapshots, per-context run series and recorded coverage snapshots."""
         return current().trends(chosen)
+
+    @app.get("/api/gate-history", tags=["history"])
+    def gate_history(chosen: FullScope) -> GateHistoryView:
+        """The release gate on each day's snapshot (last 30 days with runs) and the days it changed."""
+        return current().gate_history(chosen)
 
     @app.get("/api/runs", tags=["executions"])
     def runs(chosen: RunScope) -> tuple[RunView, ...]:
