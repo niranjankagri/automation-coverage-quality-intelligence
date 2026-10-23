@@ -1375,15 +1375,15 @@ function executionDistribution(d) {
   let offset = 0;
   const circles = OUTCOMES.map((outcome) => {
     const percent = d.percentages[outcome] ?? 0;
-    const circle = s("circle", { class: `execution-slice ${outcome}`, cx: 60, cy: 60, r: 45, pathLength: 100, "stroke-dasharray": `${percent} ${100 - percent}`, "stroke-dashoffset": -offset });
+    const circle = s("circle", { class: `execution-slice execution-slice-${outcome}`, cx: 60, cy: 60, r: 45, pathLength: 100, "stroke-dasharray": `${percent} ${100 - percent}`, "stroke-dashoffset": -offset });
     circle.append(s("title", {}, `${outcome}: ${d.counts[outcome]} (${formatPercent(d.percentages[outcome])})`));
     circle.addEventListener("click", () => select(outcome));
     offset += percent;
     return circle;
   });
   const legend = h("div", { class: "donut-legend", role: "group", "aria-label": "Explore result status" }, OUTCOMES.map((outcome) => {
-    const button = h("button", { type: "button", class: `legend-choice ${outcome}`, "aria-pressed": "false" },
-      h("span", { class: `status-dot ${outcome}`, "aria-hidden": "true" }), h("span", {}, outcome), h("strong", {}, d.counts[outcome].toLocaleString()), h("span", { class: "sub" }, formatPercent(d.percentages[outcome])));
+    const button = h("button", { type: "button", class: "legend-choice", "aria-pressed": "false" },
+      h("span", { class: `status-dot status-dot-${outcome}`, "aria-hidden": "true" }), h("span", {}, outcome), h("strong", {}, d.counts[outcome].toLocaleString()), h("span", { class: "sub" }, formatPercent(d.percentages[outcome])));
     controls.push([outcome, button]);
     button.addEventListener("click", () => select(outcome));
     return button;

@@ -115,7 +115,9 @@ h2 { font-size: 17px; margin: 28px 0 10px; }
 .lead { color: var(--muted); margin: 0 0 16px; }
 .status { color: var(--muted); margin: 0 0 12px; }
 .status:empty { display: none; }
-.error {
+/* The error message box only: "error" is also an outcome class (badges, dots, chart parts), and
+   a bare .error gave those the box's padding, border and background */
+.error[role="alert"] {
   padding: 12px 16px; border-radius: var(--radius); background: var(--bad-bg); color: var(--bad);
   border: 1px solid var(--bad);
 }
@@ -426,10 +428,12 @@ dialog::backdrop { background: rgb(10 15 25 / 58%); }
 .execution-donut { display: block; width: min(100%, 210px); margin: 16px auto; transform: rotate(-90deg); }
 .execution-ring, .execution-slice { fill: none; stroke-width: 18; }
 .execution-ring { stroke: var(--neutral-bg); }
-.execution-slice.passed { stroke: var(--good); }
-.execution-slice.failed { stroke: var(--bad); }
-.execution-slice.error { stroke: var(--warn); }
-.execution-slice.skipped { stroke: var(--muted); }
+/* Outcome modifiers carry their own prefix: a bare "error" class also gets the page-wide .error
+   message box (padding, border, background) */
+.execution-slice-passed { stroke: var(--good); }
+.execution-slice-failed { stroke: var(--bad); }
+.execution-slice-error { stroke: var(--warn); }
+.execution-slice-skipped { stroke: var(--muted); }
 .execution-panel .sub, .execution-panel .key { overflow-wrap: anywhere; }
 @media (max-width: 1000px) { .execution-grid, .execution-equal { grid-template-columns: minmax(0, 1fr); } }
 
@@ -532,9 +536,9 @@ button:focus-visible, summary:focus-visible, a:focus-visible { outline: 3px soli
 .legend-choice[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
 .legend-choice .sub { grid-column: 2 / -1; margin: 0; font-size: 11px; }
 .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
-.status-dot.passed { background: var(--good); }
-.status-dot.failed { background: var(--bad); }
-.status-dot.error { background: var(--warn); }
+.status-dot-passed { background: var(--good); }
+.status-dot-failed { background: var(--bad); }
+.status-dot-error { background: var(--warn); }
 .donut-selection { color: var(--accent); font-size: 12px; min-height: 36px; }
 .status-panel > .sub { font-size: 11px; }
 .ranking-options { margin: 28px 0 12px; }
