@@ -480,12 +480,38 @@ function readinessPanel(r) {
   );
 }
 
+// Coverage gaps in priority order, one group per owner (docs/traceability.md, Prioritised gaps)
+function prioritisedGaps(g) {
+  return [
+    h("h2", {}, `Coverage gaps by owner (${g.total})`),
+    h("p", { class: "sub" }, `Order: ${g.order}.`),
+    g.owners.length
+      ? g.owners.map((o, i) => h("details", { class: "gap-owner", open: i === 0 ? "" : null },
+          h("summary", {}, `${o.owner}: ${o.gaps.length} gap(s), most urgent #${o.gaps[0].rank}`),
+          table(
+            [{ label: "Rank", num: true }, "Requirement", "Criticality", "Risk", "Gap", "Linked test cases"],
+            o.gaps.map((x) => h("tr", {},
+              h("td", { class: "num" }, x.rank),
+              h("td", {}, h("a", { class: "key", href: drillLink(`/requirement/${encodeURIComponent(x.requirement_id)}`) }, x.requirement_id), h("span", { class: "sub" }, x.title)),
+              h("td", {}, x.criticality ?? "unspecified"),
+              h("td", {}, x.risk ?? "unspecified"),
+              h("td", {}, x.kind),
+              h("td", {}, x.case_statuses.join(", ") || "none"),
+            )),
+            "",
+          ),
+        ))
+      : h("p", { class: "empty" }, "Every requirement in scope has an automated test case."),
+  ];
+}
+
 async function overview() {
-  const [s, r, collection, builds] = await Promise.all([
+  const [s, r, collection, builds, gaps] = await Promise.all([
     api(`/api/summary${apiQuery(FILTERS)}`),
     api(`/api/readiness${apiQuery(FILTERS)}`),
     api("/api/collection"),
     api(`/api/builds${apiQuery(RUN_FILTERS)}`),
+    api(`/api/gaps${apiQuery(FILTERS)}`),
   ]);
   const comparison = builds.length > 1
     ? await api(`/api/compare${apiQuery(RUN_FILTERS, { base: builds[builds.length - 2], head: builds[builds.length - 1] })}`)
@@ -578,6 +604,7 @@ async function overview() {
           ],
     h("h2", {}, `Critical requirements without automation (${s.uncovered_critical.length})`),
     idChips(s.uncovered_critical.map((r) => r.id), "critical"),
+    ...prioritisedGaps(gaps),
     h("h2", {}, `Failing requirements (${s.failing_requirements.length})`),
     idChips(s.failing_requirements.map((r) => r.id), "failing"),
     h("h2", {}, "Other gaps"),

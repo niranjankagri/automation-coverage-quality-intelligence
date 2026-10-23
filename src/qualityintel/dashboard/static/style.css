@@ -262,6 +262,9 @@ details.columns > div { display: flex; flex-wrap: wrap; gap: 6px 12px; padding: 
 @media (max-width: 640px) { .active-filters { margin-left: 16px; margin-right: 16px; } }
 details.matrix { margin: 0 0 16px; }
 details.matrix > summary { cursor: pointer; font-weight: 600; }
+/* Owner groups of the prioritised gaps: stacked toggles, each a full 24 px touch target (WCAG 2.5.8) */
+details.gap-owner { margin: 0 0 8px; }
+details.gap-owner > summary { cursor: pointer; font-weight: 600; min-height: 24px; padding: 4px 0; }
 .badge.stale { background: var(--warn-bg); color: var(--warn); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 a.bar-link:focus-visible rect, a.bar-link:hover rect { stroke: var(--text); stroke-width: 2; }

@@ -58,6 +58,7 @@ from qualityintel.models.results import PipelineJob, RunContext, TestResult, Tes
 from qualityintel.readiness import readiness
 from qualityintel.search import build_index, search
 from qualityintel.traceability.coverage import UNSPECIFIED, Filters
+from qualityintel.traceability.gaps import prioritised_gaps
 from qualityintel.traceability.matching import match_results
 from qualityintel.traceability.pipelines import PipelineExecution, pipeline_execution, pipeline_ids
 from qualityintel.traceability.report import RunFilters, TraceabilityReport, build_report
@@ -613,6 +614,33 @@ class GateHistoryView(View):
     days: tuple[GateDayView, ...]
     changes: tuple[GateChangeView, ...]
     notes: tuple[str, ...]
+
+
+class GapView(View):
+    """A requirement without automated coverage, ranked (docs/traceability.md, Prioritised gaps)."""
+
+    rank: int
+    requirement_id: str
+    title: str
+    criticality: str | None
+    risk: str | None
+    kind: str
+    case_statuses: tuple[str, ...]
+
+
+class OwnerGapsView(View):
+    """One owner's gaps, most urgent first."""
+
+    owner: str
+    gaps: tuple[GapView, ...]
+
+
+class GapsView(View):
+    """Coverage gaps of the scope in priority order, grouped by owner."""
+
+    total: int
+    owners: tuple[OwnerGapsView, ...]
+    order: str
 
 
 class Facets(View):
@@ -1331,6 +1359,36 @@ class Workspace:
                 for context, points in trend(runs).items()
             },
             window=settings.window,
+        )
+
+    def gaps(self, scope: Scope = EVERYTHING) -> GapsView:
+        """Requirements without automated coverage, by criticality, risk and gap type, per owner."""
+        groups = prioritised_gaps(self._report(scope).coverage)
+        return GapsView(
+            total=sum(len(group.gaps) for group in groups),
+            owners=tuple(
+                OwnerGapsView(
+                    owner=group.owner,
+                    gaps=tuple(
+                        GapView(
+                            rank=g.rank,
+                            requirement_id=g.requirement_id,
+                            title=g.title,
+                            criticality=g.criticality,
+                            risk=g.risk,
+                            kind=g.kind,
+                            case_statuses=g.case_statuses,
+                        )
+                        for g in group.gaps
+                    ),
+                )
+                for group in groups
+            ),
+            order=(
+                "criticality (critical, high, medium, low, unspecified), then risk (high, medium, low, "
+                "unspecified), then no tests before not automated, then requirement id; owners by their "
+                "most urgent gap"
+            ),
         )
 
     def gate_history(self, scope: Scope = EVERYTHING) -> GateHistoryView:

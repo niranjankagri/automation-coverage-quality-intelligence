@@ -40,6 +40,7 @@ from qualityintel.workspace import (
     BuildComparisonView,
     CollectionHealthView,
     Facets,
+    GapsView,
     GateHistoryView,
     PipelinesView,
     ReadinessView,
@@ -425,6 +426,11 @@ def create_app(
     def summary(chosen: FullScope) -> Summary:
         """Coverage metrics, gaps and the execution snapshot."""
         return current().summary(chosen)
+
+    @app.get("/api/gaps", tags=["coverage"])
+    def gaps(chosen: FullScope) -> GapsView:
+        """Requirements without automated coverage in priority order, grouped by owner."""
+        return current().gaps(chosen)
 
     @app.get("/api/readiness", tags=["coverage"])
     def readiness(chosen: FullScope) -> ReadinessView:

@@ -181,6 +181,7 @@ def test_openapi_documentation_lists_every_route(client: TestClient) -> None:
         "/api/stability",
         "/api/trends",
         "/api/gate-history",
+        "/api/gaps",
     }
 
 
@@ -405,6 +406,33 @@ def test_gate_history_without_a_gate_says_so(client: TestClient) -> None:
 
     assert (body["gate_name"], body["days"], body["changes"]) == (None, [], [])
     assert "no release gate" in body["notes"][0]
+
+
+def test_gaps_on_the_samples_put_the_two_release_blockers_first(client: TestClient) -> None:
+    """10 gaps (4 without tests + 6 not automated); the critical ones rank 1 and 2, per owner."""
+    body = client.get("/api/gaps").json()
+    summary = client.get("/api/summary").json()
+
+    assert (
+        body["total"]
+        == 10
+        == len(summary["requirements_without_tests"]) + len(summary["requirements_without_automation"])
+    )
+    first = {
+        g["rank"]: (owner["owner"], g["requirement_id"], g["kind"])
+        for owner in body["owners"]
+        for g in owner["gaps"]
+    }
+    assert first[1] == ("Admin team", "ADMIN-012", "no tests")
+    assert first[2] == ("Toolshop team", "SHOP-008", "not automated")
+    assert [o["owner"] for o in body["owners"]] == [
+        "Admin team",
+        "Toolshop team",
+        "Notes API team",
+        "Storefront team",
+    ]
+    filtered = client.get("/api/gaps", params={"owner": "Storefront team"}).json()
+    assert [g["requirement_id"] for o in filtered["owners"] for g in o["gaps"]] == ["SAUCE-008"]
 
 
 def test_readiness_follows_the_chosen_scope(client: TestClient) -> None:

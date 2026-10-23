@@ -967,6 +967,94 @@
         "title": "FindingView",
         "type": "object"
       },
+      "GapView": {
+        "description": "A requirement without automated coverage, ranked (docs/traceability.md, Prioritised gaps).",
+        "properties": {
+          "case_statuses": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Case Statuses",
+            "type": "array"
+          },
+          "criticality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Criticality"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          },
+          "requirement_id": {
+            "title": "Requirement Id",
+            "type": "string"
+          },
+          "risk": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rank",
+          "requirement_id",
+          "title",
+          "criticality",
+          "risk",
+          "kind",
+          "case_statuses"
+        ],
+        "title": "GapView",
+        "type": "object"
+      },
+      "GapsView": {
+        "description": "Coverage gaps of the scope in priority order, grouped by owner.",
+        "properties": {
+          "order": {
+            "title": "Order",
+            "type": "string"
+          },
+          "owners": {
+            "items": {
+              "$ref": "#/components/schemas/OwnerGapsView"
+            },
+            "title": "Owners",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "owners",
+          "order"
+        ],
+        "title": "GapsView",
+        "type": "object"
+      },
       "GateChangeView": {
         "description": "A day on which the gate's verdict or its failing rules changed.",
         "properties": {
@@ -1227,6 +1315,28 @@
         ],
         "title": "Outcome",
         "type": "string"
+      },
+      "OwnerGapsView": {
+        "description": "One owner's gaps, most urgent first.",
+        "properties": {
+          "gaps": {
+            "items": {
+              "$ref": "#/components/schemas/GapView"
+            },
+            "title": "Gaps",
+            "type": "array"
+          },
+          "owner": {
+            "title": "Owner",
+            "type": "string"
+          }
+        },
+        "required": [
+          "owner",
+          "gaps"
+        ],
+        "title": "OwnerGapsView",
+        "type": "object"
       },
       "PipelineJob": {
         "additionalProperties": false,
@@ -4227,6 +4337,283 @@
         "summary": "Facets",
         "tags": [
           "meta"
+        ]
+      }
+    },
+    "/api/gaps": {
+      "get": {
+        "description": "Requirements without automated coverage in priority order, grouped by owner.",
+        "operationId": "gaps_api_gaps_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "feature",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Feature"
+            }
+          },
+          {
+            "in": "query",
+            "name": "owner",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Owner"
+            }
+          },
+          {
+            "in": "query",
+            "name": "criticality",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Criticality"
+            }
+          },
+          {
+            "in": "query",
+            "name": "platform",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Platform"
+            }
+          },
+          {
+            "in": "query",
+            "name": "test_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Test Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "framework",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Framework"
+            }
+          },
+          {
+            "in": "query",
+            "name": "environment",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment"
+            }
+          },
+          {
+            "in": "query",
+            "name": "browser",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Browser"
+            }
+          },
+          {
+            "in": "query",
+            "name": "build",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Build"
+            }
+          },
+          {
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "in": "query",
+            "name": "until",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Until"
+            }
+          },
+          {
+            "in": "query",
+            "name": "repository",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repository"
+            }
+          },
+          {
+            "in": "query",
+            "name": "job",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GapsView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Gaps",
+        "tags": [
+          "coverage"
         ]
       }
     },
