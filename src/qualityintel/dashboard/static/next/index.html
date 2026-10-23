@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quality Intelligence report</title>
+  <meta name="description" content="Test results of Niranjan Kumar Agri's automation projects, as a report: overview, failure causes, suites, graphs and requirements.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2308665e'/%3E%3Ctext x='32' y='42' font-family='Segoe UI,Arial' font-size='28' font-weight='700' fill='white' text-anchor='middle'%3ENA%3C/text%3E%3C/svg%3E">
+  <!-- Theme before the first paint (same key as the portfolio: na-theme), then the page -->
+  <script src="/static/next/js/theme.js"></script>
+  <link rel="stylesheet" href="/static/next/report.css">
+  <script type="module" src="/static/next/js/main.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="topbar">
+    <a class="brand" href="https://niranjankagri.github.io/" aria-label="Niranjan Kumar Agri, portfolio">
+      <span class="brand-mark" aria-hidden="true">NA</span>
+      <span class="brand-text">Niranjan Kumar Agri<span class="brand-sub">Quality Intelligence report</span></span>
+    </a>
+    <div class="topbar-tools">
+      <label class="repo-switch">
+        <span class="visually-hidden">Repository</span>
+        <select id="repository" aria-label="Repository"><option value="">All repositories</option></select>
+      </label>
+      <a class="pill-link" href="https://niranjankagri.github.io/projects.html">Portfolio <span aria-hidden="true">↗</span></a>
+      <button type="button" class="round" id="theme" aria-label="Use dark theme" title="Switch theme">◐</button>
+    </div>
+  </header>
+  <div class="layout">
+    <nav class="sidebar" aria-label="Report sections">
+      <a href="#/overview" data-section="overview"><span class="nav-icon" aria-hidden="true">◎</span>Overview</a>
+      <a href="#/categories" data-section="categories"><span class="nav-icon" aria-hidden="true">⚑</span>Categories</a>
+      <a href="#/suites" data-section="suites"><span class="nav-icon" aria-hidden="true">☰</span>Suites</a>
+      <a href="#/graphs" data-section="graphs"><span class="nav-icon" aria-hidden="true">▤</span>Graphs</a>
+      <a href="#/behaviors" data-section="behaviors"><span class="nav-icon" aria-hidden="true">◇</span>Behaviors</a>
+      <span class="sidebar-rule" role="presentation"></span>
+      <a href="/" class="sidebar-quiet"><span class="nav-icon" aria-hidden="true">↺</span>Classic dashboard</a>
+    </nav>
+    <main id="main" tabindex="-1">
+      <p class="loading" role="status">Loading the report…</p>
+    </main>
+  </div>
+  <footer class="footer" id="footer"></footer>
+</body>
+</html>
