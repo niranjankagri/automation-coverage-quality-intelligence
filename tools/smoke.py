@@ -27,6 +27,8 @@ HINTS = {
     "data not stale": "the dashboard cannot reload its data: see last_error in /api/status, then the log",
     "collection recent": "no collection published lately: open the Collect CI results workflow (failed?)",
     "no repeated incomplete collections": "pipelines are being recorded incomplete: open the Collection page",
+    "report UI answers": "the report page /next/ is missing: was static/next/ deployed? (docs/report-ui.md)",
+    "report overview reconciles": "report and /api/summary disagree: compare both, then report_overview()",
 }
 
 TIMEOUT = 30
@@ -128,7 +130,39 @@ def checks(base: str, collected: bool, max_age_hours: float | None = None) -> li
     results.append(
         ("guided navigation available", status == 200 and bool(options), f"{len(options)} recorded contexts")
     )
-    for path in ("/", "/static/app.js", "/static/style.css"):
+    # The new report UI (docs/report-ui.md), served beside the classic page
+    status, headers, body = get(f"{base}/next/")
+    results.append(
+        (
+            "report UI answers",
+            status == 200
+            and b"Quality Intelligence report" in body
+            and "script-src 'self'" in headers.get("content-security-policy", ""),
+            str(status),
+        )
+    )
+    status, _, body = get(f"{base}/api/report/overview")
+    report = json.loads(body) if status == 200 else {}
+    status, _, body = get(f"{base}/api/summary")
+    summary = json.loads(body) if status == 200 else {}
+    report_counts = report.get("counts", {})
+    results.append(
+        (
+            "report overview reconciles",
+            report.get("total", 0) > 0
+            and sum(report_counts.values()) == report.get("total")
+            and report_counts == summary.get("outcome_counts"),
+            f"{report.get('total')} results, {len(report.get('suites', []))} suites",
+        )
+    )
+    for path in (
+        "/",
+        "/static/app.js",
+        "/static/style.css",
+        "/next/",
+        "/static/next/js/main.js",
+        "/static/next/report.css",
+    ):
         status, headers, _ = get(f"{base}{path}")
         results.append(
             (
@@ -145,7 +179,7 @@ def checks(base: str, collected: bool, max_age_hours: float | None = None) -> li
         "/static/next/report.css": ("text/css",),
         **{
             f"/static/next/js/{name}.js": ("text/javascript", "application/javascript")
-            for name in ("theme", "main", "api", "dom", "overview")
+            for name in ("theme", "main", "api", "dom", "overview", "suites")
         },
     }
     for path, media_types in report_assets.items():
@@ -158,17 +192,6 @@ def checks(base: str, collected: bool, max_age_hours: float | None = None) -> li
                 f"HTTP {status}, {content_type}",
             )
         )
-    status, _, body = get(f"{base}/api/report/overview")
-    report = json.loads(body) if status == 200 else {}
-    results.append(
-        (
-            "report overview reconciles",
-            status == 200
-            and report.get("total", 0) > 0
-            and sum(report.get("counts", {}).values()) == report.get("total"),
-            f"{report.get('total')} latest results",
-        )
-    )
 
     if collected:
         results.append(
