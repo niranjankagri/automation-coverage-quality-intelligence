@@ -1,0 +1,55 @@
+# Smoke test of each new deployment (docs/deployment.md): the host deploys main once CI passes, so
+# after a successful CI run on main this waits until the live service reports that commit, then
+# checks it over HTTP (tools/smoke.py) and in a browser (tools/report_smoke.py). A failure is the
+# alert: GitHub e-mails the owner. The daily live.yml run keeps checking data freshness.
+name: Deployment smoke
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Smoke test of the new deployment
+    # Only pushes to main that passed CI (not pull requests), and only with a live address configured
+    if: >-
+      vars.QI_LIVE_URL != '' && (github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'))
+    runs-on: ubuntu-26.04
+    timeout-minutes: 35
+    steps:
+      # The repository's own code on main; nothing from the triggering run is downloaded or executed
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -e ".[e2e]"
+      # Usually about 30 s; time-boxed and retried like the CI browser installs
+      - name: Install Chromium
+        timeout-minutes: 16
+        run: |
+          for attempt in 1 2 3; do
+            timeout 300 playwright install --with-deps chromium && exit 0
+            echo "::warning::playwright install attempt $attempt failed or timed out"
+          done
+          exit 1
+      # The free host may be asleep and the deploy takes a few minutes: up to 20 minutes for the
+      # service to report the new commit, then the same checks a visitor and an operator rely on
+      - name: Wait for the deployment, then smoke test it
+        env:
+          LIVE_URL: ${{ vars.QI_LIVE_URL }}
+          EXPECTED: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: python tools/smoke.py "$LIVE_URL" --wait 1200 --expect-commit "$EXPECTED" --collected
+      - name: Report in a browser
+        env:
+          LIVE_URL: ${{ vars.QI_LIVE_URL }}
+        run: python tools/report_smoke.py "$LIVE_URL"

@@ -19,6 +19,8 @@ producer repositories ──(CI artifacts)──> collect.yml, daily 07:40 UTC
             Render web service (Docker, free) ──> https://<service>.onrender.com
                                               ▲
                      live.yml, daily 08:30 UTC: tools/smoke.py against the live address
+                     deploy-smoke.yml, after CI passes on main: waits for the new commit, then
+                     tools/smoke.py and tools/report_smoke.py (browser) against the live address
 ```
 
 - **Data persistence.** The free service has no disk that survives a restart. The history's

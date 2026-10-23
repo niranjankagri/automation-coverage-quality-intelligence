@@ -18,6 +18,7 @@ import json
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import UTC, datetime
 from typing import Any
@@ -184,11 +185,14 @@ def checks(base: str, collected: bool, max_age_hours: float | None = None) -> li
                 "main",
                 "api",
                 "dom",
+                "filters",
                 "overview",
-                "suites",
-                "categories",
-                "graphs",
-                "behaviors",
+                "results",
+                "test",
+                "failures",
+                "trends",
+                "coverage",
+                "requirement",
             )
         },
     }
@@ -202,6 +206,8 @@ def checks(base: str, collected: bool, max_age_hours: float | None = None) -> li
                 f"HTTP {status}, {content_type}",
             )
         )
+
+    results.extend(report_drilldowns(base))
 
     if collected:
         results.append(
@@ -238,6 +244,86 @@ def checks(base: str, collected: bool, max_age_hours: float | None = None) -> li
     return results
 
 
+def report_drilldowns(base: str) -> list[tuple[str, bool, str]]:
+    """What the report's links rely on: a repository filter, a test's own execution, a requirement."""
+    found: list[tuple[str, bool, str]] = []
+    status, _, body = get(f"{base}/api/report/options")
+    options = json.loads(body) if status == 200 else []
+    repositories = sorted({o["repository"] for o in options if o.get("repository")})
+    found.append(("report filter choices", status == 200 and bool(options), f"{len(options)} combinations"))
+    if repositories:
+        chosen = repositories[0]
+        status, _, body = get(f"{base}/api/report/overview?{urllib.parse.urlencode({'repository': chosen})}")
+        scoped = json.loads(body) if status == 200 else {}
+        found.append(
+            (
+                "repository selection narrows the report",
+                status == 200 and [s["name"] for s in scoped.get("suites", [])] == [chosen],
+                f"{chosen}: {scoped.get('total')} results",
+            )
+        )
+        status, _, body = get(f"{base}/api/report/suites?{urllib.parse.urlencode({'repository': chosen})}")
+        tree = json.loads(body) if status == 200 else {}
+        leaf = next(
+            (
+                (job, test)
+                for group in tree.get("groups", [])
+                for job in group["jobs"]
+                for cls in job["classes"]
+                for test in cls["tests"]
+            ),
+            None,
+        )
+        if leaf is not None:
+            job, test = leaf
+            context = {"key": test["key"], "repository": chosen, "job": job["name"]}
+            for name in ("browser", "environment"):
+                if job.get(name):
+                    context[name] = job[name]
+            status, _, body = get(f"{base}/api/tests/history?{urllib.parse.urlencode(context)}")
+            history = json.loads(body) if status == 200 else {}
+            runs = {e["run_id"] for e in history.get("executions", [])}
+            found.append(
+                (
+                    "test drill-down opens its own execution",
+                    status == 200 and test["run_id"] in runs,
+                    f"{job['name']} {job.get('browser') or ''}".strip(),
+                )
+            )
+    status, _, body = get(f"{base}/api/requirements")
+    requirements = json.loads(body) if status == 200 else []
+    if requirements:
+        first = requirements[0]["id"]
+        status, _, body = get(f"{base}/api/requirements/{urllib.parse.quote(first, safe='')}")
+        found.append(
+            (
+                "coverage drill-down opens a requirement",
+                status == 200 and json.loads(body)["requirement"]["id"] == first,
+                first,
+            )
+        )
+    return found
+
+
+def wait_for_commit(base: str, commit: str, seconds: float) -> str | None:
+    """Wait until /api/health reports ``commit`` (a deployment finished); return what it reports."""
+    deadline = time.monotonic() + seconds
+    reported: str | None = None
+    while True:
+        try:
+            status, _, body = get(f"{base}/api/health")
+            if status == 200:
+                value = json.loads(body).get("commit")
+                reported = value if isinstance(value, str) else None
+                if reported and (reported.startswith(commit) or commit.startswith(reported)):
+                    return reported
+        except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+            pass
+        if time.monotonic() >= deadline:
+            return reported
+        time.sleep(15)
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run the checks and print one line per check."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
@@ -247,9 +333,26 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--max-collection-age", type=float, metavar="HOURS", help="fail when the latest collection is older"
     )
+    parser.add_argument(
+        "--expect-commit",
+        metavar="SHA",
+        help="first wait (up to --wait seconds) until the service runs this commit: smoke the new deployment",
+    )
     args = parser.parse_args(argv)
     base = args.url.rstrip("/")
     wait_until_up(base, args.wait)
+    if args.expect_commit:
+        reported = wait_for_commit(base, args.expect_commit, args.wait)
+        if not reported or not (
+            reported.startswith(args.expect_commit) or args.expect_commit.startswith(reported)
+        ):
+            print(
+                f"FAIL  deployed commit  (expected {args.expect_commit[:7]}, "
+                f"the service runs {reported or 'unknown'})"
+            )
+            print("      what to do: the deployment did not finish in time: open the host's deploy log")
+            return 1
+        print(f"ok    deployed commit  ({reported})")
     try:
         results = checks(base, args.collected, args.max_collection_age)
     except (
