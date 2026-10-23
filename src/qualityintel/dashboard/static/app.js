@@ -6,7 +6,7 @@
 const FILTERS = ["repository", "feature", "owner", "criticality", "test_type", "framework", "environment", "browser", "build", "job", "since", "until"];
 const RUN_FILTERS = ["repository", "framework", "environment", "browser", "build", "job", "since", "until"];
 const FILTER_NAMES = { repository: "Repository", feature: "Feature", owner: "Owner", criticality: "Criticality", test_type: "Test type", framework: "Framework", environment: "Environment", browser: "Browser", build: "Build", job: "Job", since: "From", until: "To" };
-const VIEW_FILTER_NAMES = { status: "Status", coverage_status: "Coverage", execution_status: "Execution", observed: "Observed evidence", stale: "Stale evidence", outcome: "Latest outcome", state: "Finding state", kind: "Finding type" };
+const VIEW_FILTER_NAMES = { suite: "Suite", status: "Status", coverage_status: "Coverage", execution_status: "Execution", observed: "Observed evidence", stale: "Stale evidence", outcome: "Latest outcome", state: "Finding state", kind: "Finding type" };
 const OUTCOMES = ["passed", "failed", "error", "skipped"];
 const view = document.getElementById("view");
 const statusLine = document.getElementById("status");
@@ -753,7 +753,7 @@ const EXECUTION_HEADERS = ["Test", "Framework / browser", "Build", "Outcome", { 
 
 function backToResults(defaultLabel, defaultPath) {
   const from = route().params.get("from");
-  const safeFrom = from === "#/" || /^#\/(search|attention|requirements|requirement|tests|test|runs|run|pipelines|collection|compare|stability|trends)(\?|$)/.test(from ?? "");
+  const safeFrom = from === "#/" || /^#\/(search|attention|requirements|requirement|tests|test|runs|run|pipelines|collection|compare|stability|trends|executions)(\?|$)/.test(from ?? "");
   return h("p", { class: "detail-back" }, h("a", { href: safeFrom ? from : link(defaultPath) }, safeFrom ? "Back to filtered results" : `Back to ${defaultLabel}`));
 }
 
@@ -1285,10 +1285,10 @@ function frame(labels, max, unit) {
  * Stacked bars. With ``hrefs`` (one per label) every bar is a link, reachable with Tab, whose
  * accessible name lists that bar's numbers (e.g. to the runs of that day).
  */
-function stackedBars(labels, series, unit = "", hrefs = null) {
+function stackedBars(labels, series, unit = "", hrefs = null, axisLabels = labels) {
   const totals = labels.map((_, i) => series.reduce((sum, item) => sum + (item.values[i] ?? 0), 0));
   const max = Math.max(1, ...totals);
-  const f = frame(labels, max, unit);
+  const f = frame(axisLabels, max, unit);
   const barWidth = Math.max(4, Math.min(36, (f.w / labels.length) * 0.6));
   const bars = [];
   labels.forEach((label, i) => {
@@ -1409,6 +1409,83 @@ function repositoryTrends(t) {
       "No collected runs with a recorded repository in this scope.",
     ),
   ];
+}
+
+/** A status distribution with exact counts alongside an illustrative ring. */
+function executionDistribution(d) {
+  let offset = 0;
+  const circles = OUTCOMES.map((outcome) => {
+    const percent = d.percentages[outcome] ?? 0;
+    const circle = s("circle", { class: `execution-slice ${outcome}`, cx: 60, cy: 60, r: 45, pathLength: 100, "stroke-dasharray": `${percent} ${100 - percent}`, "stroke-dashoffset": -offset });
+    offset += percent;
+    return circle;
+  });
+  return h("section", { class: "execution-panel", "aria-labelledby": "execution-status-title" },
+    h("h2", { id: "execution-status-title" }, "Results by status"),
+    s("svg", { viewBox: "0 0 120 120", class: "execution-donut", "aria-hidden": "true" },
+      s("circle", { class: "execution-ring", cx: 60, cy: 60, r: 45 }), circles),
+    table(["Status", { label: "Executions", num: true }, { label: "Percentage", num: true }],
+      OUTCOMES.map((outcome) => h("tr", {}, h("th", { scope: "row" }, badge(outcome)), h("td", { class: "num" }, d.counts[outcome]), h("td", { class: "num" }, d.percentages[outcome] === null ? "n/a" : `${d.percentages[outcome].toFixed(1)} %`))),
+      "No recorded results.", { tools: false }),
+    h("p", { class: "sub" }, "Percentages use all recorded executions in scope, including skipped results. Coverage and release readiness remain separate."));
+}
+
+function executionTestLink(row) {
+  const extra = { key: row.key, repository: row.repository, job: row.job,
+    framework: row.context.framework, environment: row.context.environment, browser: row.context.browser };
+  return h("div", {}, h("a", { class: "key", href: drillLink("/test", extra) }, row.name),
+    h("span", { class: "sub" }, [row.repository || "Repository not recorded", row.suite || "Suite not recorded", row.job, row.context.framework, row.context.browser, row.context.environment, row.context.platform].filter(Boolean).join(" · ")));
+}
+
+function executionRanking(title, rows, kind) {
+  const duration = kind === "duration";
+  const headers = duration
+    ? ["Test / execution context", { label: "Average (s)", num: true }, { label: "Maximum (s)", num: true }, { label: "Timed / total", num: true }]
+    : ["Test / execution context", { label: kind === "failed" ? "Failures" : "Errors", num: true }, { label: "Executions", num: true }];
+  const body = rows.map((row) => h("tr", {}, h("td", {}, executionTestLink(row)),
+    duration ? [h("td", { class: "num" }, row.average_seconds.toFixed(3)), h("td", { class: "num" }, row.max_seconds.toFixed(3)), h("td", { class: "num" }, `${row.timed_executions} / ${row.executions}`)]
+      : [h("td", { class: "num" }, row[kind === "failed" ? "failed" : "errors"]), h("td", { class: "num" }, row.executions)]));
+  const data = table(headers, body, duration ? "No recorded durations in this scope." : "No matching results in this scope.",
+    { tools: true, searchLabel: `Search ${title.toLowerCase()}`, searchPlaceholder: "Test or context", name: `execution-${kind}` });
+  const scroll = data.querySelector(".table-wrap") ?? data;
+  scroll.setAttribute("tabindex", "0");
+  scroll.setAttribute("role", "region");
+  scroll.setAttribute("aria-label", `${title} data; scroll horizontally on narrow screens`);
+  return h("section", { class: "execution-panel execution-ranking" }, h("h2", {}, title),
+    h("p", { class: "sub execution-scroll-hint" }, "Scroll the table horizontally to compare values."), data);
+}
+
+async function executionsView() {
+  const params = route().params;
+  const suite = params.get("suite");
+  const limit = ["10", "25", "100"].includes(params.get("limit")) ? params.get("limit") : "10";
+  const d = await api(`/api/executions${apiQuery(RUN_FILTERS, { suite, limit })}`);
+  const suiteSelect = h("select", { id: "execution-suite" }, h("option", { value: "" }, "All suites"),
+    d.suites.filter(Boolean).map((value) => h("option", { value }, value)));
+  suiteSelect.value = suite ?? "";
+  suiteSelect.addEventListener("change", () => (location.hash = link("/executions", { suite: suiteSelect.value || null, limit: route().params.get("limit") })));
+  const limitSelect = h("select", { id: "execution-limit" }, ["10", "25", "100"].map((value) => h("option", { value }, `Top ${value}`)));
+  limitSelect.value = limit;
+  limitSelect.addEventListener("change", () => (location.hash = link("/executions", { suite: route().params.get("suite"), limit: limitSelect.value })));
+  const duration = d.recorded_duration_seconds === null ? "Not recorded" : `${d.recorded_duration_seconds.toFixed(3)} s`;
+  const cards = h("div", { class: "cards execution-cards" },
+    countCard("Recorded executions", d.executions, null, `${d.unique_tests} test identities · ${d.runs} imported runs`, "All result records in the selected history, not the latest snapshot. A test identity is repository plus result key; parameter rows and browser runs are executions."),
+    countCard("Recorded test duration", duration, null, `${d.timed_executions} of ${d.executions} executions have duration`, "Sum of recorded test durations. Missing durations are excluded; parallel tests overlap, so this is not elapsed CI time."),
+    OUTCOMES.map((outcome) => countCard(outcome[0].toUpperCase() + outcome.slice(1), d.counts[outcome], null,
+      d.percentages[outcome] === null ? "No executions" : `${d.percentages[outcome].toFixed(1)} % of recorded executions`)));
+  const series = OUTCOMES.map((outcome) => ({ name: outcome, cls: `s-${outcome}`, values: d.daily.map((day) => day.counts[outcome]) }));
+  const days = d.daily.map((day) => day.day);
+  return [h("h1", {}, "Test execution dashboard"),
+    h("p", { class: "lead" }, "Investigate recorded test executions across your repositories. Repository, framework, environment, browser, build, job and date filters apply; catalog-only filters do not change execution history."),
+    h("div", { class: "toolbar" }, h("label", { for: "execution-suite" }, "Suite", suiteSelect), h("label", { for: "execution-limit" }, "Ranking size", limitSelect)), cards,
+    h("p", { class: "sub" }, "Cancelled and in-progress are pipeline states, not imported test outcomes. ", h("a", { href: link("/pipelines") }, "Inspect pipeline status and missing reports"), "."),
+    d.executions === 0 ? h("p", { class: "empty", role: "status" }, "No recorded executions match these filters. Clear filters or collect test reports.") : null,
+    h("section", { class: "execution-panel" }, h("h2", {}, "Executions per recorded day"),
+      chartFigure("Daily execution results", stackedBars(days, series, "", days.map((day) => link("/runs", { since: day, until: day })), days.map(shortDay)), series, days,
+        `UTC run start dates; all imported executions, not daily snapshots. ${d.undated_executions} undated executions are excluded from this chart. Days without recorded runs are omitted; each bar opens that day's runs.`)),
+    h("div", { class: "execution-grid" }, executionDistribution(d), executionRanking(`Top ${limit} longest-running tests`, d.slowest, "duration")),
+    h("div", { class: "execution-grid execution-equal" }, executionRanking(`Top ${limit} test failures`, d.failures, "failed"), executionRanking(`Top ${limit} test errors`, d.errors, "error")),
+    h("p", { class: "sub" }, "Rankings keep repository, job, suite and browser/environment/platform contexts separate. Average and maximum use recorded durations only; test links open history in the selected repository/job/browser scope. These findings do not change release gates.")];
 }
 
 async function trendsView() {
@@ -1777,6 +1854,7 @@ const VIEWS = {
   compare: compareView,
   stability: stabilityView,
   trends: trendsView,
+  executions: executionsView,
 };
 
 // Each render gets a number; only the latest may write to the page. Without this, a slow

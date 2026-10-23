@@ -39,6 +39,7 @@ every page and API call needs HTTP basic authentication. Put TLS in front when o
 | Search | everything whose text contains every word of the query: repositories, workflows, pipelines (and GitHub run ids), tests, requirements, first lines of failure messages; grouped by kind with counts, query words marked; the header search opens it from any page; the repository and date filters apply | result -> its page (keeping the filters and the result's repository); pipeline -> its GitHub run |
 | Needs attention | existing findings grouped as Investigate now (open), Monitor (suspected or unknown), and Resolved; observed reason, evidence count, first and last seen, repository, affected entity, copy link ([attention.md](attention.md)) | finding -> its test, pipeline, requirement or collection page; GitHub run |
 | Requirements | id, title, feature, criticality, automated / linked test cases, coverage status, execution status; status filter | requirement -> its test cases and their latest executions |
+| Test dashboard | Historical recorded execution counts, status distribution, UTC daily chart, top 10/25/100 slowest tests (average/max), failures and errors; suite selector and shared run filters | ranking -> scoped test history; chart day -> imported runs |
 | Tests | every executed test with run, pass, fail, error, skip counts and last failure; search; latest-outcome filter | test -> investigation page: breadcrumbs (repository > workflow > pipeline > run > test), latest and previous result, context, repository and workflow, stability per context, source run with a link to the CI run, linked requirements and test cases, pass/fail pattern, duration chart with its numbers, latest failure and stack trace (shown as text, never as HTML, collapsed), two executions side by side (missing values say *not recorded*), every execution; copy the test identifier, the page link or a summary (text or Markdown) |
 | Compare | two builds side by side (runs, pass rate, counts and their differences, coverage snapshot, GitHub run attempts and incomplete pipelines of each build, a summary to copy) and the changes where both ran the same suite: newly failing, recovered, still failing, new, removed, slower, newly flaky; change-type chips; suites that ran in one build only listed separately ([history.md](history.md#comparing-builds)) | test -> its history |
 | Runs | every imported run with pipeline / job, context, counts and pass rate | run -> all results, failures first |
@@ -231,3 +232,31 @@ the script (caught by the console-error check).
 Charts are inline SVG drawn by the page itself (no chart library, nothing from a CDN, allowed by
 the strict CSP). Each chart has a text summary for screen readers and a "Show the numbers" table
 with exactly the values it draws; the browser tests compare that table with the API.
+
+
+## Test execution dashboard
+
+Open `#/executions`. This view counts **all imported result records in the selected history**,
+not just the latest coverage snapshot. Repository, framework, environment, browser, build, job
+and date filters apply. Suite and ranking-size selections are shareable in the URL. Catalog-only
+filters (feature, owner, criticality and test type) do not narrow raw execution history.
+
+- Passed, failed, error and skipped counts share the denominator of all recorded executions.
+  Empty scopes show no percentage. A test identity is repository plus result key, distinct from
+  data rows, repeat runs and browser executions. Retries are not invented as extra result records.
+- Recorded test duration is the sum of known durations, including recorded zeroes. Unknown
+  durations are excluded and the timed/total count is shown. It is **not elapsed CI time**:
+  parallel tests overlap. Average and maximum use the same timed subset.
+- Daily charts use the imported run's UTC start day. Undated executions remain in totals and are
+  disclosed separately; days without recorded runs are omitted, not assumed to have zero results.
+- Rankings keep repository, pipeline job, suite, framework, environment, browser and platform
+  separate. Build is excluded from grouping so a test's observations can span builds. Unknown
+  durations do not qualify for a slow-test ranking. At most 100 rows per ranking are returned.
+- Cancelled/in-progress are pipeline states. No cancelled or running test counts are inferred
+  from missing reports; the existing Pipelines view remains the evidence source.
+- Tables support search, sorting and export. Charts include their numeric tables and day links.
+  Light/dark modes and narrow-screen layouts reuse the dashboard's accessible components.
+
+API: `GET /api/executions`, with the shared run filters plus `suite` and `limit` (1–100,
+default 10). Values are calculated in Workspace and cached for each immutable data snapshot.
+The dashboard displays them without changing coverage calculations or release gates.

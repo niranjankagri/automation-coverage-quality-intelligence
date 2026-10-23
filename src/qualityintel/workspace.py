@@ -7,6 +7,7 @@ only turns these view models into JSON and HTML.
 
 from __future__ import annotations
 
+from collections import Counter, defaultdict
 from collections.abc import Callable, Hashable, Iterable, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import UTC, date, datetime, timedelta
@@ -318,6 +319,48 @@ class TestRow(View):
     latest_started_at: datetime | None
     last_failure: str
     test_cases: tuple[str, ...]
+
+
+class ExecutionDay(View):
+    """Recorded results grouped by the imported run's UTC start date."""
+
+    day: date
+    counts: dict[Outcome, int]
+
+
+class ExecutionRank(View):
+    """One test within a repository, job, suite and execution context."""
+
+    key: str
+    name: str
+    suite: str
+    repository: str | None
+    job: str | None
+    context: RunContext
+    executions: int
+    failed: int
+    errors: int
+    timed_executions: int
+    average_seconds: float | None
+    max_seconds: float | None
+
+
+class ExecutionDashboard(View):
+    """Historical execution counts; deliberately separate from snapshot coverage."""
+
+    executions: int
+    unique_tests: int
+    suites: tuple[str, ...]
+    runs: int
+    counts: dict[Outcome, int]
+    percentages: dict[Outcome, float | None]
+    recorded_duration_seconds: float | None
+    timed_executions: int
+    undated_executions: int
+    daily: tuple[ExecutionDay, ...]
+    slowest: tuple[ExecutionRank, ...]
+    failures: tuple[ExecutionRank, ...]
+    errors: tuple[ExecutionRank, ...]
 
 
 class TestHistory(View):
@@ -1039,6 +1082,106 @@ class Workspace:
         if outcome is not None:
             rows = [r for r in rows if r.latest_outcome is outcome]
         return tuple(rows)
+
+    def execution_dashboard(
+        self, scope: Scope = EVERYTHING, limit: int = 10, suite: str | None = None
+    ) -> ExecutionDashboard:
+        """All recorded executions in scope, grouped without merging unrelated contexts.
+
+        Counts include every imported report, not just the latest snapshot. A missing
+        duration stays unknown; zero is a valid duration. Dates use run start times in
+        UTC. Rankings keep repository/job/suite/framework/environment/browser/platform
+        separate and omit build so repeat executions can be compared across builds.
+        """
+        if not 1 <= limit <= 100:
+            raise ValueError("limit must be between 1 and 100")
+        return self._cached(
+            ("execution-dashboard", scope, limit, suite),
+            lambda: self._execution_dashboard(scope, limit, suite),
+        )
+
+    def _execution_dashboard(self, scope: Scope, limit: int, suite: str | None) -> ExecutionDashboard:
+        runs = self._runs(scope)
+        suites = tuple(sorted({result.suite for run in runs for result in run.results}))
+        matched_runs: set[str] = set()
+        counts: Counter[Outcome] = Counter()
+        days: dict[date, Counter[Outcome]] = defaultdict(Counter)
+        groups: dict[tuple[str, ...], list[TestResult]] = defaultdict(list)
+        contexts: dict[tuple[str, ...], tuple[RunContext, str | None, str | None]] = {}
+        undated = 0
+        durations: list[float] = []
+        for run in runs:
+            repository = run.pipeline.repository if run.pipeline else None
+            job = run.pipeline.job if run.pipeline else None
+            context = run.context.model_copy(update={"build": None})
+            for result in run.results:
+                if suite is not None and result.suite != suite:
+                    continue
+                matched_runs.add(run.run_id)
+                counts[result.outcome] += 1
+                if run.started_at is None:
+                    undated += 1
+                else:
+                    days[run.started_at.astimezone(UTC).date()][result.outcome] += 1
+                if result.duration_seconds is not None:
+                    durations.append(result.duration_seconds)
+                key = (
+                    repository or "",
+                    job or "",
+                    context.framework or "",
+                    context.environment or "",
+                    context.browser or "",
+                    context.platform or "",
+                    result.suite,
+                    result.key,
+                )
+                groups[key].append(result)
+                contexts[key] = context, repository, job
+        rows = []
+        for group_key, results in sorted(groups.items()):
+            timed = [r.duration_seconds for r in results if r.duration_seconds is not None]
+            context, repository, job = contexts[group_key]
+            rows.append(
+                ExecutionRank(
+                    key=results[-1].key,
+                    name=results[-1].name,
+                    suite=results[-1].suite,
+                    repository=repository,
+                    job=job,
+                    context=context,
+                    executions=len(results),
+                    failed=sum(r.outcome is Outcome.FAILED for r in results),
+                    errors=sum(r.outcome is Outcome.ERROR for r in results),
+                    timed_executions=len(timed),
+                    average_seconds=sum(timed) / len(timed) if timed else None,
+                    max_seconds=max(timed) if timed else None,
+                )
+            )
+        # Sorted group keys make equal-count rankings reproducible.
+        total = sum(counts.values())
+        return ExecutionDashboard(
+            executions=total,
+            unique_tests=len({(key[0], key[-1]) for key in groups}),
+            suites=suites,
+            runs=len(matched_runs),
+            counts={o: counts[o] for o in Outcome},
+            percentages={o: 100 * counts[o] / total if total else None for o in Outcome},
+            recorded_duration_seconds=sum(durations) if durations else None,
+            timed_executions=len(durations),
+            undated_executions=undated,
+            daily=tuple(
+                ExecutionDay(day=day, counts={o: values[o] for o in Outcome})
+                for day, values in sorted(days.items())
+            ),
+            slowest=tuple(
+                sorted(
+                    (r for r in rows if r.average_seconds is not None),
+                    key=lambda r: -(r.average_seconds or 0),
+                )[:limit]
+            ),
+            failures=tuple(sorted((r for r in rows if r.failed), key=lambda r: -r.failed)[:limit]),
+            errors=tuple(sorted((r for r in rows if r.errors), key=lambda r: -r.errors)[:limit]),
+        )
 
     def test_history(self, key: str, scope: Scope = EVERYTHING) -> TestHistory:
         """All executions of one test key, newest first, with its requirements (``KeyError``: never ran)."""

@@ -19,6 +19,7 @@ PAGES = [
     "#/requirement/SHOP-006",
     "#/tests",
     "#/runs",
+    "#/executions",
     "#/stability",
     "#/trends",
     "#/compare?framework=testng&base=f5a40d5&head=1d03232",
