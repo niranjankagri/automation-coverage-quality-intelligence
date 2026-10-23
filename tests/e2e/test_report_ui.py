@@ -49,13 +49,29 @@ def test_the_repository_switcher_narrows_the_report_and_keeps_it_in_the_address(
 
 
 def test_a_section_still_to_build_links_its_classic_page(page: Page) -> None:
-    """Categories is not built yet: it says so and opens the classic Stability page, not a dead end."""
+    """Graphs is not built yet: it says so and opens the classic Trends page, not a dead end."""
+    page.goto("/next/#/graphs")
+
+    expect(page.get_by_role("heading", name="Graphs", level=1)).to_be_visible()
+    expect(page.get_by_role("link", name="Open it in the classic dashboard")).to_have_attribute(
+        "href", "/#/trends"
+    )
+
+
+def test_categories_groups_failures_and_links_each_test_to_suites(page: Page) -> None:
+    """Samples: nothing fails now, four flaky candidates; a test link opens its details in Suites."""
     page.goto("/next/#/categories")
 
-    expect(page.get_by_role("heading", name="Categories", level=1)).to_be_visible()
-    expect(page.get_by_role("link", name="Open it in the classic dashboard")).to_have_attribute(
-        "href", "/#/stability"
-    )
+    expect(page.get_by_text("Nothing fails in the latest results.")).to_be_visible()
+    flaky = page.locator(".cat").filter(has_text="Flaky candidates")
+    expect(flaky).to_contain_text("4 test(s)")
+    flaky.locator("summary").click()
+    link = flaky.locator(".cat-tests a").first
+    name = link.inner_text().split(" \N{SINGLE RIGHT-POINTING ANGLE QUOTATION MARK} ", 1)[1]  # "file > test"
+    link.click()
+
+    expect(page).to_have_url(re.compile(r"#/suites\?test="))
+    expect(page.locator(".detail-title")).to_have_text(name)
 
 
 def test_suites_lists_the_snapshot_as_a_tree_and_shows_the_selected_test(page: Page) -> None:
@@ -104,9 +120,9 @@ def test_the_theme_button_works_like_the_portfolio(page: Page) -> None:
 
 
 @pytest.mark.parametrize("theme", ["light", "dark"])
-@pytest.mark.parametrize("route", ["#/overview", "#/suites", "#/categories"])
+@pytest.mark.parametrize("route", ["#/overview", "#/suites", "#/categories", "#/graphs"])
 def test_no_wcag_violations_in_the_report(page: Page, route: str, theme: str) -> None:
-    """The shell, the Overview, Suites and a section to come, in both themes."""
+    """Every built section and one still to come, in both themes."""
     page.goto("/next/")
     page.evaluate(f"localStorage.setItem('na-theme', '{theme}')")
     page.goto(f"/next/{route}")
