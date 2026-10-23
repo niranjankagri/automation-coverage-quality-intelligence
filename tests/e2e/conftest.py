@@ -6,6 +6,7 @@ sample data, so the browser sees exactly what a user of the demonstration sees.
 
 import os
 import socket
+import sys
 import threading
 import time
 from collections.abc import Callable, Iterator
@@ -138,6 +139,66 @@ def collected_url() -> Iterator[str]:
 def collected_page(browser: Browser, collected_url: str) -> Iterator[Page]:
     """A page on the dashboard with collection records."""
     yield from _page(browser, collected_url)
+
+
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    """On Windows only: ignore the test servers' unclosed browser sockets reported at garbage collection.
+
+    Warnings are errors (pyproject.toml). On Windows, asyncio's Proactor loop leaves the sockets of
+    browser connections that a closed browser context abandoned to the garbage collector, which
+    reports them as ``PytestUnraisableExceptionWarning`` in whichever test happens to run, failing
+    an unrelated test at random. Only that exact report is ignored, only here; Linux (CI) and every
+    other warning are unchanged.
+    """
+    if sys.platform != "win32":
+        return
+    marker = pytest.mark.filterwarnings(
+        r"ignore:.*(socket\.socket|_ProactorBasePipeTransport\.__del__):pytest.PytestUnraisableExceptionWarning"
+    )
+    for item in items:
+        item.add_marker(marker)
+
+
+@pytest.fixture(scope="session")
+def recurring_url() -> Iterator[str]:
+    """Synthetic: one test fails with the same cause in two collected runs of o/r (issue drafts)."""
+    runs = []
+    for day in (18, 19):
+        runs.append(
+            TestRun.model_validate(
+                {
+                    "run_id": f"{day:064d}",
+                    "source": f"TEST-checkout-{day}.xml",
+                    "started_at": datetime(2026, 10, day, 9, tzinfo=UTC),
+                    "pipeline": {"pipeline_id": f"r#{day}", "job": "ui", "repository": "o/r"},
+                    "results": [
+                        {
+                            "classname": "checkout",
+                            "name": "pays by card",
+                            "outcome": "failed",
+                            "failure": {"type": "TimeoutError", "message": "Timeout 30000ms exceeded."},
+                        }
+                    ],
+                }
+            )
+        )
+    record = PipelineCollection(
+        pipeline_id="r#19",
+        attempt=1,
+        repository="o/r",
+        workflow="CI",
+        conclusion="failure",
+        url="https://github.com/o/r/actions/runs/19",
+        collected_at=datetime(2026, 10, 19, 12, tzinfo=UTC),
+        state="complete",
+    )
+    yield from _serve(Workspace(load_catalog(SAMPLES / "catalog.toml"), runs, collections=[record]))
+
+
+@pytest.fixture
+def recurring_page(browser: Browser, recurring_url: str) -> Iterator[Page]:
+    """A page on the dashboard with one recurring failure."""
+    yield from _page(browser, recurring_url)
 
 
 @pytest.fixture(scope="session")

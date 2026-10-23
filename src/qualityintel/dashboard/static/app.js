@@ -443,16 +443,6 @@ function readinessEvidence(reason) {
   return null;
 }
 
-function gateRuleEvidence(name) {
-  const text = name.toLowerCase();
-  if (text.includes("critical") && text.includes("fail")) return link("/requirements", { criticality: "critical", execution_status: "failing" });
-  if (text.includes("critical") && (text.includes("automation") || text.includes("gap"))) return link("/attention", { kind: "critical gap" });
-  if (text.includes("coverage")) return link("/requirements", { coverage_status: "no tests" });
-  if (text.includes("pass rate") || text.includes("execution")) return link("/tests", { outcome: "failed" });
-  if (text.includes("pipeline") || text.includes("collection")) return link("/pipelines", { status: "incomplete" });
-  return null;
-}
-
 function readinessPanel(r) {
   return h(
     "section",
@@ -460,18 +450,24 @@ function readinessPanel(r) {
     h("h2", { id: "readiness-title" }, "Release status: ", badge(STATE_TEXT[r.state] ?? r.state)),
     h("p", { class: "sub" }, r.gate_name ? `Readiness engine result from the "${r.gate_name}" gate and the documented warnings it does not measure (docs/readiness.md).` : "No release gate is configured for this dashboard; readiness is unknown without a gate."),
     h("ul", { class: "reasons" }, r.reasons.map((reason) => h("li", {}, reason, readinessEvidence(reason) ? [" ", readinessEvidence(reason)] : null))),
-    r.rules.length
-      ? h(
-          "details",
-          {},
-          h("summary", {}, `Gate rules (${r.rules.filter((x) => x.fails_gate).length} failing of ${r.rules.length})`),
-          table(
-            ["Rule", "Actual", "Expected", "Result"],
-            r.rules.map((x) => h("tr", { class: x.fails_gate ? "failing-rule" : null }, h("td", {}, x.name, h("span", { class: "sub" }, x.explanation), x.fails_gate && gateRuleEvidence(x.name) ? h("a", { class: "sub", href: gateRuleEvidence(x.name) }, "View supporting evidence") : null), h("td", {}, x.actual), h("td", {}, x.expected), h("td", {}, x.fails_gate ? "fail" : x.status))),
-            "",
-          ),
-        )
-      : null,
+    // Every criterion the status was derived from, computed server-side (docs/readiness.md, Scorecard)
+    h(
+      "details",
+      {},
+      h("summary", {}, `Scorecard: ${r.scorecard.length} criteria, ${r.scorecard.filter((x) => x.effect !== "none").length} affect the status`),
+      table(
+        ["Criterion", "Source", "Measured", "Threshold", "Result", "Effect on status"],
+        r.scorecard.map((x) => h("tr", { class: x.effect !== "none" ? "failing-rule" : null },
+          h("td", {}, x.name, h("span", { class: "sub" }, x.explanation), x.route ? h("a", { class: "sub", href: link(x.route, x.params) }, "View supporting evidence") : null),
+          h("td", {}, x.source),
+          h("td", {}, x.measured),
+          h("td", {}, x.threshold),
+          h("td", {}, x.result),
+          h("td", {}, x.effect),
+        )),
+        "",
+      ),
+    ),
     h(
       "div",
       { class: "cards" },
@@ -485,12 +481,38 @@ function readinessPanel(r) {
   );
 }
 
+// Coverage gaps in priority order, one group per owner (docs/traceability.md, Prioritised gaps)
+function prioritisedGaps(g) {
+  return [
+    h("h2", {}, `Coverage gaps by owner (${g.total})`),
+    h("p", { class: "sub" }, `Order: ${g.order}.`),
+    g.owners.length
+      ? g.owners.map((o, i) => h("details", { class: "gap-owner", open: i === 0 ? "" : null },
+          h("summary", {}, `${o.owner}: ${o.gaps.length} gap(s), most urgent #${o.gaps[0].rank}`),
+          table(
+            [{ label: "Rank", num: true }, "Requirement", "Criticality", "Risk", "Gap", "Linked test cases"],
+            o.gaps.map((x) => h("tr", {},
+              h("td", { class: "num" }, x.rank),
+              h("td", {}, h("a", { class: "key", href: drillLink(`/requirement/${encodeURIComponent(x.requirement_id)}`) }, x.requirement_id), h("span", { class: "sub" }, x.title)),
+              h("td", {}, x.criticality ?? "unspecified"),
+              h("td", {}, x.risk ?? "unspecified"),
+              h("td", {}, x.kind),
+              h("td", {}, x.case_statuses.join(", ") || "none"),
+            )),
+            "",
+          ),
+        ))
+      : h("p", { class: "empty" }, "Every requirement in scope has an automated test case."),
+  ];
+}
+
 async function overview() {
-  const [s, r, collection, builds] = await Promise.all([
+  const [s, r, collection, builds, gaps] = await Promise.all([
     api(`/api/summary${apiQuery(FILTERS)}`),
     api(`/api/readiness${apiQuery(FILTERS)}`),
     api("/api/collection"),
     api(`/api/builds${apiQuery(RUN_FILTERS)}`),
+    api(`/api/gaps${apiQuery(FILTERS)}`),
   ]);
   const comparison = builds.length > 1
     ? await api(`/api/compare${apiQuery(RUN_FILTERS, { base: builds[builds.length - 2], head: builds[builds.length - 1] })}`)
@@ -583,6 +605,7 @@ async function overview() {
           ],
     h("h2", {}, `Critical requirements without automation (${s.uncovered_critical.length})`),
     idChips(s.uncovered_critical.map((r) => r.id), "critical"),
+    ...prioritisedGaps(gaps),
     h("h2", {}, `Failing requirements (${s.failing_requirements.length})`),
     idChips(s.failing_requirements.map((r) => r.id), "failing"),
     h("h2", {}, "Other gaps"),
@@ -849,9 +872,32 @@ async function testHistory() {
   ];
 }
 
+// Each suite's newest build against its previous build on the same branch (docs/history.md)
+function latestRegressions(d) {
+  const tests = (keys) => [keys.slice(0, 5).map((k, i) => [i ? ", " : null, h("a", { class: "key", href: drillLink("/test", { key: k }) }, k)]), keys.length > 5 ? ` and ${keys.length - 5} more` : null];
+  return h(
+    "section",
+    { "aria-labelledby": "regressions-title" },
+    h("h2", { id: "regressions-title" }, `Latest regressions (${d.regressions.length})`),
+    h("p", { class: "sub" }, `Each suite's newest build compared with its previous build on the same branch: ${d.compared} suites compared, ${d.single_build} ran in one build only. ${d.notes.join(" ")}`),
+    table(
+      ["Suite", "Repository · branch", "Builds", "Newly failing", "Recovered", "Runs"],
+      d.regressions.map((r) => h("tr", {},
+        h("td", {}, r.suite),
+        h("td", {}, `${r.repository ?? "not recorded"} · ${r.branch ?? "branch not recorded"}`),
+        h("td", { class: "nowrap" }, h("a", { href: link("/compare", { base: r.base_build, head: r.head_build }) }, `${r.base_build} → ${r.head_build}`), r.head_started_at ? h("span", { class: "sub" }, formatDate(r.head_started_at)) : null),
+        h("td", {}, tests(r.newly_failing)),
+        h("td", { class: "num" }, r.fixed.length),
+        h("td", { class: "nowrap" }, h("a", { href: drillLink(`/run/${r.base_run_id}`) }, "previous"), " · ", h("a", { href: drillLink(`/run/${r.head_run_id}`) }, "newest")),
+      )),
+      "No suite fails a test in its newest build that passed in its previous build.",
+    ),
+  );
+}
+
 async function compareView() {
   const params = route().params;
-  const builds = await api(`/api/builds${apiQuery(RUN_FILTERS)}`);
+  const [builds, regressions] = await Promise.all([api(`/api/builds${apiQuery(RUN_FILTERS)}`), api(`/api/regressions${apiQuery(RUN_FILTERS)}`)]);
   const head = params.get("head") ?? builds[builds.length - 1] ?? "";
   const base = params.get("base") ?? builds[builds.length - 2] ?? "";
   const pick = (id, value, other) => {
@@ -866,6 +912,7 @@ async function compareView() {
     h("div", { class: "toolbar" }, h("label", { for: "base-build" }, "Baseline build", pick("base-build", base, "base")), h("label", { for: "head-build" }, "Comparison build", pick("head-build", head, "head"))),
     // Builds of different repositories never share a suite: say so while all are listed
     params.get("repository") ? null : h("p", { class: "sub" }, "Tip: choose a Repository above to list only its builds; builds of different repositories have no suite in common."),
+    latestRegressions(regressions),
   ];
   if (builds.length < 2) return [...header, h("p", { class: "empty" }, "At least two builds are needed in this scope.")];
   if (base === head) return [...header, h("p", { class: "empty" }, "Choose two different builds.")];
@@ -1126,9 +1173,42 @@ async function collectionView() {
   ];
 }
 
+// Issue drafts for the top recurring failures: copied, or opened in GitHub's own New issue form;
+// the dashboard creates nothing (docs/issues.md)
+function issueDrafts(s) {
+  return h(
+    "section",
+    { "aria-labelledby": "issue-drafts-title" },
+    h("h2", { id: "issue-drafts-title" }, `Issue drafts for recurring failures (${s.drafts.length})`),
+    h("p", { class: "sub" }, s.notes.join(" ")),
+    s.drafts.length
+      ? s.drafts.map((draft) => {
+          const copy = h("button", { type: "button", class: "ghost" }, "Copy draft");
+          copy.addEventListener("click", async () => {
+            try {
+              await navigator.clipboard.writeText(`${draft.title}\n\n${draft.body}`);
+              copy.textContent = "Copied";
+            } catch (_) {
+              copy.textContent = "Copy unavailable";
+            }
+            setTimeout(() => (copy.textContent = "Copy draft"), 2200);
+          });
+          return h("details", { class: "gap-owner" },
+            h("summary", {}, `#${draft.rank} ${draft.title}`),
+            h("p", { class: "sub" }, `${draft.runs} runs, ${draft.recent_runs} in the last 7 days · `,
+              draft.repository ? `repository ${draft.repository}` : "no single collected repository: copy the draft"),
+            h("textarea", { class: "issue-body", readonly: true, rows: 12, "aria-label": `Draft body for ${draft.title}` }, draft.body),
+            h("p", {}, copy, draft.new_issue_url ? [" ", external(draft.new_issue_url, "Review and submit on GitHub")] : null,
+              draft.shortened ? h("span", { class: "sub" }, " The GitHub form gets a shortened evidence list; the copy is complete.") : null),
+          );
+        })
+      : h("p", { class: "empty" }, "No recurring failure, so nothing to draft."),
+  );
+}
+
 async function stabilityView() {
   const windowSize = route().params.get("window") ?? "10";
-  const d = await api(`/api/stability${apiQuery(RUN_FILTERS, { window: windowSize })}`);
+  const [d, issues] = await Promise.all([api(`/api/stability${apiQuery(RUN_FILTERS, { window: windowSize })}`), api(`/api/issue-suggestions${apiQuery(RUN_FILTERS)}`)]);
   const windowSelect = h("select", { id: "window" }, ["5", "10", "20", "50"].map((v) => h("option", { value: v }, `last ${v} verdicts`)));
   windowSelect.value = windowSize;
   windowSelect.addEventListener("change", () => (location.hash = link("/stability", { window: windowSelect.value })));
@@ -1174,6 +1254,7 @@ async function stabilityView() {
       )),
       "No failure cause appeared in more than one run.",
     ),
+    issueDrafts(issues),
     h("h2", {}, `Duration regressions (${d.duration_regressions.length})`),
     table(
       ["Test", "Context", { label: "Baseline", num: true }, { label: "Latest", num: true }],
@@ -1307,6 +1388,63 @@ function chartFigure(title, svg, series, labels, summary, format = (v) => v, dra
 }
 
 const shortDay = (iso) => iso.slice(5);
+
+// The release gate on each day's snapshot and the days it changed (docs/quality-gates.md, Gate history)
+function gateHistory(g) {
+  const dayRuns = (day) => link("/runs", { since: day, until: day });
+  if (!g.gate_name) return [h("h2", {}, "Release gate over time"), h("p", { class: "empty" }, g.notes.join(" "))];
+  return [
+    h("h2", {}, `Release gate over time: "${g.gate_name}"`),
+    h("p", { class: "sub" }, g.notes.join(" ")),
+    h("h3", {}, `Days the verdict or its reasons changed (${g.changes.length})`),
+    table(
+      ["Day", "Verdict", "Started failing", "Stopped failing", "Evidence"],
+      g.changes.map((c) => h("tr", {},
+        h("td", { class: "nowrap" }, c.day),
+        h("td", { class: "nowrap" }, c.previous === c.status ? `${c.status} (reasons changed)` : `${c.previous} → ${c.status}`),
+        h("td", {}, c.started_failing.join(", ") || "–"),
+        h("td", {}, c.stopped_failing.join(", ") || "–"),
+        h("td", {}, h("a", { href: dayRuns(c.day) }, "runs of that day")),
+      )),
+      g.days.length ? "The verdict and its failing rules did not change on any listed day." : "No dated runs in this scope.",
+    ),
+    h("details", {},
+      h("summary", {}, `Verdict per day (${g.days.length} days)`),
+      table(
+        ["Day", "Verdict", "Failing rules", { label: "Results", num: true }, "Newest run"],
+        g.days.map((d) => h("tr", {},
+          h("td", { class: "nowrap" }, d.day),
+          h("td", {}, d.status),
+          h("td", {}, [d.failed_rules.join(", "), d.input_problems.length ? ` (cannot decide: ${d.input_problems.join("; ")})` : ""].join("") || "–"),
+          h("td", { class: "num" }, d.results),
+          h("td", {}, d.latest_run_id ? h("a", { href: drillLink(`/run/${d.latest_run_id}`) }, "newest run") : "–"),
+        )),
+        "",
+      ),
+    ),
+  ];
+}
+
+// Each repository on the newest day against N days earlier (docs/metrics.md, Repository trends)
+function repositoryTrends(t) {
+  const side = (s) => (s ? [`${s.pass_rate.text} · ${s.failed} failed`, h("span", { class: "sub" }, `${s.day} · ${s.suites} suite(s) · `, s.latest_run_id ? h("a", { href: drillLink(`/run/${s.latest_run_id}`) }, "newest run") : "–")] : "no run yet");
+  const tests = (keys) => (keys.length ? [keys.slice(0, 5).map((k, i) => [i ? ", " : null, h("a", { class: "key", href: drillLink("/test", { key: k }) }, k)]), keys.length > 5 ? ` and ${keys.length - 5} more` : null] : "–");
+  return [
+    h("h2", {}, t.day ? `Repositories: ${t.day} against ${t.days} days earlier` : "Repositories over time"),
+    h("p", { class: "sub" }, `Repositories with new failures first, then the largest drop in pass rate. ${t.notes.join(" ")}`),
+    table(
+      ["Repository", `${t.days} days earlier`, "Newest day", "Started failing", "Stopped failing"],
+      t.repositories.map((r) => h("tr", {},
+        h("td", {}, h("a", { href: link("/trends", { repository: r.repository }) }, r.repository)),
+        h("td", {}, side(r.before)),
+        h("td", {}, side(r.now)),
+        h("td", {}, tests(r.newly_failing)),
+        h("td", {}, tests(r.fixed)),
+      )),
+      "No collected runs with a recorded repository in this scope.",
+    ),
+  ];
+}
 
 const EXECUTION_KINDS = { api: "API", ui: "UI", unit: "Unit", component: "Component", mobile: "Mobile", performance: "Performance", contract: "Contract", integration: "Integration", accessibility: "Accessibility", visual: "Visual", other: "Other" };
 // Families whose third step is a browser; "other" keeps browsers because a job with only a
@@ -1501,7 +1639,7 @@ async function executionsView() {
 }
 
 async function trendsView() {
-  const d = await api(`/api/trends${apiQuery(FILTERS)}`);
+  const [d, g, rt] = await Promise.all([api(`/api/trends${apiQuery(FILTERS)}`), api(`/api/gate-history${apiQuery(FILTERS)}`), api(`/api/repository-trends${apiQuery(RUN_FILTERS)}`)]);
   const days = d.daily.map((p) => p.day);
   const labels = days.map(shortDay);
   const outcomeSeries = [
@@ -1536,6 +1674,8 @@ async function trendsView() {
         : null,
     );
   }
+  content.push(...gateHistory(g));
+  content.push(...repositoryTrends(rt));
   content.push(h("h2", {}, "Runs per context"));
   const contexts = Object.entries(d.runs);
   content.push(

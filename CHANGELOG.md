@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- **M13, advanced quality intelligence** ([docs/m13-gap-analysis.md](docs/m13-gap-analysis.md)):
+  recurring failures ranked by runs in the last 7 days, then all runs, with their supporting runs;
+  latest regressions per suite and branch (`/api/regressions`); a release-readiness scorecard with
+  one row and evidence page per criterion; the release gate on each day's snapshot and the days it
+  changed (`/api/gate-history`); coverage gaps by criticality, risk and owner (`/api/gaps`);
+  repository trends, newest day against 7 days earlier (`/api/repository-trends`); a daily quality
+  digest (`qi digest`, `/api/digest`); issue drafts for recurring failures that a person submits
+  through GitHub's own form, never created by the dashboard (`/api/issue-suggestions`). AI
+  summaries stay deferred. Every new figure links its executions and documents its calculation.
+- Error badges, error dots and the error ranking no longer pick up the error-message box style
+  (`.error` is scoped to `[role="alert"]`).
+
 - Make the default dashboard a portfolio-styled visual experience: repository → test family →
   browser/job navigation, interactive result donut, day drill-downs and visual test rankings.
   Keep tables/CSV and advanced tools available on demand, and move release coverage to

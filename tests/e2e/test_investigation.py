@@ -158,3 +158,24 @@ def test_the_comparison_shows_count_differences_and_evidence(page: Page) -> None
 
     expect(page.locator("#view")).to_contain_text("Result counts, comparison minus baseline")
     expect(page.locator("#view .card").first).to_contain_text("no GitHub run recorded")
+
+
+def test_a_recurring_failure_has_a_draft_that_github_submits_not_the_dashboard(
+    recurring_page: Page,
+) -> None:
+    """Stability: the draft shows its evidence; the GitHub link only opens the pre-filled form."""
+    page = recurring_page
+    page.goto("/#/stability")
+    expect(page.get_by_role("heading", name="Issue drafts for recurring failures (1)")).to_be_visible()
+
+    draft = page.locator("details", has_text="#1 Recurring test failure: TimeoutError")
+    draft.locator("summary").click()
+
+    body = draft.get_by_role("textbox", name=re.compile("Draft body"))
+    expect(body).to_have_value(re.compile(r"Seen in \*\*2 runs\*\*"))
+    expect(body).to_have_value(re.compile(r"\[CI run\]\(https://github\.com/o/r/actions/runs/19\)"))
+    expect(body).to_have_attribute("readonly", "")
+    submit = draft.get_by_role("link", name="Review and submit on GitHub")
+    expect(submit).to_have_attribute("href", re.compile(r"^https://github\.com/o/r/issues/new\?title="))
+    expect(submit).to_have_attribute("rel", "noopener noreferrer")
+    expect(draft.get_by_role("button", name="Copy draft")).to_be_visible()

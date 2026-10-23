@@ -236,6 +236,22 @@ Filters for trends: framework, environment, browser, build, and an inclusive dat
 run's start (UTC); runs without a start time are left out of the time axis and counted in a note.
 Values are checked against plain SQL on the stored records (`tests/integration/test_trends_against_database.py`).
 
+### Repository trends
+
+`repository_trends()` in `history/trends.py`, the Trends page's *Repositories* table and
+`GET /api/repository-trends?days=7` (M13).
+
+| Part | Definition |
+|---|---|
+| Runs | dated runs of a pipeline with a recorded repository (collected runs); hand-imported files have no repository and are counted in a note |
+| Newest day | the UTC date of the newest such run in the scope, the same for every repository (the history's newest day, not today's date) |
+| Earlier day | newest day minus `days` (default 7) |
+| Snapshot | per repository, the latest run of each of its suites started on or before the end of that day, as in the daily snapshot |
+| Results, failed, pass rate | of that snapshot; failed = failed + error; pass rate as in section 4 |
+| Started / stopped failing | test keys failing in any suite of the snapshot now and in none on the earlier day, and the reverse |
+| No earlier snapshot | the repository had no run yet on the earlier day: "no run yet", and all its current failures count as started |
+| Order | repositories with tests that started failing first, then the largest drop in pass rate, then name |
+
 ### Run comparison and grouping
 
 `compare(base, head)` lists newly failing, fixed, still failing, added, removed and clearly

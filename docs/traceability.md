@@ -92,6 +92,26 @@ without automation are `SHOP-008` (card payment, planned) and `ADMIN-012` (secon
 test). These numbers are checked by hand and by a second, standard-library-only implementation
 in the integration tests.
 
+## Prioritised gaps
+
+`qualityintel/traceability/gaps.py`, the Overview's **Coverage gaps by owner** and `GET /api/gaps`
+(M13). A gap is an in-scope requirement with no linked test case (*no tests*) or with linked
+cases none of which is automated (*not automated*). The order uses catalog fields only:
+
+1. criticality: critical, high, medium, low, then unspecified;
+2. risk: high, medium, low, then unspecified;
+3. *no tests* before *not automated* (nothing at all is worse than a manual or planned test);
+4. requirement id.
+
+Gaps are grouped by `owner` (`unassigned` when the catalog names none); owners are listed by their
+most urgent gap. Each gap names its linked cases' automation status (`manual`, `planned`,
+`blocked`) and links the requirement. Nothing is guessed: a requirement without criticality is
+*unspecified* and ranks after low.
+
+On the sample catalog: 10 gaps (4 without tests, 6 not automated). The two critical ones rank
+first: `ADMIN-012` (Admin team, no tests) and `SHOP-008` (Toolshop team, automation planned), the
+same two that make the sample release gate fail.
+
 ## Known limits
 
 - Matching is by name. A renamed test stops matching its pattern; the report then shows the

@@ -40,8 +40,22 @@ def test_overview_shows_coverage_and_pass_rate_separately(page: Page) -> None:
             page.get_by_text("No change summary shown", exact=False)
         )
     ).to_be_visible()
-    expect(page.get_by_role("link", name="SHOP-008")).to_be_visible()
-    expect(page.get_by_role("link", name="ADMIN-012")).to_be_visible()
+    critical = page.locator("h2:has-text('Critical requirements without automation') + ul.chips")
+    expect(critical.get_by_role("link", name="SHOP-008")).to_be_visible()
+    expect(critical.get_by_role("link", name="ADMIN-012")).to_be_visible()
+
+
+def test_overview_lists_gaps_by_owner_with_the_most_urgent_owner_open(page: Page) -> None:
+    """Coverage gaps by owner: 10 gaps; Admin team (ADMIN-012, rank 1) is open, the others folded."""
+    page.goto("/#/coverage")
+
+    expect(page.get_by_role("heading", name="Coverage gaps by owner (10)")).to_be_visible()
+    first = page.locator("details.gap-owner").first
+    expect(first).to_have_attribute("open", "")
+    expect(first.locator("summary")).to_have_text("Admin team: 4 gap(s), most urgent #1")
+    expect(first.get_by_role("row").nth(1)).to_contain_text("ADMIN-012")
+    expect(page.locator("details.gap-owner")).to_have_count(4)
+    expect(page.locator("details.gap-owner[open]")).to_have_count(1)
 
 
 def test_metric_card_drills_down_to_the_requirements_behind_it(page: Page) -> None:

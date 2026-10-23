@@ -179,8 +179,15 @@ def test_openapi_documentation_lists_every_route(client: TestClient) -> None:
         "/api/runs/{run_id}",
         "/api/builds",
         "/api/compare",
+        "/api/regressions",
         "/api/stability",
         "/api/trends",
+        "/api/gate-history",
+        "/api/gaps",
+        "/api/repository-trends",
+        "/api/digest",
+        "/api/digest/summary",
+        "/api/issue-suggestions",
     }
 
 
@@ -319,6 +326,218 @@ def test_readiness_on_the_real_samples(gate: str | None, state: str, reason: str
     assert body["flaky_candidates"] == 4
 
 
+@pytest.mark.parametrize("gate", sorted(p.name for p in (SAMPLES / "gates").glob("*.toml")))
+def test_every_scorecard_row_of_the_sample_gates_links_its_evidence(gate: str) -> None:
+    """Each criterion has an evidence page (only "release gate configured" points to the docs)."""
+    from qualityintel.gates.config import load_gate_config
+
+    workspace, _ = Workspace.load(SAMPLES / "catalog.toml", [SAMPLES / "results"])
+    workspace.gate = load_gate_config(SAMPLES / "gates" / gate)
+    rows = TestClient(create_app(workspace)).get("/api/readiness").json()["scorecard"]
+
+    missing = [r["name"] for r in rows if r["route"] is None and r["name"] != "release gate configured"]
+    assert missing == []
+    assert {r["source"] for r in rows} == {"gate", "policy"}
+
+
+def test_every_gate_rule_the_evaluator_can_produce_has_an_evidence_page() -> None:
+    """A gate with every rule enabled: a new or renamed rule fails here, not silently in the page."""
+    from qualityintel.gates.config import GateConfig
+
+    every_rule = GateConfig.model_validate(
+        {
+            "coverage": {
+                "min_requirement_coverage": 1,
+                "min_automation_coverage": 1,
+                "min_automated_requirement_coverage": 1,
+                "max_uncovered_critical": 9,
+                "max_requirements_without_tests": 9,
+            },
+            "execution": {
+                "min_pass_rate": 1,
+                "max_failing_critical": 9,
+                "max_failing_requirements": 9,
+                "max_failed_tests": 9,
+                "min_results": 1,
+                "max_automated_cases_without_results": 9,
+            },
+        }
+    )
+    workspace, _ = Workspace.load(SAMPLES / "catalog.toml", [SAMPLES / "results"])
+    workspace.gate = every_rule
+    rows = TestClient(create_app(workspace)).get("/api/readiness").json()["scorecard"]
+
+    assert len([r for r in rows if r["source"] == "gate"]) == 2 + 11  # presence, inputs, 11 rules
+    assert [r["name"] for r in rows if r["route"] is None] == ["release gate configured"]
+
+
+def test_the_release_scorecard_names_the_blocking_rule_and_the_flaky_warning() -> None:
+    """The release gate's verdict can be read from its rows: one rule blocks, flaky puts at risk."""
+    from qualityintel.gates.config import load_gate_config
+
+    workspace, _ = Workspace.load(SAMPLES / "catalog.toml", [SAMPLES / "results"])
+    workspace.gate = load_gate_config(SAMPLES / "gates" / "release.toml")
+    rows = {r["name"]: r for r in TestClient(create_app(workspace)).get("/api/readiness").json()["scorecard"]}
+
+    blocking = rows["critical requirements without automation"]
+    assert (blocking["measured"], blocking["effect"], blocking["route"]) == ("2", "blocks", "/attention")
+    assert rows["flaky candidates"]["effect"] == "at risk"
+
+
+def test_gate_history_on_the_samples_finds_the_day_two_release_rules_stopped_failing() -> None:
+    """Release gate: failed on all 13 days; on 17 Oct two rules stopped failing.
+
+    The snapshot reached 221 results (the gate needs 200) and every automated case had results;
+    the critical gap stays.
+    """
+    from qualityintel.gates.config import load_gate_config
+
+    workspace, _ = Workspace.load(SAMPLES / "catalog.toml", [SAMPLES / "results"])
+    workspace.gate = load_gate_config(SAMPLES / "gates" / "release.toml")
+    body = TestClient(create_app(workspace)).get("/api/gate-history").json()
+
+    assert body["gate_name"] == "release gate"
+    assert len(body["days"]) == 13
+    assert {d["status"] for d in body["days"]} == {"failed"}
+    (change,) = body["changes"]
+    assert (change["day"], change["previous"], change["status"]) == ("2026-10-17", "failed", "failed")
+    assert change["stopped_failing"] == ["executed tests", "automated test cases without results"]
+    assert body["days"][-1]["failed_rules"] == ["critical requirements without automation"]
+    assert body["days"][-1]["results"] == 221
+
+
+def test_gate_history_without_a_gate_says_so(client: TestClient) -> None:
+    """No gate configured: no days, and a note instead of an empty chart."""
+    body = client.get("/api/gate-history").json()
+
+    assert (body["gate_name"], body["days"], body["changes"]) == (None, [], [])
+    assert "no release gate" in body["notes"][0]
+
+
+def test_gaps_on_the_samples_put_the_two_release_blockers_first(client: TestClient) -> None:
+    """10 gaps (4 without tests + 6 not automated); the critical ones rank 1 and 2, per owner."""
+    body = client.get("/api/gaps").json()
+    summary = client.get("/api/summary").json()
+
+    assert (
+        body["total"]
+        == 10
+        == len(summary["requirements_without_tests"]) + len(summary["requirements_without_automation"])
+    )
+    first = {
+        g["rank"]: (owner["owner"], g["requirement_id"], g["kind"])
+        for owner in body["owners"]
+        for g in owner["gaps"]
+    }
+    assert first[1] == ("Admin team", "ADMIN-012", "no tests")
+    assert first[2] == ("Toolshop team", "SHOP-008", "not automated")
+    assert [o["owner"] for o in body["owners"]] == [
+        "Admin team",
+        "Toolshop team",
+        "Notes API team",
+        "Storefront team",
+    ]
+    filtered = client.get("/api/gaps", params={"owner": "Storefront team"}).json()
+    assert [g["requirement_id"] for o in filtered["owners"] for g in o["gaps"]] == ["SAUCE-008"]
+
+
+def test_repository_trends_compare_the_same_two_days_for_every_repository() -> None:
+    """Collected runs record their repository; hand-imported sample files do not (noted)."""
+    from qualityintel.models.enums import Outcome
+    from qualityintel.models.results import PipelineJob, TestRun
+
+    from ..traceability.helpers import result, run
+
+    def collected(day: int, outcome: Outcome) -> TestRun:
+        """A run of job 'test' in repository o/a on 2026-10-<day>."""
+        job = PipelineJob(pipeline_id=f"o-a-{day}", job="test", repository="o/a")
+        return run(result("t", outcome), day=day).model_copy(update={"pipeline": job})
+
+    samples, _ = Workspace.load(SAMPLES / "catalog.toml", [SAMPLES / "results"])
+    extra = [collected(12, Outcome.PASSED), collected(19, Outcome.FAILED)]
+    workspace = Workspace(samples.catalog, [*samples.runs, *extra])
+    body = TestClient(create_app(workspace)).get("/api/repository-trends").json()
+
+    assert body["day"] == "2026-10-19"
+    ((trend),) = body["repositories"]
+    assert (trend["repository"], trend["before"]["day"], trend["now"]["failed"]) == ("o/a", "2026-10-12", 1)
+    assert trend["newly_failing"] == ["suite::t"]
+    assert any("43 run(s) without a recorded repository" in n for n in body["notes"])
+    assert (
+        TestClient(create_app(workspace)).get("/api/repository-trends", params={"days": 0}).status_code == 422
+    )
+
+
+def test_the_digest_of_13_october_names_the_real_firefox_failure(client: TestClient) -> None:
+    """Samples: the 13 Oct nightly's adminEditsACustomer timeout started failing that day."""
+    body = client.get("/api/digest", params={"day": "2026-10-13"}).json()
+
+    assert (body["day"], body["previous_day"]) == ("2026-10-13", "2026-10-12")
+    sections = {s["title"]: s["lines"] for s in body["sections"]}
+    assert list(sections) == ["Runs", "Regressions", "Tests that changed", "Recurring failures seen again"]
+    assert sections["Runs"][0]["text"] == "4 run(s), 197 results, 1 failed or errored"
+    started = [line for line in sections["Tests that changed"] if line["route"] == "/test"]
+    assert [line["params"]["key"] for line in started] == [
+        "com.enterprise.automation.tests.ui.CustomerManagementTest::adminEditsACustomer"
+    ]
+
+
+def test_the_digest_defaults_to_the_newest_day_and_copies_as_text_and_markdown(client: TestClient) -> None:
+    """Newest sample day is 19 Oct; the summary carries relative dashboard links; bad days are 422."""
+    assert client.get("/api/digest").json()["day"] == "2026-10-19"
+    made = client.get("/api/digest/summary", params={"day": "2026-10-13"}).json()
+
+    assert made["text"].startswith("Quality digest 2026-10-13 (compared with 2026-10-12)\n")
+    assert "[/#/runs?since=2026-10-13&until=2026-10-13]" in made["text"]
+    assert made["markdown"].startswith("### Quality digest 2026-10-13")
+    assert client.get("/api/digest", params={"day": "13-10-2026"}).status_code == 422
+
+
+def test_issue_drafts_link_this_dashboard_and_the_ci_run_and_create_nothing() -> None:
+    """A collected recurring failure: absolute dashboard links, the GitHub run, GitHub's own form."""
+    from datetime import UTC, datetime
+
+    from qualityintel.models.collection import PipelineCollection
+    from qualityintel.models.enums import Outcome
+    from qualityintel.models.results import PipelineJob
+
+    from ..traceability.helpers import result, run
+
+    runs = [
+        run(result("t", Outcome.FAILED, failure={"message": "boom", "type": "E"}), day=day).model_copy(
+            update={"pipeline": PipelineJob(pipeline_id=f"r#{day}", job="test", repository="o/r")}
+        )
+        for day in (18, 19)
+    ]
+    record = PipelineCollection(
+        pipeline_id="r#19",
+        attempt=1,
+        repository="o/r",
+        workflow="CI",
+        conclusion="failure",
+        url="https://github.com/o/r/actions/runs/19",
+        collected_at=datetime(2026, 10, 19, 12, tzinfo=UTC),
+        state="complete",
+    )
+    samples, _ = Workspace.load(SAMPLES / "catalog.toml", [])
+    client = TestClient(create_app(Workspace(samples.catalog, runs, collections=[record])))
+
+    (draft,) = client.get("/api/issue-suggestions").json()["drafts"]
+
+    assert draft["new_issue_url"].startswith("https://github.com/o/r/issues/new?title=Recurring+test+failure")
+    assert f"[dashboard](http://testserver/#/run/{runs[1].run_id})" in draft["body"]
+    assert "[CI run](https://github.com/o/r/actions/runs/19)" in draft["body"]
+    assert client.get("/api/issue-suggestions", params={"limit": 0}).status_code == 422
+
+
+def test_the_samples_have_no_recurring_failure_to_draft(client: TestClient) -> None:
+    """No recurring cause in the samples: no drafts, and the notes still say nothing is created."""
+    body = client.get("/api/issue-suggestions").json()
+
+    assert body["drafts"] == []
+    assert "creates no issue" in body["notes"][0]
+
+
 def test_readiness_follows_the_chosen_scope(client: TestClient) -> None:
     """Numbers are for the scope in the query, like every other endpoint."""
     body = client.get("/api/readiness", params={"framework": "robot-framework"}).json()
@@ -360,6 +579,19 @@ def test_builds_of_different_suites_are_not_compared(client: TestClient) -> None
     assert body["only_in_base"]
     assert body["only_in_head"]
     assert any("share no suite" in n for n in body["notes"])
+
+
+def test_latest_regressions_on_the_samples_compare_each_suite_with_its_previous_build(
+    client: TestClient,
+) -> None:
+    """Four suites ran in two or more builds (none newly fails there); one ran in a single build."""
+    body = client.get("/api/regressions").json()
+
+    assert (body["compared"], body["single_build"], body["regressions"]) == (4, 1, [])
+    assert any("branch" in note for note in body["notes"])
+    # The scope applies: TestNG on Firefox is one of the four (f5a40d5 -> 1d03232 only got slower)
+    testng = client.get("/api/regressions", params={"framework": "testng"}).json()
+    assert (testng["compared"], testng["regressions"]) == (1, [])
 
 
 def test_comparison_input_errors(client: TestClient) -> None:

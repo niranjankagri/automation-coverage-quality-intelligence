@@ -31,6 +31,7 @@ from qualityintel.history.analysis import DEFAULTS, HistorySettings
 from qualityintel.links import dashboard_path
 from qualityintel.live import LiveData
 from qualityintel.models.enums import Criticality, Outcome, TestType
+from qualityintel.reporting.digest import render_digest
 from qualityintel.reporting.investigation import summarise_comparison, summarise_test
 from qualityintel.search import MAX_QUERY, QueryError
 from qualityintel.traceability.coverage import UNSPECIFIED, Filters
@@ -39,11 +40,17 @@ from qualityintel.workspace import (
     AttentionView,
     BuildComparisonView,
     CollectionHealthView,
+    DigestView,
     ExecutionDashboard,
     ExecutionOption,
     Facets,
+    GapsView,
+    GateHistoryView,
+    IssueSuggestionsView,
     PipelinesView,
     ReadinessView,
+    RegressionsView,
+    RepositoryTrendsView,
     RequirementDetail,
     RequirementMatrix,
     RequirementRow,
@@ -426,6 +433,11 @@ def create_app(
         """Coverage metrics, gaps and the execution snapshot."""
         return current().summary(chosen)
 
+    @app.get("/api/gaps", tags=["coverage"])
+    def gaps(chosen: FullScope) -> GapsView:
+        """Requirements without automated coverage in priority order, grouped by owner."""
+        return current().gaps(chosen)
+
     @app.get("/api/readiness", tags=["coverage"])
     def readiness(chosen: FullScope) -> ReadinessView:
         """Release status of the scope (ready / at risk / blocked / unknown) by the documented policy."""
@@ -582,6 +594,11 @@ def create_app(
                 status_code=404, detail=f"no runs of build {error.args[0]!r} in this scope"
             ) from None
 
+    @app.get("/api/regressions", tags=["history"])
+    def regressions(chosen: RunScope) -> RegressionsView:
+        """Each suite's newest build against its previous build on the same branch (build filter ignored)."""
+        return current().regressions(chosen)
+
     @app.get("/api/stability", tags=["history"])
     def stability(
         chosen: RunScope,
@@ -595,6 +612,37 @@ def create_app(
     def trends(chosen: FullScope) -> TrendsView:
         """Daily execution snapshots, per-context run series and recorded coverage snapshots."""
         return current().trends(chosen)
+
+    @app.get("/api/gate-history", tags=["history"])
+    def gate_history(chosen: FullScope) -> GateHistoryView:
+        """The release gate on each day's snapshot (last 30 days with runs) and the days it changed."""
+        return current().gate_history(chosen)
+
+    @app.get("/api/digest", tags=["history"])
+    def digest(chosen: FullScope, day: date | None = None) -> DigestView:
+        """What one day (default: the newest day with runs) added to the history (docs/digest.md)."""
+        return current().digest(chosen, day)
+
+    @app.get("/api/digest/summary", tags=["history"])
+    def digest_summary(chosen: FullScope, day: date | None = None) -> InvestigationSummary:
+        """The digest as copyable text and Markdown, with dashboard links relative to this site."""
+        made = render_digest(current().digest(chosen, day))
+        return InvestigationSummary(text=made.text, markdown=made.markdown)
+
+    @app.get("/api/issue-suggestions", tags=["investigation"])
+    def issue_suggestions(
+        request: Request, chosen: RunScope, limit: Annotated[int, Query(ge=1, le=50)] = 10
+    ) -> IssueSuggestionsView:
+        """Issue drafts for the top recurring failures; drafts only, nothing is created (docs/issues.md)."""
+        # The draft lives on GitHub, so its dashboard links must be absolute: this site's address
+        return current().issue_suggestions(chosen, limit, str(request.base_url))
+
+    @app.get("/api/repository-trends", tags=["history"])
+    def repository_trends(
+        chosen: RunScope, days: Annotated[int, Query(ge=1, le=90)] = 7
+    ) -> RepositoryTrendsView:
+        """Each repository's snapshot on the newest day with runs against ``days`` earlier."""
+        return current().repository_trends(chosen, days)
 
     @app.get("/api/runs", tags=["executions"])
     def runs(chosen: RunScope) -> tuple[RunView, ...]:

@@ -20,7 +20,7 @@ import os
 import sys
 import traceback
 from collections.abc import Callable, Sequence
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 from qualityintel import __version__
@@ -129,6 +129,19 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         metavar="SECONDS",
         help="check the sources for new data every SECONDS, 0 = never (default: QI_REFRESH_SECONDS or 30)",
+    )
+
+    digest = commands.add_parser("digest", help="what one day added to the history (docs/digest.md)")
+    digest.add_argument("--catalog", required=True, type=Path, help="requirement catalog (TOML)")
+    add_result_arguments(digest, required=False)
+    digest.add_argument("--database", type=Path, help="also read every run stored in this history database")
+    digest.add_argument("--gate", type=Path, metavar="FILE", help="release gate to report per day (TOML)")
+    digest.add_argument(
+        "--day", metavar="YYYY-MM-DD", help="UTC day to report (default: newest day with runs)"
+    )
+    digest.add_argument("--markdown", action="store_true", help="print Markdown instead of plain text")
+    digest.add_argument(
+        "--base-url", metavar="URL", help="dashboard address for absolute links (default: relative #/ links)"
     )
 
     gate = commands.add_parser("gate", help="decide a release quality gate (exit code 0 / 1 / 3)")
@@ -965,8 +978,36 @@ def _cmd_collect(args: argparse.Namespace) -> int:
     return EXIT_INPUT if any(outcome.errors for outcome in outcomes) else EXIT_OK
 
 
+def _cmd_digest(args: argparse.Namespace) -> int:
+    """Print what one day added to the history (docs/digest.md); exit 3 when that day has no runs."""
+    try:
+        day = date.fromisoformat(args.day) if args.day else None
+    except ValueError:
+        raise UsageError(f"--day must be a date like 2026-10-19, got {args.day!r}") from None
+    if load_catalog_or_report(args.catalog) is None:
+        return EXIT_INPUT
+    if args.database is not None:
+        store = open_store(args.database)  # reports a missing or broken database itself
+        if store is None:
+            return EXIT_INPUT
+        store.close()
+    sources = Sources(args.catalog, args.database, tuple(args.results), context_from(args), args.gate)
+    try:
+        workspace = load_snapshot(sources).workspace
+    except LoadError as error:
+        print(f"qi: error: {error}", file=sys.stderr)
+        return EXIT_INPUT
+    from qualityintel.reporting.digest import render_digest
+
+    digest = workspace.digest(day=day)
+    made = render_digest(digest, args.base_url or "")
+    print(made.markdown if args.markdown else made.text, end="")
+    return EXIT_OK if digest.sections else EXIT_INPUT
+
+
 COMMANDS: dict[str, Callable[[argparse.Namespace], int]] = {
     "collect": _cmd_collect,
+    "digest": _cmd_digest,
     "version": _cmd_version,
     "config": _cmd_config,
     "inspect": _cmd_inspect,

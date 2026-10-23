@@ -28,6 +28,7 @@ from qualityintel.attention import (
     recurring_state,
 )
 from qualityintel.gates.config import GateConfig
+from qualityintel.gates.history import gate_history
 from qualityintel.history.analysis import (
     DEFAULTS,
     HistorySettings,
@@ -39,8 +40,20 @@ from qualityintel.history.analysis import (
     trend,
 )
 from qualityintel.history.analysis import Execution as HistoryExecution
-from qualityintel.history.builds import BuildSide, builds_in_order, compare_builds, label
-from qualityintel.history.trends import CoverageSnapshot, coverage_changes, daily_trend
+from qualityintel.history.builds import (
+    BuildSide,
+    builds_in_order,
+    compare_builds,
+    label,
+    latest_regressions,
+)
+from qualityintel.history.trends import (
+    CoverageSnapshot,
+    RepositorySnapshot,
+    coverage_changes,
+    daily_trend,
+    repository_trends,
+)
 from qualityintel.ingest.batch import Batch, import_results
 from qualityintel.ingest.catalog_file import load_catalog
 from qualityintel.links import github_run_url
@@ -50,11 +63,13 @@ from qualityintel.models.enums import AutomationStatus, Outcome
 from qualityintel.models.metrics import Ratio, execution_pass_rate
 from qualityintel.models.results import PipelineJob, RunContext, TestResult, TestRun
 from qualityintel.readiness import readiness
+from qualityintel.reporting.issues import Evidence, issue_draft
 from qualityintel.search import build_index, search
 from qualityintel.traceability.coverage import UNSPECIFIED, Filters
+from qualityintel.traceability.gaps import prioritised_gaps
 from qualityintel.traceability.matching import match_results
 from qualityintel.traceability.pipelines import PipelineExecution, pipeline_execution, pipeline_ids
-from qualityintel.traceability.report import RunFilters, TraceabilityReport, build_report
+from qualityintel.traceability.report import RunFilters, TraceabilityReport, build_report, latest_runs
 
 
 class View(BaseModel):
@@ -448,6 +463,30 @@ class BuildComparisonView(View):
     notes: tuple[str, ...]
 
 
+class RegressionRow(View):
+    """A suite whose newest build fails tests that passed in its previous build (docs/history.md)."""
+
+    suite: str
+    repository: str | None
+    branch: str | None
+    base_build: str
+    head_build: str
+    base_run_id: str
+    head_run_id: str
+    head_started_at: datetime | None
+    newly_failing: tuple[str, ...]
+    fixed: tuple[str, ...]
+
+
+class RegressionsView(View):
+    """Latest regressions of every suite, and how many suites could be checked."""
+
+    regressions: tuple[RegressionRow, ...]
+    compared: int
+    single_build: int
+    notes: tuple[str, ...]
+
+
 class RunDetail(View):
     """One run with all of its results."""
 
@@ -552,6 +591,20 @@ class GateRuleView(View):
     explanation: str
 
 
+class ScorecardRow(View):
+    """One criterion of the release status with its evidence page (docs/readiness.md, Scorecard)."""
+
+    name: str
+    source: str
+    measured: str
+    threshold: str
+    result: str
+    effect: str
+    explanation: str
+    route: str | None
+    params: dict[str, str]
+
+
 class ReadinessView(View):
     """The overview's release status and its headline numbers (docs/readiness.md)."""
 
@@ -559,6 +612,7 @@ class ReadinessView(View):
     reasons: tuple[str, ...]
     gate_name: str | None
     rules: tuple[GateRuleView, ...]
+    scorecard: tuple[ScorecardRow, ...]
     executions: int
     pass_rate: RatioView
     requirement_coverage: RatioView
@@ -623,6 +677,138 @@ class TrendsView(View):
     runs: dict[str, tuple[RunTrendView, ...]]
     coverage: tuple[CoverageView, ...]
     notes: tuple[str, ...]
+
+
+class GateDayView(View):
+    """The release gate's verdict on one day's snapshot."""
+
+    day: date
+    status: str
+    failed_rules: tuple[str, ...]
+    input_problems: tuple[str, ...]
+    results: int
+    latest_run_id: str | None
+
+
+class GateChangeView(View):
+    """A day on which the gate's verdict or its failing rules changed."""
+
+    day: date
+    previous: str
+    status: str
+    started_failing: tuple[str, ...]
+    stopped_failing: tuple[str, ...]
+
+
+class GateHistoryView(View):
+    """The release gate over time (docs/quality-gates.md, "Gate history")."""
+
+    gate_name: str | None
+    days: tuple[GateDayView, ...]
+    changes: tuple[GateChangeView, ...]
+    notes: tuple[str, ...]
+
+
+class RepositorySnapshotView(View):
+    """One repository's snapshot at the end of a day."""
+
+    day: date
+    results: int
+    failed: int
+    pass_rate: RatioView
+    suites: int
+    latest_run_id: str | None
+
+
+class RepositoryTrendView(View):
+    """A repository on the newest day against the earlier day (docs/metrics.md, Repository trends)."""
+
+    repository: str
+    now: RepositorySnapshotView
+    before: RepositorySnapshotView | None
+    newly_failing: tuple[str, ...]
+    fixed: tuple[str, ...]
+
+
+class RepositoryTrendsView(View):
+    """Every repository's trend over the same two days."""
+
+    day: date | None
+    days: int
+    repositories: tuple[RepositoryTrendView, ...]
+    notes: tuple[str, ...]
+
+
+class DigestLine(View):
+    """One statement of the digest and the page that shows its evidence (``route`` None: none)."""
+
+    text: str
+    route: str | None
+    params: dict[str, str]
+
+
+class DigestSection(View):
+    """A part of the digest: runs, release gate, regressions, changed tests, recurring failures."""
+
+    title: str
+    lines: tuple[DigestLine, ...]
+
+
+class DigestView(View):
+    """What one day added to the history (docs/digest.md)."""
+
+    day: date | None
+    previous_day: date | None
+    sections: tuple[DigestSection, ...]
+    notes: tuple[str, ...]
+
+
+class IssueDraftView(View):
+    """A suggested issue for one recurring failure; nothing is created (docs/issues.md)."""
+
+    rank: int
+    signature: str
+    runs: int
+    recent_runs: int
+    repository: str | None
+    title: str
+    body: str
+    new_issue_url: str | None
+    shortened: bool
+
+
+class IssueSuggestionsView(View):
+    """Issue drafts for the highest-ranked recurring failures."""
+
+    drafts: tuple[IssueDraftView, ...]
+    notes: tuple[str, ...]
+
+
+class GapView(View):
+    """A requirement without automated coverage, ranked (docs/traceability.md, Prioritised gaps)."""
+
+    rank: int
+    requirement_id: str
+    title: str
+    criticality: str | None
+    risk: str | None
+    kind: str
+    case_statuses: tuple[str, ...]
+
+
+class OwnerGapsView(View):
+    """One owner's gaps, most urgent first."""
+
+    owner: str
+    gaps: tuple[GapView, ...]
+
+
+class GapsView(View):
+    """Coverage gaps of the scope in priority order, grouped by owner."""
+
+    total: int
+    owners: tuple[OwnerGapsView, ...]
+    order: str
 
 
 class Facets(View):
@@ -710,6 +896,28 @@ EVERYTHING = Scope()
 MAX_CACHED_VIEWS = 64
 # Newest supporting runs a recurring failure links to (its run count covers all of them)
 RECURRING_RUNS_LISTED = 10
+# Where each readiness criterion's evidence is shown (route, filters); every gate rule and policy
+# warning has an entry (tests/unit/dashboard/test_api.py checks it on the sample gates)
+CRITERION_EVIDENCE: dict[str, tuple[str, dict[str, str]]] = {
+    "gate inputs complete": ("/collection", {}),
+    "requirement coverage": ("/requirements", {"coverage_status": "no tests"}),
+    "requirements without tests": ("/requirements", {"coverage_status": "no tests"}),
+    "automation coverage": ("/requirements", {"coverage_status": "not automated"}),
+    "automated requirement coverage": ("/requirements", {"coverage_status": "not automated"}),
+    "critical requirements without automation": ("/attention", {"kind": "critical gap"}),
+    "execution pass rate": ("/tests", {"outcome": "failed"}),
+    "failed tests": ("/tests", {"outcome": "failed"}),
+    "executed tests": ("/tests", {}),
+    "failing critical requirements": (
+        "/requirements",
+        {"criticality": "critical", "execution_status": "failing"},
+    ),
+    "failing requirements": ("/requirements", {"execution_status": "failing"}),
+    "automated test cases without results": ("/requirements", {"execution_status": "not run"}),
+    "flaky candidates": ("/stability", {}),
+    "incomplete pipeline collections (7 days)": ("/pipelines", {"status": "incomplete"}),
+    "data freshness": ("/collection", {}),
+}
 T = TypeVar("T")
 
 
@@ -818,6 +1026,20 @@ class Workspace:
                     explanation=rule.explanation,
                 )
                 for rule in rules
+            ),
+            scorecard=tuple(
+                ScorecardRow(
+                    name=c.name,
+                    source=c.source,
+                    measured=c.measured,
+                    threshold=c.threshold,
+                    result=c.result,
+                    effect=c.effect,
+                    explanation=c.explanation,
+                    route=CRITERION_EVIDENCE[c.name][0] if c.name in CRITERION_EVIDENCE else None,
+                    params=CRITERION_EVIDENCE[c.name][1] if c.name in CRITERION_EVIDENCE else {},
+                )
+                for c in decision.criteria
             ),
             executions=sum(report.outcome_counts.values()),
             pass_rate=RatioView.of(report.pass_rate),
@@ -1321,6 +1543,39 @@ class Workspace:
             notes=tuple(notes),
         )
 
+    def regressions(self, scope: Scope = EVERYTHING) -> RegressionsView:
+        """Each suite's newest build against its previous build on the same branch (docs/history.md)."""
+
+        def compute() -> RegressionsView:
+            scan = latest_regressions(self._runs(_without_builds(scope)))
+            return RegressionsView(
+                regressions=tuple(
+                    RegressionRow(
+                        suite=r.label,
+                        repository=r.repository,
+                        branch=r.branch,
+                        base_build=r.base_run.context.build or "",
+                        head_build=r.head_run.context.build or "",
+                        base_run_id=r.base_run.run_id,
+                        head_run_id=r.head_run.run_id,
+                        head_started_at=r.head_run.started_at,
+                        newly_failing=r.newly_failing,
+                        fixed=r.fixed,
+                    )
+                    for r in scan.regressions
+                ),
+                compared=scan.compared,
+                single_build=scan.single_build,
+                notes=(
+                    "A suite is a run context and pipeline job on one branch; builds of other suites "
+                    "or branches are never the baseline.",
+                    "Only dated runs with a build label take part; the highest job attempt of a build "
+                    "counts.",
+                ),
+            )
+
+        return self._cached(("regressions", scope), compute)
+
     def stability(
         self, scope: Scope = EVERYTHING, settings: HistorySettings = DEFAULTS, include_stable: bool = False
     ) -> StabilityView:
@@ -1403,6 +1658,277 @@ class Workspace:
             },
             window=settings.window,
         )
+
+    def issue_suggestions(
+        self, scope: Scope = EVERYTHING, limit: int = 10, dashboard_url: str = ""
+    ) -> IssueSuggestionsView:
+        """Issue drafts for the ``limit`` highest-ranked recurring failures (docs/issues.md)."""
+
+        def compute() -> IssueSuggestionsView:
+            runs = self._runs(scope)
+            by_id = {run.run_id: run for run in runs}
+            urls = {c.pipeline_id: c.url for c in self.collections if github_run_url(c.url)}
+            drafts = []
+            for rank, failure in enumerate(recurring_failures(runs)[:limit], start=1):
+                supporting = [by_id[run_id] for run_id in failure.run_ids if run_id in by_id]
+                evidence = [
+                    Evidence(
+                        source=run.source,
+                        started_at=run.started_at,
+                        dashboard_path=f"#/run/{run.run_id}",
+                        github_url=urls.get(run.pipeline.pipeline_id) if run.pipeline else None,
+                    )
+                    for run in supporting
+                ]
+                repositories = [run.pipeline.repository if run.pipeline else None for run in supporting]
+                draft = issue_draft(failure, repositories, evidence, dashboard_url)
+                drafts.append(
+                    IssueDraftView(
+                        rank=rank,
+                        signature=failure.signature,
+                        runs=failure.runs,
+                        recent_runs=failure.recent_runs,
+                        repository=draft.repository,
+                        title=draft.title,
+                        body=draft.body,
+                        new_issue_url=draft.new_issue_url,
+                        shortened=draft.shortened,
+                    )
+                )
+            return IssueSuggestionsView(
+                drafts=tuple(drafts),
+                notes=(
+                    "Drafts only: this dashboard creates no issue and holds no GitHub write access. "
+                    "A person checks the draft and submits it on GitHub.",
+                    "A pre-filled GitHub link exists only when every supporting run belongs to one "
+                    "collected repository; otherwise copy the draft.",
+                ),
+            )
+
+        return self._cached(("issue-suggestions", scope, limit, dashboard_url), compute)
+
+    def digest(self, scope: Scope = EVERYTHING, day: date | None = None) -> DigestView:
+        """What ``day`` (default: the newest day with runs) added to the history (docs/digest.md)."""
+        return self._cached(("digest", scope, day), lambda: self._compute_digest(scope, day))
+
+    def _compute_digest(self, scope: Scope, day: date | None) -> DigestView:
+        """Each section reuses an analysis the dashboard shows, limited to the runs up to ``day``."""
+        dated = [r for r in self._runs(scope) if r.started_at is not None]
+        days = sorted({_utc_day(r) for r in dated})
+        chosen = day if day is not None else (days[-1] if days else None)
+        if chosen is None or chosen not in days:
+            note = f"no dated run in this scope on {chosen}" if chosen else "no dated runs in this scope"
+            return DigestView(day=chosen, previous_day=None, sections=(), notes=(note,))
+        earlier = [d for d in days if d < chosen]
+        previous = earlier[-1] if earlier else None
+        upto = [r for r in dated if _utc_day(r) <= chosen]
+        on_day = [r for r in upto if _utc_day(r) == chosen]
+        that_day = {"since": chosen.isoformat(), "until": chosen.isoformat()}
+        sections = [
+            self._digest_runs(on_day, that_day),
+            *self._digest_gate(upto, scope, chosen, previous, that_day),
+            _digest_regressions(upto, chosen),
+            _digest_changed_tests(upto, chosen, previous),
+            _digest_recurring(upto, chosen),
+        ]
+        return DigestView(
+            day=chosen,
+            previous_day=previous,
+            sections=tuple(sections),
+            notes=(
+                "Days are UTC run start dates; the previous day is the previous day with runs, not "
+                "the calendar day before.",
+                "Every section uses only the runs started on or before the digest day.",
+            ),
+        )
+
+    @staticmethod
+    def _digest_runs(on_day: Sequence[TestRun], that_day: dict[str, str]) -> DigestSection:
+        """Runs, results and failures of the day, in total and per repository."""
+        per_repository: dict[str | None, list[int]] = {}
+        for run in on_day:
+            counts = run.outcome_counts()
+            entry = per_repository.setdefault(run.pipeline.repository if run.pipeline else None, [0, 0, 0])
+            entry[0] += 1
+            entry[1] += sum(counts.values())
+            entry[2] += counts[Outcome.FAILED] + counts[Outcome.ERROR]
+        runs, results, failed = (sum(e[i] for e in per_repository.values()) for i in range(3))
+        lines = [
+            DigestLine(
+                text=f"{runs} run(s), {results} results, {failed} failed or errored",
+                route="/runs",
+                params=that_day,
+            )
+        ]
+        for repository, (n, total, bad) in sorted(per_repository.items(), key=lambda item: item[0] or "~"):
+            lines.append(
+                DigestLine(
+                    text=f"{repository or 'repository not recorded'}: {n} run(s), {total} results, "
+                    f"{bad} failed or errored",
+                    route="/runs",
+                    params={**that_day, "repository": repository} if repository else that_day,
+                )
+            )
+        return DigestSection(title="Runs", lines=tuple(lines))
+
+    def _digest_gate(
+        self,
+        upto: Sequence[TestRun],
+        scope: Scope,
+        day: date,
+        previous: date | None,
+        that_day: dict[str, str],
+    ) -> list[DigestSection]:
+        """The release gate on the day's snapshot against the previous day (none without a gate)."""
+        if self.gate is None:
+            return []
+        verdicts, changes = gate_history(upto, self.catalog, self.gate, scope.filters)
+        by_day = {v.day: v for v in verdicts}
+        today, before = by_day.get(day), by_day.get(previous) if previous else None
+        if today is None:  # every day with runs has a verdict; kept for type safety
+            return []
+        failing = f" (failing: {', '.join(today.failed_rules)})" if today.failed_rules else ""
+        earlier = f"; {before.status.value} on {previous}" if before else "; no earlier day"
+        lines = [
+            DigestLine(
+                text=f"{self.gate.name}: {today.status.value}{failing}{earlier}", route="/trends", params={}
+            )
+        ]
+        for change in (c for c in changes if c.day == day):
+            parts = [
+                f"started failing: {', '.join(change.started_failing)}" if change.started_failing else "",
+                f"stopped failing: {', '.join(change.stopped_failing)}" if change.stopped_failing else "",
+            ]
+            lines.append(
+                DigestLine(
+                    text=(
+                        f"still {change.status.value}, reasons changed; "
+                        if change.previous is change.status
+                        else f"changed from {change.previous.value} to {change.status.value}; "
+                    )
+                    + "; ".join(p for p in parts if p),
+                    route="/runs",
+                    params=that_day,
+                )
+            )
+        return [DigestSection(title="Release gate", lines=tuple(lines))]
+
+    def repository_trends(self, scope: Scope = EVERYTHING, days: int = 7) -> RepositoryTrendsView:
+        """Each repository's snapshot on the newest day with runs against ``days`` earlier."""
+
+        def snapshot(s: RepositorySnapshot | None) -> RepositorySnapshotView | None:
+            if s is None:
+                return None
+            return RepositorySnapshotView(
+                day=s.day,
+                results=s.results,
+                failed=s.failed,
+                pass_rate=RatioView.of(s.pass_rate),
+                suites=s.suites,
+                latest_run_id=s.latest_run_id,
+            )
+
+        def compute() -> RepositoryTrendsView:
+            runs = self._runs(scope)
+            today, trends = repository_trends(runs, days)
+            without = sum(1 for r in runs if not (r.pipeline and r.pipeline.repository))
+            notes = [
+                f"Both columns are end-of-day snapshots: the newest day with runs and {days} days "
+                "before it; a test counts as failing when it fails in any of the repository's suites."
+            ]
+            if without:
+                notes.append(f"{without} run(s) without a recorded repository are not in this table")
+            return RepositoryTrendsView(
+                day=today,
+                days=days,
+                repositories=tuple(
+                    RepositoryTrendView(
+                        repository=t.repository,
+                        now=cast(RepositorySnapshotView, snapshot(t.now)),
+                        before=snapshot(t.before),
+                        newly_failing=t.newly_failing,
+                        fixed=t.fixed,
+                    )
+                    for t in trends
+                ),
+                notes=tuple(notes),
+            )
+
+        return self._cached(("repository-trends", scope, days), compute)
+
+    def gaps(self, scope: Scope = EVERYTHING) -> GapsView:
+        """Requirements without automated coverage, by criticality, risk and gap type, per owner."""
+        groups = prioritised_gaps(self._report(scope).coverage)
+        return GapsView(
+            total=sum(len(group.gaps) for group in groups),
+            owners=tuple(
+                OwnerGapsView(
+                    owner=group.owner,
+                    gaps=tuple(
+                        GapView(
+                            rank=g.rank,
+                            requirement_id=g.requirement_id,
+                            title=g.title,
+                            criticality=g.criticality,
+                            risk=g.risk,
+                            kind=g.kind,
+                            case_statuses=g.case_statuses,
+                        )
+                        for g in group.gaps
+                    ),
+                )
+                for group in groups
+            ),
+            order=(
+                "criticality (critical, high, medium, low, unspecified), then risk (high, medium, low, "
+                "unspecified), then no tests before not automated, then requirement id; owners by their "
+                "most urgent gap"
+            ),
+        )
+
+    def gate_history(self, scope: Scope = EVERYTHING) -> GateHistoryView:
+        """The release gate on each day's snapshot of the last 30 days with runs, and its changes."""
+
+        def compute() -> GateHistoryView:
+            if self.gate is None:
+                return GateHistoryView(
+                    gate_name=None,
+                    days=(),
+                    changes=(),
+                    notes=("no release gate is configured, so there is no gate history",),
+                )
+            days, changes = gate_history(self._runs(scope), self.catalog, self.gate, scope.filters)
+            return GateHistoryView(
+                gate_name=self.gate.name,
+                days=tuple(
+                    GateDayView(
+                        day=d.day,
+                        status=d.status.value,
+                        failed_rules=d.failed_rules,
+                        input_problems=d.input_problems,
+                        results=d.results,
+                        latest_run_id=d.latest_run_id,
+                    )
+                    for d in days
+                ),
+                changes=tuple(
+                    GateChangeView(
+                        day=c.day,
+                        previous=c.previous.value,
+                        status=c.status.value,
+                        started_failing=c.started_failing,
+                        stopped_failing=c.stopped_failing,
+                    )
+                    for c in changes
+                ),
+                notes=(
+                    "Each day is the end-of-day snapshot of the Trends page, judged by the gate alone "
+                    "(the readiness warnings are not part of the gate).",
+                    "The catalog is today's: a requirement added later counts as a gap on earlier days too.",
+                ),
+            )
+
+        return self._cached(("gate-history", scope), compute)
 
     def trends(self, scope: Scope = EVERYTHING) -> TrendsView:
         """Cached per snapshot: see :meth:`_compute_trends`."""
@@ -2055,3 +2581,103 @@ def _sorted(values: Iterable[str | None]) -> tuple[str, ...]:
 def _text(member: object) -> str:
     """Enum value, or ``unspecified``."""
     return UNSPECIFIED if member is None else str(getattr(member, "value", member))
+
+
+# ---- daily digest (docs/digest.md) ------------------------------------------------------------
+
+# Recurring failures the digest names at most (the Stability page lists all of them)
+DIGEST_RECURRING = 5
+# Tests per repository the digest names when they started failing (the count covers all)
+DIGEST_TESTS = 5
+
+
+def _utc_day(run: TestRun) -> date:
+    """UTC start date of a dated run."""
+    return (run.started_at or datetime.min.replace(tzinfo=UTC)).astimezone(UTC).date()
+
+
+def _digest_regressions(upto: Sequence[TestRun], day: date) -> DigestSection:
+    """Suites whose newest build, started on ``day``, fails tests its previous build passed."""
+    found = [r for r in latest_regressions(upto).regressions if _utc_day(r.head_run) == day]
+    lines = [
+        DigestLine(
+            text=f"{r.label}: {len(r.newly_failing)} test(s) newly failing, build "
+            f"{r.base_run.context.build} -> {r.head_run.context.build}",
+            route="/compare",
+            params={"base": r.base_run.context.build or "", "head": r.head_run.context.build or ""},
+        )
+        for r in found
+    ]
+    if not lines:
+        lines = [
+            DigestLine(
+                text="no suite's build of this day fails a test its previous build passed",
+                route=None,
+                params={},
+            )
+        ]
+    return DigestSection(title="Regressions", lines=tuple(lines))
+
+
+def _failing_by_repository(runs: Iterable[TestRun]) -> dict[str | None, set[str]]:
+    """Failing test keys of the snapshot of ``runs`` (latest run per suite), per repository."""
+    found: dict[str | None, set[str]] = {}
+    for run in latest_runs(runs):
+        keys = found.setdefault(run.pipeline.repository if run.pipeline else None, set())
+        keys.update(r.key for r in run.results if r.outcome in (Outcome.FAILED, Outcome.ERROR))
+    return found
+
+
+def _digest_changed_tests(upto: Sequence[TestRun], day: date, previous: date | None) -> DigestSection:
+    """Per repository: tests that started or stopped failing since the previous day with runs.
+
+    Compares the snapshots at the end of both days; runs without a repository form their own group.
+    """
+    if previous is None:
+        line = DigestLine(text="no earlier day with runs to compare with", route=None, params={})
+        return DigestSection(title="Tests that changed", lines=(line,))
+    now = _failing_by_repository(upto)
+    before = _failing_by_repository(r for r in upto if _utc_day(r) <= previous)
+    lines = []
+    for repository in sorted(now.keys() | before.keys(), key=lambda r: r or "~"):
+        started = sorted(now.get(repository, set()) - before.get(repository, set()))
+        stopped = sorted(before.get(repository, set()) - now.get(repository, set()))
+        if not (started or stopped):
+            continue
+        name = repository or "repository not recorded"
+        lines.append(
+            DigestLine(
+                text=f"{name}: {len(started)} started failing, {len(stopped)} stopped failing",
+                route="/trends",
+                params={"repository": repository} if repository else {},
+            )
+        )
+        lines += [
+            DigestLine(text=f"{name}: started failing: {key}", route="/test", params={"key": key})
+            for key in started[:DIGEST_TESTS]
+        ]
+    if not lines:
+        lines = [
+            DigestLine(text=f"no test started or stopped failing since {previous}", route=None, params={})
+        ]
+    return DigestSection(title="Tests that changed", lines=tuple(lines))
+
+
+def _digest_recurring(upto: Sequence[TestRun], day: date) -> DigestSection:
+    """Recurring failure causes seen again on ``day``, in rank order (docs/metrics.md)."""
+    seen = [f for f in recurring_failures(upto) if f.last_seen and f.last_seen.astimezone(UTC).date() == day]
+    lines = [
+        DigestLine(
+            text=f"{f.signature[:160]}: {f.runs} runs, {f.recent_runs} in the 7 days before {day}",
+            route=f"/run/{f.run_ids[0]}",
+            params={},
+        )
+        for f in seen[:DIGEST_RECURRING]
+    ]
+    if len(seen) > DIGEST_RECURRING:
+        lines.append(
+            DigestLine(text=f"and {len(seen) - DIGEST_RECURRING} more", route="/stability", params={})
+        )
+    if not lines:
+        lines = [DigestLine(text="no recurring failure cause was seen on this day", route=None, params={})]
+    return DigestSection(title="Recurring failures seen again", lines=tuple(lines))

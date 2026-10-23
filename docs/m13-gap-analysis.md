@@ -27,6 +27,23 @@ recommendation links to its supporting executions and documented calculation.**
 | 9 | GitHub issue suggestions for recurring failures, approval before creation | **missing** | – | a draft issue (title, body with evidence links) and a pre-filled *new issue* link; the app never creates issues |
 | 10 | AI-assisted summaries after deterministic metrics are verified | **deferred** | – | not in M13: no API key on the deployment, and the plan puts deterministic metrics first; the digest and summaries are deterministic |
 
+## Result
+
+Each item links its evidence (runs, builds, tests, requirements) and documents its calculation.
+
+| # | Item | Done in | Where | Calculation |
+|---|---|---|---|---|
+| 1 | Latest regressions | `33bcdd9` | Compare page, `/api/regressions` | [history.md, Latest regressions](history.md#latest-regressions) |
+| 2 | Recurring failures ranked by recency, then frequency | `cbfc7e6` | Stability page, Needs attention | [metrics.md, Recurring failures](metrics.md#recurring-failures) |
+| 3 | Persistent performance regressions | before M13 | Stability page | [metrics.md, Durations](metrics.md#durations) |
+| 4 | Readiness scorecard | `739636d` | Coverage & release page (`#/coverage`) | [readiness.md, Scorecard](readiness.md#scorecard) |
+| 5 | Gate history | `31801a7` | Trends page, `/api/gate-history` | [quality-gates.md, Gate history](quality-gates.md#gate-history) |
+| 6 | Gaps by criticality, risk and owner | `beb080e` | Coverage & release page, `/api/gaps` | [traceability.md, Prioritised gaps](traceability.md#prioritised-gaps) |
+| 7 | Repository trends | `e6ccd6d` | Trends page, `/api/repository-trends` | [metrics.md, Repository trends](metrics.md#repository-trends) |
+| 8 | Daily digest | `12492a8` | `qi digest`, `/api/digest`, `/api/digest/summary` | [digest.md](digest.md) |
+| 9 | Issue drafts (a person submits on GitHub) | `d8e2005` | Stability page, `/api/issue-suggestions` | [issues.md](issues.md) |
+| 10 | AI-assisted summaries | deferred | – | deterministic texts first (digest, summaries); no model on the deployment |
+
 ## Rules kept from earlier milestones
 
 - Read-only API (`GET` only); the dashboard never writes to GitHub.

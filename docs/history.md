@@ -101,3 +101,22 @@ On the sample data, TestNG on Firefox, builds `f5a40d5` → `1d03232`: one compa
 10 tests slower; the 13 Oct timeout is not a change between builds because a later nightly on
 the same commit passed (the latest run of a build counts), and the test's own history shows it.
 
+## Latest regressions
+
+`latest_regressions()` in `qualityintel/history/builds.py`, the top of the **Compare** page and
+`GET /api/regressions` (M13). No builds are chosen: every suite is checked by itself.
+
+- A **suite** is the comparison key of *Comparing builds* (run context, pipeline job and result
+  file) **plus the pipeline branch**: a pull-request build is never the baseline of a `main`
+  build.
+- Only **dated runs with a build label** take part; an undated run cannot be placed before or
+  after another. Per suite and build the **highest job attempt**, then the latest start, counts
+  (a passing re-run replaces a failed first attempt).
+- The suite's **newest build** is compared with the build that ran **just before it** in the same
+  suite, with the same comparison as *Comparing runs*. Tests that passed there and fail or error
+  now are the regression; recovered tests are shown beside them. A suite whose newest build has
+  no new failure is counted as compared, not listed.
+- Suites that ran in one build only are counted ("ran in one build only"), never treated as a
+  regression or as passing.
+- Each row links the two builds' comparison, both runs and every newly failing test.
+
