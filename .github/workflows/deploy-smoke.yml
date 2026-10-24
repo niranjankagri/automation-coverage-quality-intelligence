@@ -29,14 +29,32 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # A late CI run (e.g. "Re-run failed jobs") for a commit that main has already moved past:
+      # the host now runs the newer commit, so waiting for the old one could only fail. The newer
+      # commit's own CI run triggers its own smoke test, so this run has nothing left to check.
+      - name: Check that this is the newest commit on main
+        id: newest
+        env:
+          EXPECTED: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          main_sha="$(git rev-parse HEAD)"
+          if [ "$EXPECTED" = "$main_sha" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipped: ${EXPECTED:0:7} is no longer the newest commit on main (${main_sha:0:7}); its smoke test covers the live service"
+          fi
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        if: steps.newest.outputs.current == 'true'
         with:
           python-version: "3.13"
           cache: pip
       - run: pip install -e ".[e2e]"
+        if: steps.newest.outputs.current == 'true'
       # Like the CI browser installs (ci.yml, other-browsers): the system libraries get one long try
       # (a slow mirror still finishes), the browser download 5 minutes a try and three tries
       - name: Install Chromium
+        if: steps.newest.outputs.current == 'true'
         timeout-minutes: 45
         run: |
           timeout 1800 playwright install-deps chromium
@@ -48,11 +66,13 @@ jobs:
       # The free host may be asleep and the deploy takes a few minutes: up to 20 minutes for the
       # service to report the new commit, then the same checks a visitor and an operator rely on
       - name: Wait for the deployment, then smoke test it
+        if: steps.newest.outputs.current == 'true'
         env:
           LIVE_URL: ${{ vars.QI_LIVE_URL }}
           EXPECTED: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: python tools/smoke.py "$LIVE_URL" --wait 1200 --expect-commit "$EXPECTED" --collected
       - name: Report in a browser
+        if: steps.newest.outputs.current == 'true'
         env:
           LIVE_URL: ${{ vars.QI_LIVE_URL }}
         run: python tools/report_smoke.py "$LIVE_URL"
