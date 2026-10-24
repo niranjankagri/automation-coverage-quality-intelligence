@@ -50,6 +50,20 @@ def test_the_overview_keeps_pass_rate_coverage_gaps_and_readiness_apart(page: Pa
     expect(page.locator(".compare tbody tr")).to_have_count(4)  # chrome, chromium, firefox, no browser
 
 
+def test_browser_cards_open_scoped_results_and_keep_exact_numbers(page: Page) -> None:
+    """Visual browser cards open their own results; the exact comparison remains available."""
+    page.goto("/next/#/overview")
+    heading(page, "Overview")
+    card = page.locator("a.browser-card").filter(has_text="chromium").first
+    expect(card).to_contain_text("results")
+    page.get_by_text("Compare exact numbers", exact=True).click()
+    expect(page.locator(".compare")).to_be_visible()
+    card.click()
+    heading(page, "Test Results")
+    expect(page).to_have_url(re.compile(r"browser=chromium"))
+    expect(page.get_by_role("button", name="Remove Browser chromium", exact=True)).to_be_visible()
+
+
 def test_the_donut_and_the_trend_open_the_matching_results(page: Page) -> None:
     """A status in the donut opens those results; a day of the trend opens that day's results."""
     page.goto("/next/#/overview")
@@ -299,7 +313,7 @@ def test_the_theme_button_works_like_the_portfolio(page: Page) -> None:
 
     expect(page.locator("html")).to_have_attribute("data-theme", "dark")
     expect(page.get_by_role("button", name="Use light theme")).to_be_visible()
-    assert page.evaluate("getComputedStyle(document.body).backgroundColor") == "rgb(20, 24, 39)"
+    assert page.evaluate("getComputedStyle(document.body).backgroundColor") == "rgb(17, 27, 43)"
 
 
 def test_keyboard_focus_is_visible_and_motion_can_be_reduced(page: Page) -> None:

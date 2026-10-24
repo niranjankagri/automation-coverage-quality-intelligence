@@ -22,7 +22,8 @@ jobs:
       vars.QI_LIVE_URL != '' && (github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'))
     runs-on: ubuntu-26.04
-    timeout-minutes: 35
+    # Budget: up to 45 min browser setup, two 20 min service waits, then checks.
+    timeout-minutes: 90
     steps:
       # The repository's own code on main; nothing from the triggering run is downloaded or executed
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

@@ -30,13 +30,20 @@ export async function overview(state, { signal, facts }) {
     : null;
 
   return [
-    h("div", { class: "report-heading" },
+    h("div", { class: "report-heading overview-heading" },
       h("div", {},
         h("p", { class: "eyebrow" }, `Report · ${repoName(scope.repository)}${scope.kind ? ` · ${KIND_LABELS[scope.kind] ?? scope.kind}` : ""}`),
         h("h1", {}, "Overview"),
         h("p", { class: "lead" }, d.first_started_at
           ? `The latest result of every suite in this scope: ${n(d.runs)} run(s), ${formatDate(d.first_started_at)} to ${formatDate(d.latest_started_at)}.`
-          : "No dated runs in this scope."))),
+           : "No dated runs in this scope.")),
+      h("div", { class: "hero-actions" },
+        h("a", { class: "button", href: href("results", scope) }, "Explore test results", h("span", { "aria-hidden": "true" }, " ↗")),
+        h("a", { class: "button-quiet", href: href("coverage", scope) }, "View coverage")),
+      h("div", { class: "snapshot-strip", role: "group", "aria-label": "Snapshot scope" },
+        h("span", {}, h("strong", {}, n(d.suites.length)), " suite groups"),
+        h("span", {}, h("strong", {}, n(d.runs)), " latest runs"),
+        h("span", {}, h("strong", {}, n(d.total)), " test results"))),
     nothing,
     headline(d, summary, readiness, scope),
     h("div", { class: "grid" },
@@ -150,7 +157,21 @@ function trendCard(points, scope) {
 function browsersCard(browsers, scope) {
   return card("browsers-title", "Browser comparison", `${browsers.length} browser group(s)`,
     browsers.length
-      ? h("div", { class: "table-wrap" }, h("table", { class: "compare" },
+      ? [h("div", { class: "browser-cards" }, browsers.map((b) => {
+          const bar = h("span", { class: "browser-progress-fill" });
+          bar.style.width = `${b.pass_rate.percent ?? 0}%`;
+          const content = [
+            h("span", { class: "browser-card-top" }, h("strong", {}, b.browser ?? "No browser"), h("span", { class: "browser-rate" }, percent(b.pass_rate))),
+            h("span", { class: "browser-progress", "aria-hidden": "true" }, bar),
+            h("span", { class: "browser-card-meta" }, `${n(b.total)} results`, h("span", {}, b.duration_seconds === null ? "time not recorded" : clock(b.duration_seconds))),
+            b.untimed ? h("small", { class: "sub" }, `${n(b.untimed)} without recorded duration`) : null,
+          ];
+          return b.browser
+            ? h("a", { class: "browser-card", href: href("results", { ...without(scope, "browser"), browser: b.browser }), "aria-label": `${b.browser}: ${n(b.total)} results, ${percent(b.pass_rate)} pass rate` }, content)
+            : h("div", { class: "browser-card" }, content);
+        })),
+        h("details", { class: "numbers" }, h("summary", {}, "Compare exact numbers"),
+        h("div", { class: "table-wrap" }, h("table", { class: "compare" },
           h("thead", {}, h("tr", {}, h("th", {}, "Browser"), h("th", { class: "num" }, "Results"), h("th", {}, "Pass rate"), h("th", { class: "num" }, "Recorded time"))),
           h("tbody", {}, browsers.map((b) => {
             const bar = h("span", { class: "meter-fill" });
@@ -160,7 +181,7 @@ function browsersCard(browsers, scope) {
               h("td", { class: "num" }, n(b.total)),
               h("td", {}, h("span", { class: "meter" }, bar), " ", percent(b.pass_rate)),
               h("td", { class: "num" }, b.duration_seconds === null ? "not recorded" : clock(b.duration_seconds), b.untimed && b.duration_seconds !== null ? h("small", { class: "sub" }, ` (${n(b.untimed)} untimed)`) : null));
-          }))))
+          })))))]
       : emptyState("no-match"),
     { class: "span-6 accent-purple" });
 }
