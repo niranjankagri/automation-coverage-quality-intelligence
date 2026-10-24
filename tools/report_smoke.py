@@ -1,6 +1,6 @@
 """Browser smoke test of a deployed report: python tools/report_smoke.py URL.
 
-After a deployment (docs/deployment.md), opens the report (``/next/``) in headless Chromium the way a
+After a deployment (docs/deployment.md), opens the report (``/``) in headless Chromium the way a
 visitor would: every section shows its own heading; choosing a repository narrows the report; a
 test opens its own execution (same run as the row clicked); a requirement opens inside the report;
 and no page logs an application error. Exit code 0 when every check passed, 1 otherwise; one line
@@ -17,7 +17,7 @@ from urllib.parse import parse_qs
 from playwright.sync_api import Error, Page, sync_playwright
 
 SECTIONS = {
-    "overview": "Overview",
+    "overview": "Quality at a glance",
     "results": "Test Results",
     "failures": "Failures & Stability",
     "trends": "Trends",
@@ -31,7 +31,7 @@ def section(page: Page, base: str, route: str, title: str) -> None:
 
     Waits use locators: the page's Content Security Policy forbids evaluating strings as script.
     """
-    page.goto(f"{base}/next/#/{route}")
+    page.goto(f"{base}/#/{route}")
     page.locator("main h1", has_text=title).first.wait_for(timeout=TIMEOUT_MS)
     page.locator("main[aria-busy]").wait_for(state="detached", timeout=TIMEOUT_MS)
 
@@ -39,11 +39,16 @@ def section(page: Page, base: str, route: str, title: str) -> None:
 def checks(page: Page, base: str) -> list[tuple[str, bool, str]]:
     """Every check as (name, passed, detail)."""
     results: list[tuple[str, bool, str]] = []
+    page.goto(f"{base}/classic/")
+    page.locator("#view h1").wait_for(timeout=TIMEOUT_MS)
+    results.append(
+        ("classic dashboard remains available", page.locator("#view h1").is_visible(), "/classic/")
+    )
     for route, title in SECTIONS.items():
         section(page, base, route, title)
         results.append((f"section {title}", page.locator(".error-box").count() == 0, route))
 
-    section(page, base, "overview", "Overview")
+    section(page, base, "overview", "Quality at a glance")
     choices = page.locator("#filter-repository option").evaluate_all(
         "els => els.map(e => e.value).filter(Boolean)"
     )
@@ -64,7 +69,7 @@ def checks(page: Page, base: str) -> list[tuple[str, bool, str]]:
         clicked = parse_qs(row.get_attribute("href").split("?", 1)[1])["run"][0]  # type: ignore[union-attr]
         row.click()
         page.locator(".test-title").wait_for(timeout=TIMEOUT_MS)
-        shown = page.locator(".tab-panel a[href^='/#/run/']").first.get_attribute("href") or ""
+        shown = page.locator(".tab-panel a[href^='/classic/#/run/']").first.get_attribute("href") or ""
         results.append(("test drill-down opens its own execution", clicked[:12] in shown, clicked[:12]))
     else:
         results.append(("test drill-down opens its own execution", False, "no passed results listed"))

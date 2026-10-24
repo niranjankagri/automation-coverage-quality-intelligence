@@ -52,7 +52,7 @@ def boxes(page: Page) -> list[dict[str, Any]]:
 def test_page_regions_stack_without_overlapping_or_spilling(page: Page, route: str, width: int) -> None:
     """Header, filters, data bar, notice and content follow each other, inside the window."""
     page.set_viewport_size({"width": width, "height": 900})
-    page.goto(f"/{route}")
+    page.goto(f"/classic/{route}")
     expect(page.locator("#view h1")).to_be_visible()
     page.wait_for_load_state("networkidle")
 
@@ -78,7 +78,7 @@ def test_page_regions_stack_without_overlapping_or_spilling(page: Page, route: s
 def test_card_values_fit_their_cards_and_nav_links_stay_on_screen(page: Page, width: int) -> None:
     """Numbers like '90.5 %' never overflow a card; every section link can be reached."""
     page.set_viewport_size({"width": width, "height": 900})
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
     expect(page.get_by_role("heading", name="Overview", exact=True)).to_be_visible()
     if width <= 720:
         page.locator(".mobile-nav > summary").click()

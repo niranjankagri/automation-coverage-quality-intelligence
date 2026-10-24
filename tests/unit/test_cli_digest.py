@@ -28,7 +28,7 @@ def test_digest_in_markdown_with_absolute_links(capsys: pytest.CaptureFixture[st
 
     out = capsys.readouterr().out
     assert out.startswith("### Quality digest 2026-10-13")
-    assert "(https://qi.example/#/runs?since=2026-10-13&until=2026-10-13)" in out
+    assert "(https://qi.example/classic/#/runs?since=2026-10-13&until=2026-10-13)" in out
 
 
 def test_a_day_without_runs_exits_3_and_a_bad_date_is_a_usage_error(

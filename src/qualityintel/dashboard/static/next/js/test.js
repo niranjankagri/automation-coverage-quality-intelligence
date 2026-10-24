@@ -93,7 +93,7 @@ function executionPanel(e, history) {
       h("dt", {}, "Retries in this run"), h("dd", {}, n(e.retries)),
       h("dt", {}, "Started"), h("dd", {}, formatDate(e.started_at)),
       h("dt", {}, "Framework"), h("dd", {}, e.context.framework ?? "not recorded"),
-      h("dt", {}, "Run"), h("dd", {}, h("a", { href: `/#/run/${encodeURIComponent(e.run_id)}` }, e.run_id.slice(0, 12)))),
+      h("dt", {}, "Run"), h("dd", {}, h("a", { href: `/classic/#/run/${encodeURIComponent(e.run_id)}` }, e.run_id.slice(0, 12)))),
     h("h3", {}, "Requirements"),
     history.requirements.length
       ? h("p", {}, history.requirements.map((id, i) => [i ? ", " : null, h("a", { href: href("requirement", {}, { id }) }, id)]))

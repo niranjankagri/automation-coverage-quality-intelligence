@@ -146,7 +146,7 @@ def test_front_end_is_served_with_a_strict_content_security_policy(client: TestC
     script = client.get("/static/app.js")
 
     assert page.status_code == 200
-    assert '<script src="/static/app.js" defer></script>' in page.text
+    assert 'src="/static/next/js/main.js"' in page.text
     assert page.headers["content-security-policy"] == CONTENT_SECURITY_POLICY
     assert script.headers["x-content-type-options"] == "nosniff"
     assert "unsafe-inline" not in CONTENT_SECURITY_POLICY
@@ -491,7 +491,7 @@ def test_the_digest_defaults_to_the_newest_day_and_copies_as_text_and_markdown(c
     made = client.get("/api/digest/summary", params={"day": "2026-10-13"}).json()
 
     assert made["text"].startswith("Quality digest 2026-10-13 (compared with 2026-10-12)\n")
-    assert "[/#/runs?since=2026-10-13&until=2026-10-13]" in made["text"]
+    assert "[/classic/#/runs?since=2026-10-13&until=2026-10-13]" in made["text"]
     assert made["markdown"].startswith("### Quality digest 2026-10-13")
     assert client.get("/api/digest", params={"day": "13-10-2026"}).status_code == 422
 
@@ -528,7 +528,7 @@ def test_issue_drafts_link_this_dashboard_and_the_ci_run_and_create_nothing() ->
     (draft,) = client.get("/api/issue-suggestions").json()["drafts"]
 
     assert draft["new_issue_url"].startswith("https://github.com/o/r/issues/new?title=Recurring+test+failure")
-    assert f"[dashboard](http://testserver/#/run/{runs[1].run_id})" in draft["body"]
+    assert f"[dashboard](http://testserver/classic/#/run/{runs[1].run_id})" in draft["body"]
     assert "[CI run](https://github.com/o/r/actions/runs/19)" in draft["body"]
     assert client.get("/api/issue-suggestions", params={"limit": 0}).status_code == 422
 
@@ -696,6 +696,14 @@ def test_the_report_page_is_served_beside_the_classic_one(client: TestClient) ->
     assert page.headers["Content-Security-Policy"].startswith("default-src 'self'")
     assert (redirect.status_code, redirect.headers["location"]) == (308, "/next/")
     assert client.get("/static/next/js/main.js").status_code == 200
+    assert client.get("/").text == page.text
+    classic = client.get("/classic/")
+    assert classic.status_code == 200
+    assert 'src="/static/app.js"' in classic.text
+    assert classic.headers["Cache-Control"] == "no-cache"
+    assert 'href="/classic/"' in page.text
+    slash = client.get("/classic", follow_redirects=False)
+    assert (slash.status_code, slash.headers["location"]) == (308, "/classic/")
 
 
 def test_readiness_follows_the_chosen_scope(client: TestClient) -> None:

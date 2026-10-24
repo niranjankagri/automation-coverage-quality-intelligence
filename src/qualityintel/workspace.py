@@ -1772,7 +1772,7 @@ class Workspace:
                     Evidence(
                         source=run.source,
                         started_at=run.started_at,
-                        dashboard_path=f"#/run/{run.run_id}",
+                        dashboard_path=f"classic/#/run/{run.run_id}",
                         github_url=urls.get(run.pipeline.pipeline_id) if run.pipeline else None,
                     )
                     for run in supporting

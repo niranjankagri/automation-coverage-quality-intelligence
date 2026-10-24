@@ -116,8 +116,10 @@ def test_links_are_relative_or_under_the_given_base_url() -> None:
     """``#/route?params`` by default; absolute with a base URL; none for a line without evidence."""
     line = DigestLine(text="t", route="/test", params={"key": "suite::a b"})
 
-    assert dashboard_link(line) == "/#/test?key=suite%3A%3Aa+b"
-    assert dashboard_link(line, "https://qi.example/") == "https://qi.example/#/test?key=suite%3A%3Aa+b"
+    assert dashboard_link(line) == "/classic/#/test?key=suite%3A%3Aa+b"
+    assert (
+        dashboard_link(line, "https://qi.example/") == "https://qi.example/classic/#/test?key=suite%3A%3Aa+b"
+    )
     assert dashboard_link(DigestLine(text="t", route=None, params={})) is None
 
 

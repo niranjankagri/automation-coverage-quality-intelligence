@@ -39,7 +39,7 @@ def evidence(n: int, github: bool = True) -> list[Evidence]:
         Evidence(
             source=f"TEST-{i}.xml",
             started_at=WHEN,
-            dashboard_path=f"#/run/{str(i) * 64}",
+            dashboard_path=f"classic/#/run/{str(i) * 64}",
             github_url=f"https://github.com/o/r/actions/runs/{1000 + i}" if github else None,
         )
         for i in range(n)
@@ -56,7 +56,7 @@ def test_the_draft_states_the_evidence_and_its_calculation() -> None:
     assert "2026-10-13 to 2026-10-19 (UTC)" in draft.body
     assert "- `suite::a`" in draft.body
     assert (
-        f"- TEST-0.xml, 2026-10-19 09:00 UTC: [dashboard](https://qi.example/#/run/{'0' * 64}), "
+        f"- TEST-0.xml, 2026-10-19 09:00 UTC: [dashboard](https://qi.example/classic/#/run/{'0' * 64}), "
         "[CI run](https://github.com/o/r/actions/runs/1000)"
     ) in draft.body
     assert "docs/metrics.md, Recurring failures" in draft.body

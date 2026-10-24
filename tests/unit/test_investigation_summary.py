@@ -27,7 +27,7 @@ def workspace() -> Workspace:
 def test_a_test_summary_states_observations_counts_and_limits(workspace: Workspace) -> None:
     """Latest and previous outcome, history counts that add up, the suspicion as a suspicion."""
     history = workspace.test_history(TEST_KEY)
-    summary = summarise_test(history, AS_OF, "/#/test?key=SHOP-006", workspace.catalog.notice)
+    summary = summarise_test(history, AS_OF, "/classic/#/test?key=SHOP-006", workspace.catalog.notice)
     lines = summary.text.splitlines()
 
     assert lines[0] == f"Investigation: {TEST_KEY}"
@@ -36,7 +36,7 @@ def test_a_test_summary_states_observations_counts_and_limits(workspace: Workspa
     )
     assert "flaky candidate (suspected)" in summary.text
     assert "Requirements: ADMIN-003" in summary.text
-    assert "Dashboard: /#/test?key=SHOP-006" in summary.text
+    assert "Dashboard: /classic/#/test?key=SHOP-006" in summary.text
     assert "Data as of: 2026-10-21 05:00 UTC" in summary.text
     assert "no cause is inferred" in summary.text
     assert "synthetic sample catalog" in summary.text  # the catalog's own notice
@@ -79,9 +79,11 @@ def test_the_summary_api_accepts_only_web_links_and_known_entities(workspace: Wo
     for destination in ("javascript:alert(1)", "https://evil.example/", "//evil.example/"):
         bad = client.get("/api/tests/summary", params={"key": TEST_KEY, "link": destination}).json()
         assert destination not in bad["text"] + bad["markdown"]
-    safe = client.get("/api/tests/summary", params={"key": TEST_KEY, "link": "/#/test?key=x)evil"}).json()
-    assert "Dashboard: /#/test?key=x)evil" in safe["text"]
-    assert "[Open in the dashboard](/#/test?key=x%29evil)" in safe["markdown"]
+    safe = client.get(
+        "/api/tests/summary", params={"key": TEST_KEY, "link": "/classic/#/test?key=x)evil"}
+    ).json()
+    assert "Dashboard: /classic/#/test?key=x)evil" in safe["text"]
+    assert "[Open in the dashboard](/classic/#/test?key=x%29evil)" in safe["markdown"]
     assert client.get("/api/tests/summary", params={"key": "no::such"}).status_code == 404
     assert client.get("/api/compare/summary", params={"base": "x", "head": "x"}).status_code == 422
     assert client.get("/api/compare/summary", params={"base": "f5a40d5", "head": "nope"}).status_code == 404

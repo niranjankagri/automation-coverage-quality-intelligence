@@ -18,7 +18,7 @@ TEST_KEY = "com.enterprise.automation.tests.ui.CustomerManagementTest::adminEdit
 
 def test_the_header_search_finds_a_test_and_opens_its_history(page: Page) -> None:
     """Keyboard only: focus the header search, type, Enter; the result opens the test's page."""
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
     expect(page.get_by_role("heading", name="Overview", exact=True)).to_be_visible()
     page.get_by_role("searchbox", name=re.compile("^Search tests, requirements")).focus()
     page.keyboard.type("adminEditsACustomer")
@@ -36,7 +36,7 @@ def test_the_header_search_finds_a_test_and_opens_its_history(page: Page) -> Non
 
 def test_search_follows_typing_keeps_the_query_in_the_address_and_explains_no_results(page: Page) -> None:
     """Debounced: the address follows the input; a reload restores it; nothing found says why."""
-    page.goto("/#/search")
+    page.goto("/classic/#/search")
     box = page.get_by_label("Search for")
     expect(page.locator("#search-results")).to_contain_text("at least two characters")
     box.fill("SHOP-006")
@@ -53,7 +53,7 @@ def test_search_follows_typing_keeps_the_query_in_the_address_and_explains_no_re
 
 def test_search_highlight_maps_unicode_lowercase_expansion_to_original_text(page: Page) -> None:
     """Lowercasing U+0130 adds a code point; the highlight must still cover the original letter."""
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
     highlighted = page.evaluate(
         """() => {
           const wrapper = document.createElement('span');
@@ -68,7 +68,7 @@ def test_search_highlight_maps_unicode_lowercase_expansion_to_original_text(page
 def test_search_results_keep_the_repository_filter(collected_page: Page) -> None:
     """With a repository chosen, results and their links stay in that repository."""
     page = collected_page
-    page.goto("/#/pipelines")
+    page.goto("/classic/#/pipelines")
     page.locator('#filters select[name="repository"]').select_option(index=1)
     repository = page.locator('#filters select[name="repository"]').input_value()
     page.get_by_role("searchbox", name=re.compile("^Search tests, requirements")).fill("38842296207")
@@ -85,7 +85,7 @@ def test_search_results_keep_the_repository_filter(collected_page: Page) -> None
 
 def test_needs_attention_lists_evidence_and_leads_to_the_records(page: Page) -> None:
     """Every finding says why and how much evidence; states filter; a finding opens its test."""
-    page.goto("/#/attention")
+    page.goto("/classic/#/attention")
     expect(page.get_by_role("heading", name="Needs attention")).to_be_visible()
     rows = page.locator("#view table tbody tr")
     expect(rows.first).to_be_visible()
@@ -104,7 +104,7 @@ def test_needs_attention_lists_evidence_and_leads_to_the_records(page: Page) -> 
 def test_an_incomplete_pipeline_finding_links_its_pipeline_and_github_run(collected_page: Page) -> None:
     """The cancelled TaskBoard run: open, with the reason, the pipeline here and the run on GitHub."""
     page = collected_page
-    page.goto("/#/attention")
+    page.goto("/classic/#/attention")
     row = page.locator("#view table tbody tr").filter(has_text="incomplete pipeline")
 
     expect(row).to_contain_text("artifact report-ui-firefox not found")
@@ -118,7 +118,7 @@ def test_an_incomplete_pipeline_finding_links_its_pipeline_and_github_run(collec
 
 def test_the_investigation_compares_two_executions(page: Page) -> None:
     """Choose two executions of a test: outcome, build, duration, failure side by side."""
-    page.goto(f"/#/test?key={TEST_KEY}")
+    page.goto(f"/classic/#/test?key={TEST_KEY}")
     section = page.get_by_role("region", name="Compare two executions")
     expect(section.locator("tbody")).to_contain_text("Outcome")
 
@@ -134,7 +134,7 @@ def test_the_investigation_compares_two_executions(page: Page) -> None:
 def test_summaries_are_copied_as_text_and_markdown(page: Page) -> None:
     """The test page and the build comparison copy the server's summary, with its limitations."""
     page.context.grant_permissions(["clipboard-read", "clipboard-write"])
-    page.goto(f"/#/test?key={TEST_KEY}")
+    page.goto(f"/classic/#/test?key={TEST_KEY}")
     expect(page.locator("#view h1")).to_have_text(TEST_KEY)
     page.get_by_role("button", name="Copy summary (text)").click()
     expect(page.get_by_role("button", name="Copied")).to_be_visible()
@@ -143,7 +143,7 @@ def test_summaries_are_copied_as_text_and_markdown(page: Page) -> None:
     assert "Limitations:" in text
     assert "flaky candidate (suspected)" in text
 
-    page.goto("/#/compare?framework=testng&base=f5a40d5&head=1d03232")
+    page.goto("/classic/#/compare?framework=testng&base=f5a40d5&head=1d03232")
     expect(page.get_by_role("heading", name="Compare builds")).to_be_visible()  # not the test page's button
     page.get_by_role("button", name="Copy summary (Markdown)").click()
     expect(page.get_by_role("button", name="Copied")).to_be_visible()
@@ -154,7 +154,7 @@ def test_summaries_are_copied_as_text_and_markdown(page: Page) -> None:
 
 def test_the_comparison_shows_count_differences_and_evidence(page: Page) -> None:
     """Count differences per outcome; builds without collection records say so instead of a link."""
-    page.goto("/#/compare?framework=testng&base=f5a40d5&head=1d03232")
+    page.goto("/classic/#/compare?framework=testng&base=f5a40d5&head=1d03232")
 
     expect(page.locator("#view")).to_contain_text("Result counts, comparison minus baseline")
     expect(page.locator("#view .card").first).to_contain_text("no GitHub run recorded")
@@ -165,7 +165,7 @@ def test_a_recurring_failure_has_a_draft_that_github_submits_not_the_dashboard(
 ) -> None:
     """Stability: the draft shows its evidence; the GitHub link only opens the pre-filled form."""
     page = recurring_page
-    page.goto("/#/stability")
+    page.goto("/classic/#/stability")
     expect(page.get_by_role("heading", name="Issue drafts for recurring failures (1)")).to_be_visible()
 
     draft = page.locator("details", has_text="#1 Recurring test failure: TimeoutError")

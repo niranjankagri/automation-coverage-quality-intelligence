@@ -132,7 +132,7 @@ def checks(base: str, collected: bool, max_age_hours: float | None = None) -> li
         ("guided navigation available", status == 200 and bool(options), f"{len(options)} recorded contexts")
     )
     # The new report UI (docs/report-ui.md), served beside the classic page
-    status, headers, body = get(f"{base}/next/")
+    status, headers, body = get(f"{base}/")
     results.append(
         (
             "report UI answers",
@@ -161,6 +161,7 @@ def checks(base: str, collected: bool, max_age_hours: float | None = None) -> li
         "/static/app.js",
         "/static/style.css",
         "/next/",
+        "/classic/",
         "/static/next/js/main.js",
         "/static/next/report.css",
     ):
@@ -177,6 +178,7 @@ def checks(base: str, collected: bool, max_age_hours: float | None = None) -> li
     # files present even if package-data globs forgot the report's nested modules.
     report_assets = {
         "/next/": ("text/html",),
+        "/classic/": ("text/html",),
         "/static/next/report.css": ("text/css",),
         **{
             f"/static/next/js/{name}.js": ("text/javascript", "application/javascript")
