@@ -119,3 +119,10 @@ The original report address `/next/` still serves the same report, preserving it
 Legacy operational pages and execution run links now target `/classic/#/...`; digest and issue
 draft links follow that path too. The classic dashboard includes a link back to the new home.
 Deployment smoke checks the report at `/` and verifies the classic page separately.
+
+### Neutral headings and repository summaries
+
+Light-mode headings and repository names use black; dark mode uses light ink. Repository links
+retain hover underlines and keyboard focus. Selected scope uses exact outcome counts instead of
+full-width green bars, reserving green for the pass-rate charts and small success indicators.
+Failed and errored counts stay identifiable by text and status styling.

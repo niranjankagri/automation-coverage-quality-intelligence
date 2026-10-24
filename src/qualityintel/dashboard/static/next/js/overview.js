@@ -254,23 +254,20 @@ function scopeCard(d, scope) {
   const env = d.environment;
   return card("scope-title", "Selected scope", `${n(d.suites.length)} group(s)`,
     [d.suites.length
-      ? h("ul", { class: "suites" }, d.suites.map((suite) => {
+      ? h("ul", { class: "suites", tabindex: "0", "aria-label": "Repository execution summaries" }, d.suites.map((suite) => {
           const total = OUTCOMES.reduce((sum, o) => sum + suite.counts[o], 0);
           const name = suite.collected && !scope.repository
             ? h("a", { href: href("overview", { ...scope, repository: suite.name }), title: suite.name }, repoName(suite.name))
             : h("span", { title: suite.name }, suite.collected ? repoName(suite.name) : suite.name);
-          const stack = h("span", { class: "stack", "aria-hidden": "true" }, OUTCOMES.map((o) => {
-            if (!suite.counts[o]) return null;
-            const part = h("span", { class: `s-${o}` });
-            part.style.width = `${(100 * suite.counts[o]) / total}%`;
-            return part;
-          }));
+          const outcomes = h("span", { class: "suite-outcomes" }, OUTCOMES.map((outcome) =>
+            suite.counts[outcome] ? h("span", { class: `suite-outcome suite-outcome-${outcome}` },
+              `${n(suite.counts[outcome])} ${outcome}`) : null));
           return h("li", { class: "suite-row" },
             h("div", { class: "suite-top" }, h("span", { class: "suite-name" }, name),
               h("span", { class: "suite-meta" }, contextLine([`${n(total)} results`, `${n(suite.runs)} run(s)`,
                 suite.branch, suite.commit ? `commit ${suite.commit.slice(0, 7)}` : null]),
                 suite.ci_url ? [" · ", h("a", { href: suite.ci_url, rel: "noopener noreferrer", target: "_blank" }, "CI run")] : null)),
-            stack);
+            outcomes);
         }))
       : emptyState("no-match"),
       h("dl", { class: "env" },

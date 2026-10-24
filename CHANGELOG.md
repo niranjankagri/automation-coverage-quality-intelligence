@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Neutral light-mode headings and repository links; selected-scope rows show exact outcome counts
+  instead of full-width green bars, with accessible keyboard scrolling and readable dark headings.
+
 - Make the approved hybrid dashboard the home page (`/`), with top navigation, portfolio-style
   heading, light analytics panels and green pass-rate visuals. Preserve the report at `/next/`
   and the original dashboard at `/classic/` (including run, collection, digest and issue links).
