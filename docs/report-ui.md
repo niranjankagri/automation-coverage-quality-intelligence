@@ -94,3 +94,15 @@ Slate surfaces and indigo interaction accents; the portfolio's teal only for its
 chart segments use a muted blue; failures stay red, errors amber and skips grey; green marks success.
 Counts and labels remain authoritative; colours do not change results or release decisions. Light,
 dark and system themes share one layout; motion only plays when the system allows it.
+
+### Workspace visual refresh
+
+A navy navigation rail frames bright, quiet content panels. The overview introduces the selected
+scope, then four independent metrics, results and trends. Browser comparison uses clickable
+progress cards with result counts and recorded durations; an expandable exact-number table stays
+available. Phone layouts use two compact metric columns and a horizontally scrolling section bar.
+The NA identity, theme preference, evidence links and scope semantics remain shared with the report.
+
+Deployment smoke has a 90-minute job budget: browser setup can take 45 minutes, and waking the
+service and waiting for the expected commit can each take 20. A skipped job is not evidence that
+the deployed report passed smoke; the live URL variable must be configured.
