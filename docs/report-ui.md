@@ -77,7 +77,9 @@ reliable type. It is a run filter (`kind=`) on every API route, like `browser=`.
   until the live service reports that commit (`tools/smoke.py --expect-commit`), then check health,
   all report routes and assets, repository selection, a test drill-down into its own execution and
   a requirement drill-down over HTTP, and the same in a browser with no application errors
-  (`tools/report_smoke.py`).
+  (`tools/report_smoke.py`). A late CI run for a commit that `main` has already moved past (for
+  example "Re-run failed jobs" after a newer merge) skips with a notice instead of waiting for a
+  deployment that will never come; the newer commit's own run does the check.
 
 ### Installed deployment guard
 
