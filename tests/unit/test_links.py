@@ -48,4 +48,4 @@ def test_dashboard_links_reject_external_or_ambiguous_destinations(link: str | N
 
 def test_dashboard_link_keeps_a_root_relative_route() -> None:
     """Hash routes and query strings work when opened from any deployment hostname."""
-    assert dashboard_path("/#/test?key=x%29evil") == "/#/test?key=x%29evil"
+    assert dashboard_path("/classic/#/test?key=x%29evil") == "/classic/#/test?key=x%29evil"

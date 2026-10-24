@@ -22,7 +22,7 @@ def dashboard_link(line: DigestLine, base_url: str = "") -> str | None:
         return None
     path = "/".join(quote(part, safe="") for part in line.route.strip("/").split("/"))
     query = f"?{urlencode(line.params)}" if line.params else ""
-    return f"{base_url.rstrip('/')}/#/{path}{query}"
+    return f"{base_url.rstrip('/')}/classic/#/{path}{query}"
 
 
 def render_digest(digest: DigestView, base_url: str = "") -> Summary:

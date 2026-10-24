@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Make the approved hybrid dashboard the home page (`/`), with top navigation, portfolio-style
+  heading, light analytics panels and green pass-rate visuals. Preserve the report at `/next/`
+  and the original dashboard at `/classic/` (including run, collection, digest and issue links).
+  Smoke checks exercise the main page, classic page and scoped evidence drill-downs.
+
 - Report UI upgrade (docs/report-ui.md): a filter bar (repository → test type → browser/environment →
   dates) with recorded choices only, parent resets, chips and freshness; sections renamed to Overview,
   Test Results, Failures & Stability, Trends, Coverage & Requirements (old addresses still open);

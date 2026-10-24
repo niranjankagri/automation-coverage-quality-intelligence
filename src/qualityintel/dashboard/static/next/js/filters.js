@@ -128,6 +128,6 @@ function freshness(facts, refresh) {
       ? h("details", { class: "notice notice-warning" }, h("summary", {}, warnings[0]),
           warnings.slice(1).map((w) => h("p", {}, w)),
           status.collection_problems?.length ? h("ul", {}, status.collection_problems.slice(0, 5).map((p) => h("li", {}, p))) : null,
-          h("p", {}, h("a", { href: "/#/collection" }, "Open the collection page")))
+          h("p", {}, h("a", { href: "/classic/#/collection" }, "Open the collection page")))
       : null);
 }

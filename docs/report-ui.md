@@ -1,7 +1,7 @@
-# Report UI (`/next/`)
+# Main dashboard (`/`)
 
-A front end for the same data, shaped like an **Allure report**, at `/next/`. It is built beside
-the classic dashboard (`/`), which stays the main page until the owner switches them. Nothing in
+A front end for the same data, shaped like an **Allure report**, at `/`. The classic dashboard remains available at `/classic/`; `/next/` stays as a compatible
+preview address. Nothing in
 the engine changes: the report reads the same read-only JSON API, and where it needs data shaped
 differently it gets one more `GET` route.
 
@@ -12,12 +12,12 @@ what to look at in the filter bar, read the section, and every figure links to t
 
 - **Fresh front end in the same project, on the existing data.** Plain JavaScript modules
   (`static/next/js/`), no build step, the same strict Content Security Policy.
-- **Separate address first.** `/next/`; the classic UI stays at `/` until the owner switches them.
+- **Main address.** `/` serves the report; `/classic/` serves the original UI. `/next/` remains available.
 - **Allure structure, plain names:** Overview, Test Results, Failures & Stability, Trends, Coverage &
   Requirements. The first version's addresses (`#/suites`, `#/categories`, `#/graphs`,
   `#/behaviors`) still open the renamed sections.
 - **The portfolio's identity:** its NA mark, type, rounded controls and theme button (`na-theme`),
-  with slate surfaces and indigo as the report colour; green only for success. The portfolio itself
+  with slate surfaces and indigo as the report colour; green for execution success. The portfolio itself
   is not changed by this work.
 
 ## Navigation
@@ -90,14 +90,14 @@ and every JavaScript module, including MIME types.
 
 ### Colour
 
-Slate surfaces and indigo interaction accents; the portfolio's teal only for its NA mark. Passed
-chart segments use a muted blue; failures stay red, errors amber and skips grey; green marks success.
+Light surfaces and indigo interaction accents; the portfolio's teal for its NA mark. Passed
+chart segments use green; failures stay red, errors amber and skips grey; green marks success.
 Counts and labels remain authoritative; colours do not change results or release decisions. Light,
 dark and system themes share one layout; motion only plays when the system allows it.
 
 ### Workspace visual refresh
 
-A navy navigation rail frames bright, quiet content panels. The overview introduces the selected
+Horizontal navigation frames bright, quiet content panels. The overview introduces the selected
 scope, then four independent metrics, results and trends. Browser comparison uses clickable
 progress cards with result counts and recorded durations; an expandable exact-number table stays
 available. Phone layouts use two compact metric columns and a horizontally scrolling section bar.
@@ -106,3 +106,14 @@ The NA identity, theme preference, evidence links and scope semantics remain sha
 Deployment smoke has a 90-minute job budget: browser setup can take 45 minutes, and waking the
 service and waiting for the expected commit can each take 20. A skipped job is not evidence that
 the deployed report passed smoke; the live URL variable must be configured.
+
+### Approved Light Studio / Portfolio Canvas hybrid
+
+The main page combines horizontal navigation, a restrained portfolio-style hero, white analytics
+panels and green pass-rate charts. Coverage remains blue so execution success and automation
+coverage have different visual meanings. Dark mode keeps contrast and the same information order.
+
+The original report address `/next/` still serves the same report, preserving its hash and filters.
+Legacy operational pages and execution run links now target `/classic/#/...`; digest and issue
+draft links follow that path too. The classic dashboard includes a link back to the new home.
+Deployment smoke checks the report at `/` and verifies the classic page separately.

@@ -33,7 +33,7 @@ export async function overview(state, { signal, facts }) {
     h("div", { class: "report-heading overview-heading" },
       h("div", {},
         h("p", { class: "eyebrow" }, `Report · ${repoName(scope.repository)}${scope.kind ? ` · ${KIND_LABELS[scope.kind] ?? scope.kind}` : ""}`),
-        h("h1", {}, "Overview"),
+        h("h1", {}, "Quality at a glance"),
         h("p", { class: "lead" }, d.first_started_at
           ? `The latest result of every suite in this scope: ${n(d.runs)} run(s), ${formatDate(d.first_started_at)} to ${formatDate(d.latest_started_at)}.`
            : "No dated runs in this scope.")),
@@ -224,8 +224,8 @@ function attentionCard(stability, summary, status, scope) {
     [flaky, "error", `${n(flaky)} flaky candidate(s)`, href("failures", scope)],
     [summary.uncovered_critical.length, "failed", `${n(summary.uncovered_critical.length)} critical requirement(s) without automated tests`, href("coverage", scope, { show: "gaps" })],
     [stability.duration_regressions.length, "error", `${n(stability.duration_regressions.length)} test(s) markedly slower`, href("trends", scope)],
-    [status?.incomplete_collections_7d ?? 0, "error", `${n(status?.incomplete_collections_7d ?? 0)} incomplete collection(s) in 7 days`, "/#/collection"],
-    [status?.stale ? 1 : 0, "failed", "The data could not be reloaded; figures may be old", "/#/collection"],
+    [status?.incomplete_collections_7d ?? 0, "error", `${n(status?.incomplete_collections_7d ?? 0)} incomplete collection(s) in 7 days`, "/classic/#/collection"],
+    [status?.stale ? 1 : 0, "failed", "The data could not be reloaded; figures may be old", "/classic/#/collection"],
   ].filter(([count]) => count);
   return card("attention-title", "Needs attention", items.length ? `${items.length} item(s)` : "all clear",
     items.length

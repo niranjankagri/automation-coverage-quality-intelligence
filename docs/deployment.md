@@ -87,3 +87,9 @@ connection.
 
 A paid plan (always on, a persistent disk) needs no change in the image: point `--database`
 at the disk and keep the hourly fetch, or run the collection there.
+
+### Dashboard URLs
+
+The report is the main page at `/`. The original dashboard and its operational tools are at
+`/classic/`. Existing `/next/` report bookmarks still work, including their hash filters.
+After deployment, smoke checks both interfaces and the test and requirement drill-downs.

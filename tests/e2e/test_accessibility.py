@@ -46,9 +46,9 @@ def violations(page: Page) -> list[str]:
 @pytest.mark.parametrize("route", PAGES)
 def test_no_wcag_violations(page: Page, route: str, theme: str) -> None:
     """Every page, both themes: no violation of the WCAG 2.2 A/AA rules axe-core checks."""
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
     page.evaluate(f"localStorage.setItem('qi-theme', '{theme}')")
-    page.goto(f"/{route}")
+    page.goto(f"/classic/{route}")
     expect(page.locator("#view h1")).to_be_visible()
     page.wait_for_load_state("networkidle")
 
@@ -59,9 +59,9 @@ def test_no_wcag_violations(page: Page, route: str, theme: str) -> None:
 def test_mobile_overview_has_no_wcag_violations(page: Page, theme: str) -> None:
     """The collapsed phone navigation and filters stay accessible in either theme."""
     page.set_viewport_size({"width": 390, "height": 844})
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
     page.evaluate(f"localStorage.setItem('qi-theme', '{theme}')")
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
     expect(page.locator("#view h1")).to_be_visible()
     expect(page.locator(".mobile-nav > summary")).to_be_visible()
 
@@ -72,18 +72,18 @@ def test_no_wcag_violations_with_pipelines_and_test_investigation(collected_page
     """The pages that need pipeline and collection data, and a test's investigation page."""
     page = collected_page
     for route in ("#/pipelines", "#/collection", "#/runs"):
-        page.goto(f"/{route}")
+        page.goto(f"/classic/{route}")
         expect(page.locator("#view h1")).to_be_visible()
         page.wait_for_load_state("networkidle")
         assert violations(page) == [], route
-    page.goto("/#/pipelines")
+    page.goto("/classic/#/pipelines")
     page.locator("details.pipeline summary").first.click()
     assert violations(page) == []
 
 
 def test_guide_dialog_has_no_wcag_violations(page: Page) -> None:
     """The keyboard-accessible first-use guide stays accessible when opened."""
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
     page.get_by_role("button", name="Guide and glossary").click()
 
     assert violations(page) == []
@@ -93,9 +93,9 @@ def test_guide_dialog_has_no_wcag_violations(page: Page) -> None:
 def test_an_open_issue_draft_has_no_wcag_violations(recurring_page: Page, theme: str) -> None:
     """The draft's read-only text box, copy button and GitHub link stay accessible in either theme."""
     page = recurring_page
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
     page.evaluate(f"localStorage.setItem('qi-theme', '{theme}')")
-    page.goto("/#/stability")
+    page.goto("/classic/#/stability")
     page.locator("details", has_text="#1 Recurring test failure").locator("summary").click()
     expect(page.get_by_role("link", name="Review and submit on GitHub")).to_be_visible()
     page.wait_for_load_state("networkidle")

@@ -1,4 +1,4 @@
-"""The report UI at /next/ (docs/report-ui.md): filters, drill-downs, data rules, accessibility."""
+"""The report UI at / (docs/report-ui.md): filters, drill-downs, data rules, accessibility."""
 
 import re
 
@@ -12,7 +12,7 @@ AXE = Axe()
 TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]
 TB_Q = "repository=niranjankagri%2Fcypress-typescript-framework"
 SECTIONS = {
-    "overview": "Overview",
+    "overview": "Quality at a glance",
     "results": "Test Results",
     "failures": "Failures & Stability",
     "trends": "Trends",
@@ -38,8 +38,8 @@ def heading(page: Page, text: str) -> None:
 
 def test_the_overview_keeps_pass_rate_coverage_gaps_and_readiness_apart(page: Page) -> None:
     """Samples: 100% pass rate, 86% of catalog test cases automated, 2 critical gaps, no gate."""
-    page.goto("/next/")
-    heading(page, "Overview")
+    page.goto("/")
+    heading(page, "Quality at a glance")
 
     kpis = page.locator(".kpi")
     expect(kpis.nth(0)).to_contain_text("Execution pass rate100%")
@@ -50,10 +50,24 @@ def test_the_overview_keeps_pass_rate_coverage_gaps_and_readiness_apart(page: Pa
     expect(page.locator(".compare tbody tr")).to_have_count(4)  # chrome, chromium, firefox, no browser
 
 
+def test_main_dashboard_classic_and_preview_links_stay_available(page: Page) -> None:
+    """Home is the new report, classic stays functional, and /next remains a working bookmark."""
+    page.goto("/")
+    heading(page, "Quality at a glance")
+    expect(page.locator(".ring .seg-passed")).to_have_css("stroke", "rgb(21, 153, 104)")
+    page.get_by_role("link", name="Classic dashboard", exact=True).click()
+    expect(page).to_have_url(re.compile(r"/classic/"))
+    expect(page.locator("#view h1")).to_be_visible()
+    page.get_by_role("link", name="Quality Intelligence home", exact=False).click()
+    heading(page, "Quality at a glance")
+    page.goto("/next/#/results?status=passed")
+    heading(page, "Test Results")
+
+
 def test_browser_cards_open_scoped_results_and_keep_exact_numbers(page: Page) -> None:
     """Visual browser cards open their own results; the exact comparison remains available."""
-    page.goto("/next/#/overview")
-    heading(page, "Overview")
+    page.goto("/#/overview")
+    heading(page, "Quality at a glance")
     card = page.locator("a.browser-card").filter(has_text="chromium").first
     expect(card).to_contain_text("results")
     page.get_by_text("Compare exact numbers", exact=True).click()
@@ -66,8 +80,8 @@ def test_browser_cards_open_scoped_results_and_keep_exact_numbers(page: Page) ->
 
 def test_the_donut_and_the_trend_open_the_matching_results(page: Page) -> None:
     """A status in the donut opens those results; a day of the trend opens that day's results."""
-    page.goto("/next/#/overview")
-    heading(page, "Overview")
+    page.goto("/#/overview")
+    heading(page, "Quality at a glance")
     page.locator(".legend a").filter(has_text="passed").click()
 
     heading(page, "Test Results")
@@ -75,7 +89,7 @@ def test_the_donut_and_the_trend_open_the_matching_results(page: Page) -> None:
     expect(page.get_by_role("button", name=re.compile(r"^passed"))).to_have_attribute("aria-pressed", "true")
 
     page.go_back()
-    heading(page, "Overview")
+    heading(page, "Quality at a glance")
     page.locator(".chart a").last.click()
     heading(page, "Test Results")
     expect(page).to_have_url(re.compile(r"since=2026-10-19&until=2026-10-19"))
@@ -84,14 +98,14 @@ def test_the_donut_and_the_trend_open_the_matching_results(page: Page) -> None:
 
 def test_a_headline_card_opens_its_evidence(page: Page) -> None:
     """Critical gaps opens Coverage at the gaps; readiness opens its explanation."""
-    page.goto("/next/")
-    heading(page, "Overview")
+    page.goto("/")
+    heading(page, "Quality at a glance")
     page.locator(".kpi").filter(has_text="Critical gaps").click()
 
     heading(page, "Coverage & Requirements")
     expect(page.locator("#gaps")).to_be_in_viewport()
     page.go_back()
-    heading(page, "Overview")
+    heading(page, "Quality at a glance")
     page.locator(".kpi").filter(has_text="Release readiness").click()
     expect(page.locator("#readiness")).to_be_in_viewport()
     expect(page.locator("#readiness")).to_contain_text("no release gate is configured")
@@ -103,7 +117,7 @@ def test_a_headline_card_opens_its_evidence(page: Page) -> None:
 def test_test_type_and_browser_follow_the_repository(collected_page: Page) -> None:
     """Only recorded choices; a new test type drops a browser it does not have; chips remove one."""
     page = collected_page
-    page.goto(f"/next/#/results?{TB_Q}&kind=ui&browser=firefox")
+    page.goto(f"/#/results?{TB_Q}&kind=ui&browser=firefox")
     heading(page, "Test Results")
     expect(page.get_by_label("Browser", exact=True)).to_have_value("firefox")
 
@@ -123,8 +137,8 @@ def test_test_type_and_browser_follow_the_repository(collected_page: Page) -> No
 def test_an_unrecorded_combination_says_so(collected_page: Page) -> None:
     """A typed address with a combination no run has is called unsupported, with a reset."""
     page = collected_page
-    page.goto(f"/next/#/overview?{TB_Q}&kind=performance")
-    heading(page, "Overview")
+    page.goto(f"/#/overview?{TB_Q}&kind=performance")
+    heading(page, "Quality at a glance")
 
     expect(page.get_by_text("No collected run has this combination of filters.")).to_be_visible()
 
@@ -136,7 +150,7 @@ def test_an_unrecorded_combination_says_so(collected_page: Page) -> None:
 def test_a_result_opens_the_execution_of_its_own_browser(collected_page: Page, engine: str) -> None:
     """The same test ran in three browsers: details show the one selected, with its own time."""
     page = collected_page
-    page.goto(f"/next/#/results?{TB_Q}&kind=ui&browser={engine}&q=combines")
+    page.goto(f"/#/results?{TB_Q}&kind=ui&browser={engine}&q=combines")
     heading(page, "Test Results")
     row = page.locator(".test-row").first
     time = row.locator(".test-time").inner_text()
@@ -151,7 +165,7 @@ def test_a_result_opens_the_execution_of_its_own_browser(collected_page: Page, e
 def test_back_and_shared_links_keep_the_selection(browser: Browser, collected_page: Page) -> None:
     """Back returns to the filtered list; the test's address opens the same execution elsewhere."""
     page = collected_page
-    page.goto(f"/next/#/results?{TB_Q}&kind=ui&browser=edge&q=combines")
+    page.goto(f"/#/results?{TB_Q}&kind=ui&browser=edge&q=combines")
     heading(page, "Test Results")
     page.locator(".test-row").first.click()
     expect(page.locator(".test-title")).to_be_visible()
@@ -173,7 +187,7 @@ def test_back_and_shared_links_keep_the_selection(browser: Browser, collected_pa
 def test_the_search_survives_a_reload(collected_page: Page) -> None:
     """Search and status filter are in the address (replaced while typing, not a new history entry)."""
     page = collected_page
-    page.goto("/next/#/results")
+    page.goto("/#/results")
     heading(page, "Test Results")
     page.get_by_label("Search tests").fill("filters")
     page.get_by_role("button", name=re.compile(r"^passed")).click()
@@ -188,7 +202,7 @@ def test_the_search_survives_a_reload(collected_page: Page) -> None:
 def test_details_tabs_separate_this_execution_history_and_browsers(collected_page: Page) -> None:
     """Keyboard tabs; history in this context apart from all contexts; three browsers compared."""
     page = collected_page
-    page.goto(f"/next/#/results?{TB_Q}&kind=ui&browser=firefox&q=combines")
+    page.goto(f"/#/results?{TB_Q}&kind=ui&browser=firefox&q=combines")
     heading(page, "Test Results")
     page.locator(".test-row").first.click()
     page.get_by_role("tab", name="Selected execution").focus()
@@ -206,7 +220,7 @@ def test_details_tabs_separate_this_execution_history_and_browsers(collected_pag
 def test_long_lists_load_more_and_say_how_many(collected_page: Page) -> None:
     """No silent truncation: 'Showing 50 of 147', then 100 after Load more."""
     page = collected_page
-    page.goto("/next/#/results?status=passed")
+    page.goto("/#/results?status=passed")
     heading(page, "Test Results")
 
     expect(page.locator(".list-status")).to_have_text("Showing 50 of 147 matching results")
@@ -218,7 +232,7 @@ def test_long_lists_load_more_and_say_how_many(collected_page: Page) -> None:
 def test_the_newest_navigation_wins(collected_page: Page) -> None:
     """Quick section changes: the last one is shown, never an older response."""
     page = collected_page
-    page.goto("/next/#/results")
+    page.goto("/#/results")
     heading(page, "Test Results")
     page.evaluate("location.hash = '#/trends'; location.hash = '#/failures'; location.hash = '#/coverage'")
 
@@ -230,7 +244,7 @@ def test_the_newest_navigation_wins(collected_page: Page) -> None:
 
 def test_earlier_section_names_still_open(page: Page) -> None:
     """Links to the first report version (#/suites, #/categories ...) open the renamed sections."""
-    page.goto("/next/#/suites")
+    page.goto("/#/suites")
     heading(page, "Test Results")
     expect(page).to_have_url(re.compile(r"#/results$"))
 
@@ -240,8 +254,8 @@ def test_earlier_section_names_still_open(page: Page) -> None:
 
 def test_a_feature_opens_requirements_and_their_executions_in_scope(page: Page) -> None:
     """Overview feature bar > product opened > requirement page > the exact execution."""
-    page.goto("/next/")
-    heading(page, "Overview")
+    page.goto("/")
+    heading(page, "Quality at a glance")
     page.locator(".feature-name").filter(has_text="Toolshop").click()
 
     heading(page, "Coverage & Requirements")
@@ -258,8 +272,8 @@ def test_a_feature_opens_requirements_and_their_executions_in_scope(page: Page) 
 def test_skipped_only_results_are_not_a_pass_rate(edge_page: Page) -> None:
     """The API job only skipped: 'No results' to rate, never 100%."""
     page = edge_page
-    page.goto("/next/#/overview?kind=api")
-    heading(page, "Overview")
+    page.goto("/#/overview?kind=api")
+    heading(page, "Quality at a glance")
 
     expect(page.locator(".kpi").first).to_contain_text("No results")
     expect(page.locator(".kpi").first).not_to_contain_text("100%")
@@ -268,7 +282,7 @@ def test_skipped_only_results_are_not_a_pass_rate(edge_page: Page) -> None:
 def test_failures_are_not_product_defects_and_recovered_is_not_unstable(edge_page: Page) -> None:
     """One failed check; one new failure is unstable; the recovered test is listed apart."""
     page = edge_page
-    page.goto("/next/#/failures")
+    page.goto("/#/failures")
     heading(page, "Failures & Stability")
 
     expect(page.locator(".stat").nth(1)).to_contain_text("1unstable tests")
@@ -281,8 +295,8 @@ def test_failures_are_not_product_defects_and_recovered_is_not_unstable(edge_pag
 def test_stale_and_incomplete_collections_are_said_plainly(edge_page: Page) -> None:
     """The latest collection is 3 days old and one pipeline was incomplete."""
     page = edge_page
-    page.goto("/next/")
-    heading(page, "Overview")
+    page.goto("/")
+    heading(page, "Quality at a glance")
 
     expect(page.locator(".notice-warning summary")).to_contain_text("Collection stale")
     expect(page.locator(".notice-warning")).to_contain_text("Collection incomplete")
@@ -292,11 +306,11 @@ def test_stale_and_incomplete_collections_are_said_plainly(edge_page: Page) -> N
 def test_unmapped_coverage_and_missing_durations_are_named(edge_page: Page) -> None:
     """Results without requirements: 'Coverage not mapped'; a result without time: 'not recorded'."""
     page = edge_page
-    page.goto("/next/#/coverage?repository=e%2Fedge")
+    page.goto("/#/coverage?repository=e%2Fedge")
     heading(page, "Coverage & Requirements")
     expect(page.locator("[data-empty='not-mapped']")).to_be_visible()
 
-    page.goto("/next/#/results?q=works")
+    page.goto("/#/results?q=works")
     heading(page, "Test Results")
     expect(page.locator(".test-time").first).to_have_text("not recorded")
 
@@ -307,7 +321,7 @@ def test_unmapped_coverage_and_missing_durations_are_named(edge_page: Page) -> N
 def test_the_theme_button_works_like_the_portfolio(page: Page) -> None:
     """One button switches light/dark, remembered as na-theme, with the report's dark background."""
     page.emulate_media(color_scheme="light")
-    page.goto("/next/")
+    page.goto("/")
     page.get_by_role("button", name="Use dark theme").click()
     page.reload()
 
@@ -319,8 +333,8 @@ def test_the_theme_button_works_like_the_portfolio(page: Page) -> None:
 def test_keyboard_focus_is_visible_and_motion_can_be_reduced(page: Page) -> None:
     """A focused link shows an outline; with reduced motion the loading shimmer does not move."""
     page.emulate_media(reduced_motion="reduce")
-    page.goto("/next/")
-    heading(page, "Overview")
+    page.goto("/")
+    heading(page, "Quality at a glance")
     page.keyboard.press("Tab")
     page.keyboard.press("Tab")
 
@@ -346,9 +360,9 @@ PAGES = [
 @pytest.mark.parametrize(("route", "title"), PAGES, ids=[route.split("?")[0] for route, _ in PAGES])
 def test_no_wcag_violations_in_the_report(page: Page, route: str, title: str | None, theme: str) -> None:
     """Every section, a test and a requirement, in both themes."""
-    page.goto("/next/")
+    page.goto("/")
     page.evaluate(f"localStorage.setItem('na-theme', '{theme}')")
-    page.goto(f"/next/#/{route}")
+    page.goto(f"/#/{route}")
     page.reload()
     if title:
         heading(page, title)
@@ -364,7 +378,7 @@ def test_no_wcag_violations_in_the_report(page: Page, route: str, title: str | N
 def test_every_section_fits_a_phone(page: Page, route: str, title: str) -> None:
     """390 px: the sidebar becomes a tab row, filters stack, nothing scrolls sideways."""
     page.set_viewport_size({"width": 390, "height": 844})
-    page.goto(f"/next/#/{route}")
+    page.goto(f"/#/{route}")
     heading(page, title)
     page.wait_for_load_state("networkidle")
 
@@ -375,7 +389,7 @@ def test_every_section_fits_a_phone(page: Page, route: str, title: str) -> None:
 def test_filters_fold_behind_a_toggle_on_a_phone(page: Page) -> None:
     """390 px: the filter bar is one button (with the number of active filters) until opened."""
     page.set_viewport_size({"width": 390, "height": 844})
-    page.goto("/next/#/results?kind=ui")
+    page.goto("/#/results?kind=ui")
     heading(page, "Test Results")
     toggle = page.get_by_role("button", name="Filters (1 active)")
 

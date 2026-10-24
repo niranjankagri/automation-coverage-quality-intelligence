@@ -10,7 +10,7 @@ pytestmark = pytest.mark.e2e
 
 def test_execution_dashboard_suite_scope_and_history_link(page: Page) -> None:
     """Suite and ranking choices survive refresh; a ranking links to scoped test history and back."""
-    page.goto("/#/executions")
+    page.goto("/classic/#/executions")
     expect(page.locator("#view h1")).to_have_text("Test execution dashboard")
     expect(page.get_by_role("heading", name="Results by status")).to_be_visible()
     expect(page.get_by_role("heading", name="Top 10 longest-running tests")).to_be_visible()
@@ -35,7 +35,7 @@ def test_execution_dashboard_suite_scope_and_history_link(page: Page) -> None:
 
 def test_execution_dashboard_empty_scope(page: Page) -> None:
     """No results yields an explicit empty state rather than fabricated rates and timings."""
-    page.goto("/#/executions?repository=unknown/missing")
+    page.goto("/classic/#/executions?repository=unknown/missing")
     expect(page.get_by_role("status").filter(has_text="No recorded executions")).to_be_visible()
     expect(page.locator(".execution-cards")).to_contain_text("Not recorded")
 
@@ -43,7 +43,7 @@ def test_execution_dashboard_empty_scope(page: Page) -> None:
 def test_mobile_rankings_keep_names_readable(page: Page) -> None:
     """Ranking tables scroll internally instead of squeezing test names into word-wide columns."""
     page.set_viewport_size({"width": 390, "height": 844})
-    page.goto("/#/executions")
+    page.goto("/classic/#/executions")
     expect(page.locator("#view h1")).to_have_text("Test execution dashboard")
     page.locator(".ranking-details > summary").first.click()
     region = page.get_by_role(
@@ -59,7 +59,7 @@ def test_mobile_rankings_keep_names_readable(page: Page) -> None:
 @pytest.mark.parametrize("first", ["suite", "limit"])
 def test_quick_filter_changes_keep_current_url_state(page: Page, first: str) -> None:
     """An old visible select must not erase another filter while the replacement API call waits."""
-    page.goto("/#/executions")
+    page.goto("/classic/#/executions")
     expect(page.locator("#view h1")).to_have_text("Test execution dashboard")
     suite = page.locator("#execution-suite option").nth(1).get_attribute("value")
     assert suite
@@ -88,7 +88,7 @@ def test_quick_filter_changes_keep_current_url_state(page: Page, first: str) -> 
 def test_guided_repository_family_browser_and_back(collected_page: Page) -> None:
     """Real imported combinations drive the picker; changing parents clears child choices."""
     page = collected_page
-    page.goto("/#/executions")
+    page.goto("/classic/#/executions")
     repos = page.get_by_role("region", name="Choose a repository", exact=True)
     repos.get_by_role("button", name="cypress typescript framework", exact=True).click()
     families = page.get_by_role("region", name="Choose a test family", exact=True)
@@ -120,7 +120,7 @@ def test_guided_repository_family_browser_and_back(collected_page: Page) -> None
 
 def test_chart_interaction_and_progressive_details(page: Page) -> None:
     """Charts are interactive without forcing tables open; detailed evidence stays available."""
-    page.goto("/#/executions")
+    page.goto("/classic/#/executions")
     expect(page.locator("#view h1")).to_be_visible()
     expect(page.locator("#filters")).to_be_hidden()
     expect(page.locator(".ranking-details").first.locator("table")).to_be_hidden()
@@ -144,7 +144,9 @@ def test_chart_interaction_and_progressive_details(page: Page) -> None:
 def test_daily_chart_preserves_guided_scope(collected_page: Page) -> None:
     """Selecting a day never broadens a repository/type/browser selection."""
     page = collected_page
-    page.goto("/#/executions?repository=niranjankagri%2Fcypress-typescript-framework&kind=ui&browser=chrome")
+    page.goto(
+        "/classic/#/executions?repository=niranjankagri%2Fcypress-typescript-framework&kind=ui&browser=chrome"
+    )
     page.get_by_role("group", name="Bars, one link per day").get_by_role("link").first.click()
     expect(page.locator("#view h1")).to_have_text("Test execution dashboard")
     query = parse_qs(urlsplit(page.url).fragment.partition("?")[2])
@@ -153,9 +155,9 @@ def test_daily_chart_preserves_guided_scope(collected_page: Page) -> None:
     assert query["since"] == query["until"]
 
 
-@pytest.mark.parametrize("path", ["/", "/#/"])
-def test_portfolio_entry_opens_visual_dashboard(page: Page, path: str) -> None:
-    """Both existing portfolio landing URLs enter the simple chart-first experience."""
+@pytest.mark.parametrize("path", ["/classic/", "/classic/#/"])
+def test_classic_entry_keeps_the_original_visual_dashboard(page: Page, path: str) -> None:
+    """Both classic landing URLs retain the original execution dashboard."""
     page.goto(path)
     expect(page.locator("#view h1")).to_have_text("Test execution dashboard")
     expect(page.locator("#filters")).to_be_hidden()

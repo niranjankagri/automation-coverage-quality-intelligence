@@ -27,7 +27,7 @@ def card(page: Page, label: str) -> Locator:
 
 def test_overview_shows_coverage_and_pass_rate_separately(page: Page) -> None:
     """Coverage numbers and the execution pass rate are different cards with their counts."""
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
 
     expect(page.get_by_role("heading", name="Overview", exact=True)).to_be_visible()
     expect(card(page, "Requirement coverage")).to_contain_text("90.5 %")
@@ -47,7 +47,7 @@ def test_overview_shows_coverage_and_pass_rate_separately(page: Page) -> None:
 
 def test_overview_lists_gaps_by_owner_with_the_most_urgent_owner_open(page: Page) -> None:
     """Coverage gaps by owner: 10 gaps; Admin team (ADMIN-012, rank 1) is open, the others folded."""
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
 
     expect(page.get_by_role("heading", name="Coverage gaps by owner (10)")).to_be_visible()
     first = page.locator("details.gap-owner").first
@@ -60,7 +60,7 @@ def test_overview_lists_gaps_by_owner_with_the_most_urgent_owner_open(page: Page
 
 def test_metric_card_drills_down_to_the_requirements_behind_it(page: Page) -> None:
     """Requirement coverage card -> the four requirements without tests."""
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
 
     card(page, "Requirement coverage").click()
 
@@ -71,7 +71,7 @@ def test_metric_card_drills_down_to_the_requirements_behind_it(page: Page) -> No
 
 def test_filter_changes_every_number_and_stays_in_the_url(page: Page) -> None:
     """Criticality critical: 13 requirements; the filter is part of the address."""
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
 
     page.get_by_label("Criticality").select_option("critical")
 
@@ -85,7 +85,7 @@ def test_filter_changes_every_number_and_stays_in_the_url(page: Page) -> None:
 
 def test_requirement_detail_shows_cases_and_latest_executions(page: Page) -> None:
     """SHOP-006 -> its automated checkout case with four Playwright executions."""
-    page.goto("/#/requirement/SHOP-006")
+    page.goto("/classic/#/requirement/SHOP-006")
 
     expect(page.get_by_role("heading", name=re.compile("^SHOP-006"))).to_be_visible()
     expect(page.get_by_text("guests are asked to sign in at checkout.")).to_be_visible()  # description
@@ -95,7 +95,7 @@ def test_requirement_detail_shows_cases_and_latest_executions(page: Page) -> Non
 
 def test_test_history_shows_the_real_selenium_failure(page: Page) -> None:
     """The 13 Oct Firefox timeout is in the history and its message can be expanded."""
-    page.goto("/#/tests")
+    page.goto("/classic/#/tests")
     page.get_by_label("Filter tests by name").fill("adminEditsACustomer")
     page.get_by_role("link", name=re.compile("adminEditsACustomer")).click()
 
@@ -109,7 +109,7 @@ def test_test_history_shows_the_real_selenium_failure(page: Page) -> None:
 
 def test_run_detail_lists_failures_first(page: Page) -> None:
     """The first Playwright attempt of 19 Oct: the failed checkout test is the first row."""
-    page.goto("/#/runs?framework=playwright")
+    page.goto("/classic/#/runs?framework=playwright")
     page.get_by_role("link", name=re.compile("39229363499-attempt1")).click()
 
     first = page.locator("tbody tr").first
@@ -119,7 +119,7 @@ def test_run_detail_lists_failures_first(page: Page) -> None:
 
 def test_empty_scope_has_an_empty_state(page: Page) -> None:
     """A browser with no runs: no snapshot table, an explanation instead."""
-    page.goto("/#/coverage?browser=webkit")
+    page.goto("/classic/#/coverage?browser=webkit")
 
     expect(page.get_by_text("No runs in this scope")).to_be_visible()
     expect(card(page, "Execution pass rate")).to_contain_text("n/a")
@@ -137,7 +137,7 @@ def test_api_error_shows_a_message_and_retry(page: Page) -> None:
             route.continue_()
 
     page.route("**/api/summary*", fail_once)
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
 
     expect(page.get_by_role("alert")).to_contain_text("500: database offline")
     page.get_by_role("button", name="Retry").click()
@@ -146,10 +146,10 @@ def test_api_error_shows_a_message_and_retry(page: Page) -> None:
 
 def test_unknown_page_and_unknown_requirement_show_errors(page: Page) -> None:
     """Bad links end in a readable message, not a blank page."""
-    page.goto("/#/nowhere")
+    page.goto("/classic/#/nowhere")
     expect(page.get_by_role("alert")).to_contain_text("This page does not exist.")
 
-    page.goto("/#/requirement/NOPE-1")
+    page.goto("/classic/#/requirement/NOPE-1")
     expect(page.get_by_role("alert")).to_contain_text("unknown requirement 'NOPE-1'")
 
 
@@ -157,7 +157,14 @@ def test_unknown_page_and_unknown_requirement_show_errors(page: Page) -> None:
 def test_layout_fits_small_screens(page: Page, width: int) -> None:
     """Phone and tablet width: no sideways scrolling of the page; wide tables scroll inside."""
     page.set_viewport_size({"width": width, "height": 800})
-    for path in ("/#/coverage", "/#/requirements", "/#/tests", "/#/runs", "/#/stability", "/#/trends"):
+    for path in (
+        "/classic/#/coverage",
+        "/classic/#/requirements",
+        "/classic/#/tests",
+        "/classic/#/runs",
+        "/classic/#/stability",
+        "/classic/#/trends",
+    ):
         page.goto(path)
         expect(page.locator("#view h1")).to_be_visible()
         overflow = page.evaluate(
@@ -170,7 +177,7 @@ def test_keyboard_users_can_skip_to_the_content(page: Page) -> None:
     """First Tab reaches the skip link; it moves focus to the main region."""
     if ENGINE == "webkit":
         pytest.skip("WebKit, like Safari by default, moves Tab between form controls only")
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
     expect(page.get_by_role("heading", name="Overview", exact=True)).to_be_visible()
 
     page.keyboard.press("Tab")
@@ -181,7 +188,7 @@ def test_keyboard_users_can_skip_to_the_content(page: Page) -> None:
 
 def test_stability_page_shows_flaky_candidates_with_evidence(page: Page) -> None:
     """Four flaky candidates; each row says why; a smaller window forgets the 13 Oct failure."""
-    page.goto("/#/stability")
+    page.goto("/classic/#/stability")
 
     expect(page.get_by_role("heading", name="Stability", exact=True)).to_be_visible()
     expect(card(page, "Flaky candidate")).to_contain_text("4")
@@ -197,7 +204,7 @@ def test_stability_page_shows_flaky_candidates_with_evidence(page: Page) -> None
 
 def test_trends_page_draws_what_the_api_says(page: Page) -> None:
     """Every number in the 'Test results' table equals the API's daily counts; the jump in suites is explained."""
-    page.goto("/#/trends")
+    page.goto("/classic/#/trends")
     expect(page.get_by_role("heading", name="Trends", exact=True)).to_be_visible()
     daily = page.request.get("/api/trends").json()["daily"]
 
@@ -218,7 +225,7 @@ def test_trends_page_draws_what_the_api_says(page: Page) -> None:
 
 def test_date_filter_narrows_the_trend_and_stays_in_the_url(page: Page) -> None:
     """From 13 Oct to 15 Oct: three days, filter kept in the address."""
-    page.goto("/#/trends")
+    page.goto("/classic/#/trends")
     expect(page.get_by_role("heading", name="Trends", exact=True)).to_be_visible()
 
     page.get_by_label("From", exact=True).fill("2026-10-13")
@@ -235,7 +242,7 @@ def test_date_filter_narrows_the_trend_and_stays_in_the_url(page: Page) -> None:
 
 def test_trends_without_runs_in_scope_say_so(page: Page) -> None:
     """A date range with no runs: no chart, an explanation."""
-    page.goto("/#/trends?since=2030-01-01")
+    page.goto("/classic/#/trends?since=2030-01-01")
 
     expect(page.get_by_text("No dated runs in this scope")).to_be_visible()
     expect(page.locator("figure.chart")).to_have_count(0)
@@ -251,7 +258,7 @@ def test_a_late_response_for_an_older_address_is_not_shown(page: Page) -> None:
         else:
             delayed.append(route)  # answered only after the newer request finished
 
-    page.goto("/#/trends")
+    page.goto("/classic/#/trends")
     expect(page.get_by_role("heading", name="Trends", exact=True)).to_be_visible()
     page.route("**/api/trends?*", hold_first)
 
@@ -269,7 +276,7 @@ def test_a_late_response_for_an_older_address_is_not_shown(page: Page) -> None:
 def test_pipelines_page_shows_the_cancelled_run_as_incomplete(pipelines_page: Page) -> None:
     """Both real pipelines; naming the five jobs marks the cancelled one, and the URL keeps them."""
     page = pipelines_page
-    page.goto("/#/pipelines")
+    page.goto("/classic/#/pipelines")
     expect(page.get_by_role("heading", name="Pipelines", exact=True)).to_be_visible()
     complete = page.locator("details.pipeline").filter(has_text="Pipeline 39238241112")
     cancelled = page.locator("details.pipeline").filter(has_text="Pipeline 38842296207")
@@ -293,7 +300,7 @@ def test_pipelines_page_shows_the_cancelled_run_as_incomplete(pipelines_page: Pa
 def test_status_chips_filter_the_pipelines_and_stay_in_the_address(pipelines_page: Page) -> None:
     """With the five jobs expected: 1 incomplete, 1 complete; a chip keeps only its pipelines."""
     page = pipelines_page
-    page.goto("/#/pipelines?jobs=api,ui-chrome,ui-firefox,ui-edge,component")
+    page.goto("/classic/#/pipelines?jobs=api,ui-chrome,ui-firefox,ui-edge,component")
     chips = page.get_by_role("navigation", name="Pipeline status")
     expect(chips).to_contain_text("All (2)")
 
@@ -307,7 +314,7 @@ def test_status_chips_filter_the_pipelines_and_stay_in_the_address(pipelines_pag
 def test_runs_page_names_the_pipeline_job(pipelines_page: Page) -> None:
     """The run list has a pipeline / job column; a run's page repeats it."""
     page = pipelines_page
-    page.goto("/#/runs")
+    page.goto("/classic/#/runs")
     row = page.get_by_role("row").filter(has_text="ui-firefox/ui-firefox.json")
     expect(row).to_contain_text("39238241112 / ui-firefox")
 
@@ -325,7 +332,7 @@ def test_with_a_login_the_whole_dashboard_works_after_signing_in(browser: Browse
         base_url=secured_url, http_credentials={"username": "qi", "password": "correct horse battery"}
     )
     page = context.new_page()
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
     expect(page.get_by_role("heading", name="Overview")).to_be_visible()
     expect(page.locator("#data-size")).to_contain_text("42 requirements")
     page.get_by_role("link", name="Trends", exact=True).click()
@@ -339,7 +346,7 @@ def test_new_history_appears_without_a_restart_and_the_filters_stay(
     """A run is stored while the page is open: Refresh shows it, the filtered address is kept."""
     page = live_page
     _, sources = live_server
-    page.goto("/#/runs?framework=pytest")
+    page.goto("/classic/#/runs?framework=pytest")
     rows = page.locator("#view tbody tr")
     expect(rows).to_have_count(3)
     expect(page.locator("#data-fresh")).to_contain_text("Data loaded")
@@ -360,7 +367,7 @@ def test_a_failed_refresh_keeps_the_data_and_warns(live_page: Page, live_server:
     """The database becomes unreadable: the page keeps its figures and says they are stale."""
     page = live_page
     _, sources = live_server
-    page.goto("/#/runs")
+    page.goto("/classic/#/runs")
     rows = page.locator("#view tbody tr")
     expect(rows).to_have_count(3)
 
@@ -378,7 +385,7 @@ def test_a_failed_refresh_keeps_the_data_and_warns(live_page: Page, live_server:
 def test_the_repository_selection_is_kept_across_pages_and_reloads(pipelines_page: Page) -> None:
     """Chosen once, in the address, applied on every page."""
     page = pipelines_page
-    page.goto("/#/runs")
+    page.goto("/classic/#/runs")
     page.locator('#filters select[name="repository"]').select_option(
         "niranjankagri/cypress-typescript-framework"
     )
@@ -395,7 +402,7 @@ def test_the_repository_selection_is_kept_across_pages_and_reloads(pipelines_pag
 
 def test_overview_shows_the_release_status_with_its_reasons(page: Page) -> None:
     """Without a gate the status is Unknown, never Ready; the numbers are the API's."""
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
     panel = page.get_by_role("region", name="Release status")
     expect(panel).to_contain_text("Unknown")
     expect(panel).to_contain_text("no release gate is configured")
@@ -406,7 +413,7 @@ def test_overview_shows_the_release_status_with_its_reasons(page: Page) -> None:
 def test_explorer_links_to_github_and_the_collection_page_shows_health(collected_page: Page) -> None:
     """The cancelled run is incomplete with its missing artifact; links open the exact run; health is fresh."""
     page = collected_page
-    page.goto("/#/pipelines")
+    page.goto("/classic/#/pipelines")
     cancelled = page.locator("details.pipeline").filter(has_text="#6")
     expect(cancelled.locator("summary .badge")).to_have_text("incomplete")
     cancelled.locator("summary").click()
@@ -429,7 +436,7 @@ def test_explorer_links_to_github_and_the_collection_page_shows_health(collected
 def test_test_investigation_shows_context_pattern_requirements_and_copies(page: Page) -> None:
     """Latest result, a pattern of 13 executions with one failure, duration chart and copy actions."""
     page.context.grant_permissions(["clipboard-read", "clipboard-write"])
-    page.goto("/#/tests")
+    page.goto("/classic/#/tests")
     page.get_by_label("Filter tests by name").fill("adminEditsACustomer")
     page.get_by_role("link", name=re.compile("adminEditsACustomer")).click()
 
@@ -445,7 +452,7 @@ def test_test_investigation_shows_context_pattern_requirements_and_copies(page: 
 
 def test_compare_page_shows_two_builds_and_their_changes(page: Page) -> None:
     """Default: the last two builds; choosing TestNG's first two shows 10 slower tests with links."""
-    page.goto("/#/compare?framework=testng&base=f5a40d5&head=1d03232")
+    page.goto("/classic/#/compare?framework=testng&base=f5a40d5&head=1d03232")
     expect(page.get_by_role("heading", name="Compare builds")).to_be_visible()
     expect(page.get_by_label("Baseline build")).to_have_value("f5a40d5")
     expect(page.get_by_role("navigation", name="Change type")).to_contain_text("slower (10)")
@@ -460,7 +467,7 @@ def test_compare_page_shows_two_builds_and_their_changes(page: Page) -> None:
 
 def test_filter_chips_quick_dates_job_filter_and_table_tools(page: Page) -> None:
     """Active filters as removable chips; a quick range sets From; tables sort and export CSV."""
-    page.goto("/#/runs?framework=testng")
+    page.goto("/classic/#/runs?framework=testng")
     chip = page.get_by_role("list", name="Active filters")
     expect(chip).to_contain_text("Framework: testng")
 
@@ -471,7 +478,7 @@ def test_filter_chips_quick_dates_job_filter_and_table_tools(page: Page) -> None
     page.get_by_role("button", name="Remove filter Framework: testng").click()
     expect(page).not_to_have_url(re.compile(r"framework="))
 
-    page.goto("/#/runs")
+    page.goto("/classic/#/runs")
     rows = page.locator("#view tbody tr")
     page.get_by_role("button", name=re.compile(r"^passed")).click()  # sort by passed, ascending
     expect(page.locator("#view th[aria-sort=ascending]")).to_have_count(1)
@@ -490,7 +497,7 @@ def test_filter_chips_quick_dates_job_filter_and_table_tools(page: Page) -> None
 
 def test_a_trend_bar_opens_the_runs_of_its_day_with_the_keyboard(page: Page) -> None:
     """Each day's bar is a link with its numbers as name; Enter on it lists that day's runs."""
-    page.goto("/#/trends")
+    page.goto("/classic/#/trends")
     bar = page.get_by_role("link", name=re.compile(r"^10-13: .*Open the runs"))
     expect(bar).to_have_count(1)
     bar.focus()
@@ -521,7 +528,7 @@ def test_no_horizontal_overflow_at_phone_tablet_and_desktop_widths(
 ) -> None:
     """The page itself never scrolls sideways; wide tables scroll inside their own box."""
     page.set_viewport_size({"width": width, "height": 900})
-    page.goto(f"/{route}")
+    page.goto(f"/classic/{route}")
     expect(page.locator("#view h1")).to_be_visible()
 
     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
@@ -529,7 +536,7 @@ def test_no_horizontal_overflow_at_phone_tablet_and_desktop_widths(
 
 def test_theme_and_density_are_remembered(page: Page) -> None:
     """Dark chosen in the page wins over the system setting after a reload; Compact too."""
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
     page.get_by_label("Theme").select_option("dark")
     page.get_by_label("Compact").check()
     page.reload()
@@ -542,7 +549,7 @@ def test_theme_and_density_are_remembered(page: Page) -> None:
 
 def test_moving_to_another_page_puts_the_focus_on_its_heading(page: Page) -> None:
     """Keyboard and screen-reader users land on the new page, not on the old link."""
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
     expect(page.get_by_role("heading", name="Overview", exact=True)).to_be_visible()
     page.get_by_role("link", name="Runs", exact=True).click()
 
@@ -551,7 +558,7 @@ def test_moving_to_another_page_puts_the_focus_on_its_heading(page: Page) -> Non
 
 def test_the_owner_filter_narrows_requirements_and_the_matrix_groups_by_owner(page: Page) -> None:
     """Owner = Admin team: 12 requirements, a chip, the address; the matrix has a By owner table."""
-    page.goto("/#/requirements")
+    page.goto("/classic/#/requirements")
     expect(page.get_by_role("heading", name="By owner")).to_be_visible()
     page.locator('#filters select[name="owner"]').select_option("Admin team")
 
@@ -563,7 +570,7 @@ def test_the_owner_filter_narrows_requirements_and_the_matrix_groups_by_owner(pa
 
 def test_navigation_groups_and_the_collapsible_filter_area(page: Page) -> None:
     """Navigation follows product areas; URL filters stay active while the advanced filters collapse."""
-    page.goto("/#/coverage?criticality=critical")
+    page.goto("/classic/#/coverage?criticality=critical")
 
     expect(page.locator(".section-nav")).to_contain_text("Investigate")
     expect(page.locator(".section-nav")).to_contain_text("Coverage")
@@ -583,7 +590,7 @@ def test_navigation_groups_and_the_collapsible_filter_area(page: Page) -> None:
 def test_mobile_sections_menu_can_collapse_and_reopen(page: Page) -> None:
     """On a phone, the whole grouped navigation can be hidden and reopened."""
     page.set_viewport_size({"width": 390, "height": 844})
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
 
     sections = page.locator(".mobile-nav > summary")
     attention = page.get_by_role("link", name="Needs attention", exact=True)
@@ -600,7 +607,7 @@ def test_mobile_sections_menu_can_collapse_and_reopen(page: Page) -> None:
 
 def test_critical_gap_preset_groups_findings_and_returns_to_filtered_results(page: Page) -> None:
     """The critical gap shortcut uses the existing attention API and keeps a back link from detail."""
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
     page.get_by_role("button", name="Critical gaps").click()
 
     expect(page).to_have_url(
@@ -621,12 +628,12 @@ def test_critical_gap_preset_groups_findings_and_returns_to_filtered_results(pag
 
 def test_quick_views_and_metric_definitions_are_shareable(page: Page) -> None:
     """Presets keep their route filters in the address and KPI help states the metric limits."""
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
     page.get_by_role("button", name="Recent failures").click()
     expect(page).to_have_url(re.compile(r"#/tests\?.*outcome=failed.*since=\d{4}-\d{2}-\d{2}"))
     expect(page.locator("#outcome-filter")).to_have_value("failed")
 
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
     help = page.locator(".card-shell").filter(has=page.locator(".label", has_text="Execution pass rate"))
     help.locator(".help-tip > summary").click()
     expect(help.locator(".help-popover")).to_contain_text("Skips are excluded")
@@ -639,7 +646,7 @@ def test_repository_requirement_breakdown_uses_observed_results_and_drills_down(
     page: Page, pipelines_url: str
 ) -> None:
     """Repository rows are limited to observed linked results; each count opens its exact evidence."""
-    page.goto(f"{pipelines_url}/#/requirements")
+    page.goto(f"{pipelines_url}/classic/#/requirements")
     repository_table = page.locator(".table-block table").filter(has_text="Observed requirements")
     repo_row = repository_table.locator("tbody tr").first
     expect(repo_row).to_contain_text("niranjankagri/cypress-typescript-framework")
@@ -658,7 +665,7 @@ def test_repository_requirement_breakdown_uses_observed_results_and_drills_down(
 
 def test_a_table_that_fits_on_one_page_shows_no_pager(page: Page) -> None:
     """Five snapshot runs: no "Rows 1-5 of 5" and no Previous/Next (the hidden attribute wins)."""
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
     expect(page.get_by_role("heading", name="Overview", exact=True)).to_be_visible()
 
     expect(page.locator(".pagerbox").first).to_be_hidden()
@@ -668,7 +675,7 @@ def test_a_table_that_fits_on_one_page_shows_no_pager(page: Page) -> None:
 def test_every_page_says_the_requirements_are_synthetic(page: Page) -> None:
     """The sample catalog's notice is visible above every page, not only on the overview."""
     for route in ("#/coverage", "#/requirements", "#/pipelines"):
-        page.goto(f"/{route}")
+        page.goto(f"/classic/{route}")
         expect(page.locator("#view h1")).to_be_visible()
         expect(page.locator("#catalog-notice")).to_contain_text("synthetic sample catalog")
 
@@ -676,7 +683,7 @@ def test_every_page_says_the_requirements_are_synthetic(page: Page) -> None:
 def test_collection_problems_lead_to_their_pipeline_and_github_run(collected_page: Page) -> None:
     """Each problem links its pipeline and its run attempt on GitHub; so does the freshness line."""
     page = collected_page
-    page.goto("/#/collection")
+    page.goto("/classic/#/collection")
     problem = page.locator("ul.reasons li").filter(has_text="report-ui-firefox not found")
 
     expect(problem.get_by_role("link", name="Open the run on GitHub")).to_have_attribute(
@@ -686,7 +693,7 @@ def test_collection_problems_lead_to_their_pipeline_and_github_run(collected_pag
     problem.get_by_role("link", name=re.compile("pipeline 38842296207 attempt 1")).click()
     expect(page).to_have_url(re.compile(r"#/pipelines\?.*status=incomplete"))
 
-    page.goto("/#/coverage")
+    page.goto("/classic/#/coverage")
     page.locator("#data-fresh").get_by_role("link", name=re.compile("incomplete collection")).click()
     expect(page).to_have_url(re.compile(r"#/pipelines\?status=incomplete"))
     expect(page.locator("#view h1")).to_have_text("Pipelines")
@@ -694,7 +701,7 @@ def test_collection_problems_lead_to_their_pipeline_and_github_run(collected_pag
 
 def test_operations_separates_snapshot_refresh_from_collection_freshness(collected_page: Page) -> None:
     """Operations shows the last good dashboard snapshot and last complete collection separately."""
-    collected_page.goto("/#/collection")
+    collected_page.goto("/classic/#/collection")
 
     expect(collected_page.get_by_role("heading", name="Dashboard snapshot")).to_be_visible()
     expect(collected_page.get_by_text("It does not start a CI collection workflow.")).to_be_visible()
@@ -705,7 +712,7 @@ def test_operations_separates_snapshot_refresh_from_collection_freshness(collect
 
 def test_a_compare_link_to_an_unknown_build_still_offers_the_build_choice(page: Page) -> None:
     """A mistyped or pruned build in the address: an explanation and the selectors, not an error page."""
-    page.goto("/#/compare?base=f5a40d5&head=0000000")
+    page.goto("/classic/#/compare?base=f5a40d5&head=0000000")
 
     expect(page.locator("#view [role=note]")).to_contain_text("No runs of build 0000000 in this scope")
     expect(page.get_by_label("Baseline build")).to_be_visible()

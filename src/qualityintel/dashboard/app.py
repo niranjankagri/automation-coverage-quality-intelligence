@@ -182,7 +182,9 @@ class SecurityHeaders(BaseHTTPMiddleware):
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()"
         if request.url.scheme == "https":
             response.headers["Strict-Transport-Security"] = "max-age=31536000"
-        if request.url.path in ("/", "/next/") or request.url.path.startswith(("/api/", "/static/")):
+        if request.url.path in ("/", "/next/", "/classic/") or request.url.path.startswith(
+            ("/api/", "/static/")
+        ):
             response.headers["Cache-Control"] = "private, no-store" if self.private else "no-cache"
         if not request.url.path.startswith(("/docs", "/openapi.json")):
             response.headers["Content-Security-Policy"] = CONTENT_SECURITY_POLICY
@@ -382,8 +384,18 @@ def create_app(
 
     @app.get("/", include_in_schema=False)
     def index() -> FileResponse:
-        """The single-page front end."""
+        """The main Quality Intelligence report."""
+        return FileResponse(STATIC / "next" / "index.html")
+
+    @app.get("/classic/", include_in_schema=False)
+    def classic_dashboard() -> FileResponse:
+        """The original dashboard, including operational and run detail pages."""
         return FileResponse(STATIC / "index.html")
+
+    @app.get("/classic", include_in_schema=False)
+    def classic_dashboard_slash() -> RedirectResponse:
+        """Canonical trailing slash for the classic dashboard."""
+        return RedirectResponse("/classic/", status_code=308)
 
     @app.get("/next/", include_in_schema=False)
     def next_report() -> FileResponse:
