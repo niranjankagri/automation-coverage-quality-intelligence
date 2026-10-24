@@ -64,6 +64,27 @@ def test_main_dashboard_classic_and_preview_links_stay_available(page: Page) -> 
     heading(page, "Test Results")
 
 
+@pytest.mark.parametrize(("theme", "ink"), [("light", "rgb(23, 23, 23)"), ("dark", "rgb(241, 243, 247)")])
+def test_scope_names_are_neutral_and_counts_keep_repository_navigation(
+    pipelines_page: Page, theme: str, ink: str
+) -> None:
+    """Repository names remain readable and clickable; exact outcomes replace decorative bars."""
+    page = pipelines_page
+    page.goto("/")
+    page.evaluate(f"localStorage.setItem('na-theme', '{theme}')")
+    page.reload()
+    heading(page, "Quality at a glance")
+    scope = page.get_by_role("region", name="Selected scope", exact=True)
+    link = scope.locator(".suite-name a").first
+    expect(link).to_have_css("color", ink)
+    expect(page.locator("main h1")).to_have_css("color", ink)
+    expect(scope.locator(".stack")).to_have_count(0)
+    expect(scope.locator(".suite-outcomes").first).to_contain_text("passed")
+    link.click()
+    heading(page, "Quality at a glance")
+    expect(page).to_have_url(re.compile(r"repository=niranjankagri%2Fcypress-typescript-framework"))
+
+
 def test_browser_cards_open_scoped_results_and_keep_exact_numbers(page: Page) -> None:
     """Visual browser cards open their own results; the exact comparison remains available."""
     page.goto("/#/overview")

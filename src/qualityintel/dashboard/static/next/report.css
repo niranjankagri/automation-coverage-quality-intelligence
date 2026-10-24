@@ -602,3 +602,25 @@ body { background: radial-gradient(ellipse at 15% 12%, var(--glow), transparent 
   .summary .big-number { font-size: 28px; }
   .browser-card { padding: 12px; gap: 8px; }
 }
+
+/* Neutral hierarchy: headings and repository names use ink, status charts retain their meaning. */
+:root { --heading-ink: #171717; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --heading-ink: #f1f3f7; }
+}
+:root[data-theme="dark"] { --heading-ink: #f1f3f7; }
+h1, h2, h3, .eyebrow, .kpi-label, .feature-name, .browser-card-top strong, .suite-name, .suite-name a {
+  color: var(--heading-ink);
+}
+.suite-name a { text-decoration: none; }
+.suite-name a:hover { text-decoration: underline; text-decoration-thickness: 1px; }
+.suite-name a:focus-visible { text-decoration: underline; }
+.suite-meta a { color: var(--muted); }
+.suite-outcomes { display: flex; flex-wrap: wrap; gap: 6px; font-size: 11.5px; }
+.suite-outcome { padding: 3px 8px; border-radius: 6px; background: var(--surface-3); color: var(--muted); font-variant-numeric: tabular-nums; }
+.suite-outcome-failed { color: var(--failed); background: var(--failed-soft); }
+.suite-outcome-error { color: var(--error); background: var(--error-soft); }
+.suite-row { gap: 9px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; }
+.suite-row:last-child { border: 1px solid var(--line); padding-bottom: 12px; }
+.suite-row:hover { background: var(--surface-3); }
+.suites { gap: 8px; }
