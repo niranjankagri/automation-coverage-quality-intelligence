@@ -1620,7 +1620,7 @@ async function executionsView() {
   const scope = [params.get("repository") ? prettyRepo(params.get("repository")) : "All repositories", kind ? EXECUTION_KINDS[kind] ?? kind : "All tests", params.get("browser") || params.get("job") || "All contexts"].join(" / ");
   return [h("div", { class: "dashboard-hero" }, h("div", {}, h("p", { class: "eyebrow" }, "Niranjan Kumar Agri / Quality engineering"),
     h("h1", {}, "Test execution dashboard"), h("p", { class: "lead" }, "Your automation, at a glance. Pick a project. Explore the results.")),
-    h("a", { class: "portfolio-return", href: "https://niranjankagri.github.io/projects.html" }, "← Back to my projects")),
+    h("a", { class: "portfolio-return", href: "https://niranjankagri.github.io/" }, "← Back to portfolio")),
     executionNavigator(options),
     h("div", { class: "dashboard-heading" }, h("div", {}, h("p", { class: "eyebrow" }, "Execution insights"), h("h2", {}, scope),
       h("p", { class: "sub" }, `${params.get("since") || "First recorded run"} → ${params.get("until") || "Latest recorded run"} · UTC`)),

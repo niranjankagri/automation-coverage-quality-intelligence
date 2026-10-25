@@ -136,8 +136,8 @@ def test_chart_interaction_and_progressive_details(page: Page) -> None:
     expect(page.locator("#filters")).to_be_hidden()
     page.locator(".ranking-details > summary").first.click()
     expect(page.locator(".ranking-details").first.locator("table")).to_be_visible()
-    expect(page.get_by_role("link", name="← Back to my projects")).to_have_attribute(
-        "href", "https://niranjankagri.github.io/projects.html"
+    expect(page.get_by_role("link", name="← Back to portfolio")).to_have_attribute(
+        "href", "https://niranjankagri.github.io/"
     )
 
 
