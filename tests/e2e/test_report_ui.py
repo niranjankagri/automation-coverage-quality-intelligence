@@ -54,6 +54,9 @@ def test_main_dashboard_classic_and_preview_links_stay_available(page: Page) -> 
     """Home is the new report, classic stays functional, and /next remains a working bookmark."""
     page.goto("/")
     heading(page, "Quality at a glance")
+    expect(page.get_by_role("link", name="Portfolio", exact=False)).to_have_attribute(
+        "href", "https://niranjankagri.github.io/"
+    )
     expect(page.locator(".ring .seg-passed")).to_have_css("stroke", "rgb(21, 153, 104)")
     page.get_by_role("link", name="Classic dashboard", exact=True).click()
     expect(page).to_have_url(re.compile(r"/classic/"))
