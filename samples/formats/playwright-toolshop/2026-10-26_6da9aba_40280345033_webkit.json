@@ -1,0 +1,909 @@
+{
+ "config": {
+  "version": "1.64.0",
+  "projects": [
+   {
+    "name": "api"
+   },
+   {
+    "name": "chromium"
+   },
+   {
+    "name": "firefox"
+   },
+   {
+    "name": "webkit"
+   }
+  ]
+ },
+ "suites": [
+  {
+   "title": "ui/catalog.spec.ts",
+   "file": "ui/catalog.spec.ts",
+   "column": 0,
+   "line": 0,
+   "specs": [],
+   "suites": [
+    {
+     "title": "Product catalogue",
+     "file": "ui/catalog.spec.ts",
+     "line": 5,
+     "column": 6,
+     "specs": [
+      {
+       "title": "home page shows a full first page of products",
+       "ok": true,
+       "tags": [
+        "catalog",
+        "smoke"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 5893,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:40.820Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-cd905a76a5245528bc29",
+       "file": "ui/catalog.spec.ts",
+       "line": 10,
+       "column": 7
+      },
+      {
+       "title": "search shows only matching products",
+       "ok": true,
+       "tags": [
+        "catalog",
+        "smoke"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 9231,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:40.835Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-01e7580fcfeca007ea8b",
+       "file": "ui/catalog.spec.ts",
+       "line": 18,
+       "column": 7
+      },
+      {
+       "title": "search without a match says so",
+       "ok": true,
+       "tags": [
+        "catalog",
+        "negative"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 3894,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:48.460Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-9d2cbe5b17caaaa839bb",
+       "file": "ui/catalog.spec.ts",
+       "line": 31,
+       "column": 7
+      },
+      {
+       "title": "category filter shows the same products as the API",
+       "ok": true,
+       "tags": [
+        "catalog"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 3746,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:52.367Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-c67c2153efc4e51ec46a",
+       "file": "ui/catalog.spec.ts",
+       "line": 38,
+       "column": 7
+      },
+      {
+       "title": "sort \"Name (A - Z)\" orders the products by name",
+       "ok": true,
+       "tags": [
+        "catalog"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 3428,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:52.549Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-69b73b98a0a039154ffd",
+       "file": "ui/catalog.spec.ts",
+       "line": 60,
+       "column": 9
+      },
+      {
+       "title": "sort \"Name (Z - A)\" orders the products by name",
+       "ok": true,
+       "tags": [
+        "catalog"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 3751,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:56.019Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-baa007575e3580dea929",
+       "file": "ui/catalog.spec.ts",
+       "line": 60,
+       "column": 9
+      },
+      {
+       "title": "sort \"Price (Low - High)\" orders the products by price",
+       "ok": true,
+       "tags": [
+        "catalog"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 3390,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:56.136Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-62bdf37230c889ae169c",
+       "file": "ui/catalog.spec.ts",
+       "line": 60,
+       "column": 9
+      },
+      {
+       "title": "sort \"Price (High - Low)\" orders the products by price",
+       "ok": true,
+       "tags": [
+        "catalog"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 3517,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:59.548Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-b56b5fb30f8d19172a94",
+       "file": "ui/catalog.spec.ts",
+       "line": 60,
+       "column": 9
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "ui/checkout.spec.ts",
+   "file": "ui/checkout.spec.ts",
+   "column": 0,
+   "line": 0,
+   "specs": [],
+   "suites": [
+    {
+     "title": "Checkout as a logged-in customer",
+     "file": "ui/checkout.spec.ts",
+     "line": 4,
+     "column": 6,
+     "specs": [
+      {
+       "title": "customer can order two products",
+       "ok": true,
+       "tags": [
+        "checkout",
+        "smoke",
+        "e2e"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 13092,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:59.808Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "25ab1bfc84c57e3e3a45-b9f0e5ad0cabce1b6438",
+       "file": "ui/checkout.spec.ts",
+       "line": 8,
+       "column": 7
+      },
+      {
+       "title": "cart line prices and total add up",
+       "ok": true,
+       "tags": [
+        "checkout"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 9352,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:33:03.088Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "25ab1bfc84c57e3e3a45-b65ce0ed686081b8b979",
+       "file": "ui/checkout.spec.ts",
+       "line": 44,
+       "column": 7
+      }
+     ]
+    },
+    {
+     "title": "Checkout as a guest",
+     "file": "ui/checkout.spec.ts",
+     "line": 66,
+     "column": 6,
+     "specs": [
+      {
+       "title": "guest is asked to sign in at checkout",
+       "ok": true,
+       "tags": [
+        "checkout"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 5155,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:33:12.457Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "25ab1bfc84c57e3e3a45-d84ed02cbd7b71535ea1",
+       "file": "ui/checkout.spec.ts",
+       "line": 67,
+       "column": 7
+      },
+      {
+       "title": "a cart filled through the API shows up in the browser",
+       "ok": true,
+       "tags": [
+        "checkout",
+        "hybrid"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 3322,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:33:12.914Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "25ab1bfc84c57e3e3a45-75772d59ace097628515",
+       "file": "ui/checkout.spec.ts",
+       "line": 80,
+       "column": 7
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "ui/login.spec.ts",
+   "file": "ui/login.spec.ts",
+   "column": 0,
+   "line": 0,
+   "specs": [],
+   "suites": [
+    {
+     "title": "Login",
+     "file": "ui/login.spec.ts",
+     "line": 5,
+     "column": 6,
+     "specs": [
+      {
+       "title": "customer can log in and lands on the account page",
+       "ok": true,
+       "tags": [
+        "login",
+        "smoke"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 4145,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:33:16.258Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "41d3fd2474a19feb00a1-3f66b95315f251efb149",
+       "file": "ui/login.spec.ts",
+       "line": 10,
+       "column": 7
+      },
+      {
+       "title": "wrong password is rejected with a message",
+       "ok": true,
+       "tags": [
+        "login",
+        "negative"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 3151,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:33:17.632Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "41d3fd2474a19feb00a1-c53c2c6cbdf67affd98c",
+       "file": "ui/login.spec.ts",
+       "line": 26,
+       "column": 7
+      },
+      {
+       "title": "empty form shows a message for each required field",
+       "ok": true,
+       "tags": [
+        "login",
+        "negative"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 1737,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:33:20.424Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "41d3fd2474a19feb00a1-16a9484da8e7107f6207",
+       "file": "ui/login.spec.ts",
+       "line": 35,
+       "column": 7
+      },
+      {
+       "title": "customer can sign out again",
+       "ok": true,
+       "tags": [
+        "login"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 5694,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:33:20.798Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "41d3fd2474a19feb00a1-8715db28149ea2a16fbe",
+       "file": "ui/login.spec.ts",
+       "line": 42,
+       "column": 7
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "ui/network.spec.ts",
+   "file": "ui/network.spec.ts",
+   "column": 0,
+   "line": 0,
+   "specs": [],
+   "suites": [
+    {
+     "title": "Catalogue with a mocked API",
+     "file": "ui/network.spec.ts",
+     "line": 14,
+     "column": 6,
+     "specs": [
+      {
+       "title": "renders exactly the products the API sends",
+       "ok": true,
+       "tags": [
+        "network"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 2100,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:33:22.177Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "5567a9004528a7a67849-a9e8b51a034f2905c8c5",
+       "file": "ui/network.spec.ts",
+       "line": 15,
+       "column": 7
+      },
+      {
+       "title": "shows a message when the API returns no products",
+       "ok": true,
+       "tags": [
+        "network"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 1875,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:33:24.293Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "5567a9004528a7a67849-e9077d172c3e4bf47a9a",
+       "file": "ui/network.spec.ts",
+       "line": 29,
+       "column": 7
+      },
+      {
+       "title": "a failing product API leaves the rest of the page working",
+       "ok": true,
+       "tags": [
+        "network"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 1923,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:33:26.179Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "5567a9004528a7a67849-96483fbde466a0fb9902",
+       "file": "ui/network.spec.ts",
+       "line": 38,
+       "column": 7
+      }
+     ]
+    },
+    {
+     "title": "Requests the front end sends",
+     "file": "ui/network.spec.ts",
+     "line": 52,
+     "column": 6,
+     "specs": [
+      {
+       "title": "sorting asks the API for sorted data",
+       "ok": true,
+       "tags": [
+        "network"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 2435,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:33:26.507Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "5567a9004528a7a67849-20557289ddb0f1073f8a",
+       "file": "ui/network.spec.ts",
+       "line": 53,
+       "column": 7
+      },
+      {
+       "title": "search sends the search term to the search endpoint",
+       "ok": true,
+       "tags": [
+        "network"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 2917,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:33:28.120Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "5567a9004528a7a67849-1eb390b868d6f91d7953",
+       "file": "ui/network.spec.ts",
+       "line": 70,
+       "column": 7
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "ui/product.spec.ts",
+   "file": "ui/product.spec.ts",
+   "column": 0,
+   "line": 0,
+   "specs": [],
+   "suites": [
+    {
+     "title": "Product details",
+     "file": "ui/product.spec.ts",
+     "line": 4,
+     "column": 6,
+     "specs": [
+      {
+       "title": "card and detail page show the same name and price",
+       "ok": true,
+       "tags": [
+        "product",
+        "smoke"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 2786,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:33:29.000Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "2fa8ab87beca8e7f39ce-c8d576faa589dcfe319e",
+       "file": "ui/product.spec.ts",
+       "line": 5,
+       "column": 7
+      },
+      {
+       "title": "adding a product with a quantity updates the cart badge",
+       "ok": true,
+       "tags": [
+        "product"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 4152,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:33:31.057Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "2fa8ab87beca8e7f39ce-40ee6311460a6e4e2c0a",
+       "file": "ui/product.spec.ts",
+       "line": 18,
+       "column": 7
+      },
+      {
+       "title": "the + button raises the quantity by one",
+       "ok": true,
+       "tags": [
+        "product"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "webkit",
+         "projectName": "webkit",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 2956,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:33:31.813Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "2fa8ab87beca8e7f39ce-c9d382be8ea30d9e7bce",
+       "file": "ui/product.spec.ts",
+       "line": 31,
+       "column": 7
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "errors": [],
+ "stats": {
+  "startTime": "2026-10-26T06:32:39.758Z",
+  "duration": 55637.751,
+  "expected": 24,
+  "skipped": 0,
+  "unexpected": 0,
+  "flaky": 0
+ }
+}

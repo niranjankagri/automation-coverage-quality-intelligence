@@ -71,6 +71,8 @@ set they were written for. Cleaned with [`tools/sanitize_reports.py`](../tools/s
 | `allure-enterprise-api` | Allure 2 TestNG adapter (`allure-results` folder, one folder per run) | [enterprise-test-automation-framework](https://github.com/niranjankagri/enterprise-test-automation-framework), API job | 5 (6-19 Oct), 57 tests each |
 | `allure-enterprise-nightly-full` | Allure 2 TestNG adapter | enterprise-test-automation-framework, nightly job *Full suite (Chrome)*, run 39385969773 (20 Oct) | 1, with 169 executions (its CI log: "169 passed"), incl. 4 invocations of one method (`invocationCount`) |
 | `junit-enterprise-api` | Maven Surefire, the same CI job and run as `allure-enterprise-api` | same | 5 |
+| `playwright-toolshop` | Playwright 1.64 `json` reporter, one file per project | [playwright-typescript-framework](https://github.com/niranjankagri/playwright-typescript-framework), jobs `api`, `chromium`, `firefox`, `webkit` of PR run 40280345033 (26 Oct, commit 6da9aba) | 1 run, 4 files: 23 + 24 + 24 + 24 tests; in `chromium` the checkout test failed once and passed on its retry (Playwright: `flaky: 1`) |
+| `junit-playwright-toolshop` | Playwright `junit` reporter, the same jobs and run as `playwright-toolshop` | same | 1 run, 4 files (framework, build and browser recorded with `--set`) |
 
 One run per day was kept (the latest of that day). All of these runs passed.
 

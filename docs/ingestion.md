@@ -2,14 +2,15 @@
 
 `qualityintel.ingest` turns result files into `TestRun` / `TestResult` objects
 ([models](../src/qualityintel/models/results.py)). JUnit XML is the main input format
-([ADR 0002](adr/0002-junit-xml-first.md)); Cypress (mochawesome) and Allure results are read by
-two adapters that produce the same model ([ADR 0005](adr/0005-format-adapters.md), and
-[Other formats](#other-formats-cypress-and-allure) below).
+([ADR 0002](adr/0002-junit-xml-first.md)); Cypress (mochawesome), Playwright JSON and Allure
+results are read by adapters that produce the same model ([ADR 0005](adr/0005-format-adapters.md),
+and [Other formats](#other-formats-cypress-playwright-json-and-allure) below).
 
 | Input | Read as | Importer |
 |---|---|---|
 | `*.xml` file | JUnit XML | `ingest/junit.py` |
-| `*.json` file | mochawesome JSON | `ingest/mochawesome.py` |
+| `*.json` file with Playwright's `config`, `suites` and `stats` | Playwright JSON report | `ingest/playwright_json.py` |
+| other `*.json` file | mochawesome JSON | `ingest/mochawesome.py` |
 | `*.html` / `*.htm` file, named explicitly | mochawesome HTML report | `ingest/mochawesome.py` |
 | folder that directly holds `*-result.json` files | one Allure run | `ingest/allure.py` |
 | other folder | everything above found below it (HTML excepted) | `ingest/batch.py` |
@@ -24,7 +25,7 @@ by the integration tests.
 | pytest | `pytest --junitxml=reports/junit.xml` | 14 CI runs | `classname` = module path, parametrised ids stay in the name |
 | Robot Framework | `robot --xunit xunit.xml` (or `rebot --xunit`) | 11 CI runs | nested suites; `classname` = dotted suite path |
 | Maven Surefire + TestNG | `target/surefire-reports/TEST-TestSuite.xml` | 13 CI runs | no timestamp in the file; JVM properties are ignored |
-| Playwright Test | `--reporter=junit`, or `npx playwright merge-reports --reporter junit <blob dir>` | 5 CI run attempts | `merge-reports` stamps the merge time, not the run time |
+| Playwright Test | `--reporter=junit`, or `npx playwright merge-reports --reporter junit <blob dir>` | 5 CI run attempts | `merge-reports` stamps the merge time, not the run time; a pass on a retry is written as a plain pass: use the [JSON report](#playwright-json) to see retries |
 
 **No adapter was needed** for these four: their JUnit XML carries everything the model uses.
 Cypress is read from its mochawesome report instead (next section).
@@ -84,7 +85,7 @@ input as success.
 whole directory would count each test twice; the per-class files differ in content, so duplicate
 detection cannot catch it. Point the importer at `TEST-TestSuite.xml` only.
 
-## Other formats: Cypress and Allure
+## Other formats: Cypress, Playwright JSON and Allure
 
 Real samples: `samples/formats` ([what they are](../samples/README.md#formats-other-result-formats-real-ci-output)),
 checked by `tests/integration/test_format_samples.py`.
@@ -112,6 +113,35 @@ Tested with Cypress 16.2 and cypress-mochawesome-reporter 5 (8 CI runs). One fil
 with `--browser`/`--build`/... or record them as `qi_context`), and no retries (`retries` stays
 0; Cypress retries are invisible here). Test source (`code`), `context` (screenshots, values)
 and hooks are not read.
+
+### Playwright JSON
+
+Supported: the report of Playwright's `json` reporter (`--reporter=json`, or
+`['json', { outputFile: 'test-results/results.json' }]` in `playwright.config.ts`), **one
+project per file** (one CI job per browser writes exactly that). Tested with Playwright 1.64
+(one CI run, four projects). One file = one run.
+
+**Why it exists:** Playwright's JUnit reporter writes a test that passed on a retry as a plain
+pass, so a flaky Playwright test is invisible in JUnit XML. In the sample run the checkout test
+of the Chromium job failed once and passed on its retry: JUnit says *passed*, the JSON report
+gives *passed after 1 retry*, which makes it a flaky candidate.
+
+| Playwright JSON | Model |
+|---|---|
+| spec `file` (always with `/`; the file suite's title uses the OS separator) | `classname` |
+| describe titles + spec `title`, joined with ` › ` | `name`: the **same key as Playwright's JUnit XML**, so history continues when a producer switches |
+| innermost describe title (the file when there is none) | `suite` |
+| the last attempt's `status`: passed / failed / timedOut / skipped / interrupted | passed / failed / failed / skipped / error (unknown: error) |
+| attempts before the last one | `retries` (a pass with retries is a pass after retry) |
+| a test without any attempt (e.g. after `maxFailures`) | skipped |
+| the last attempt's first error: `message` (colour codes removed), `stack` | `FailureDetails` |
+| the last attempt's `duration` (ms), `startTime` | `duration_seconds`, `timestamp` |
+| `stats.startTime` | `TestRun.started_at` |
+| (always) | `framework = playwright`; browser, environment and build come from `--browser`/`--build`/... or the producer's context |
+
+**Not read:** stdout, stderr, attachments (screenshots, traces, videos), annotations, steps and
+the earlier attempts' errors. A file with results of **several projects** is refused
+(`MalformedResultError`): their tests share keys; write one report per project.
 
 ### Allure
 
@@ -148,9 +178,9 @@ continue across a format switch. Plain test methods are not affected.
 
 | Situation | Result |
 |---|---|
-| JSON that is not a mochawesome report (`package.json`, `.last-run.json` ...) found in a directory | `UnsupportedFormatError`, batch incomplete: point the importer at the report, not the whole project folder |
+| JSON that is neither a Playwright nor a mochawesome report (`package.json`, `.last-run.json` ...) found in a directory | `UnsupportedFormatError`, batch incomplete: point the importer at the report, not the whole project folder |
 | HTML without `data-raw` | `UnsupportedFormatError` (HTML is only read when named; a directory search skips it) |
-| A test without a title; an Allure result without `name` or `status`; invalid JSON | `MalformedResultError` naming the file |
+| A test without a title; an Allure result without `name` or `status`; a Playwright report with several projects; invalid JSON | `MalformedResultError` naming the file |
 | Allure folder larger than 50 MB in total | `MalformedResultError` |
 | Same report or same Allure folder content twice | imported once, listed in `duplicates` |
 

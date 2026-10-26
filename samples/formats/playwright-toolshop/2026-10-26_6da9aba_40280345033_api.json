@@ -1,0 +1,833 @@
+{
+ "config": {
+  "version": "1.64.0",
+  "projects": [
+   {
+    "name": "api"
+   },
+   {
+    "name": "chromium"
+   },
+   {
+    "name": "firefox"
+   },
+   {
+    "name": "webkit"
+   }
+  ]
+ },
+ "suites": [
+  {
+   "title": "api/auth.api.spec.ts",
+   "file": "api/auth.api.spec.ts",
+   "column": 0,
+   "line": 0,
+   "specs": [],
+   "suites": [
+    {
+     "title": "Auth API",
+     "file": "api/auth.api.spec.ts",
+     "line": 6,
+     "column": 6,
+     "specs": [
+      {
+       "title": "a new customer can register",
+       "ok": true,
+       "tags": [
+        "auth",
+        "smoke"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "api",
+         "projectName": "api",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 717,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:10.452Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "1880dd47a9b883be6a63-ac8efffd456546b879a8",
+       "file": "api/auth.api.spec.ts",
+       "line": 7,
+       "column": 7
+      },
+      {
+       "title": "registering the same e-mail twice is rejected",
+       "ok": true,
+       "tags": [
+        "auth",
+        "negative"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "api",
+         "projectName": "api",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 635,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:10.443Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "1880dd47a9b883be6a63-0b4450fb1664792d02c0",
+       "file": "api/auth.api.spec.ts",
+       "line": 19,
+       "column": 7
+      },
+      {
+       "title": "valid login returns a bearer JWT",
+       "ok": true,
+       "tags": [
+        "auth",
+        "smoke"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "api",
+         "projectName": "api",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 482,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:11.192Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "1880dd47a9b883be6a63-5e28cd40907d26ece62d",
+       "file": "api/auth.api.spec.ts",
+       "line": 27,
+       "column": 7
+      },
+      {
+       "title": "the token identifies the logged-in user",
+       "ok": true,
+       "tags": [
+        "auth"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "api",
+         "projectName": "api",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 923,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:11.787Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "1880dd47a9b883be6a63-5d7e393dd464661f509b",
+       "file": "api/auth.api.spec.ts",
+       "line": 36,
+       "column": 7
+      },
+      {
+       "title": "wrong password is rejected with 401",
+       "ok": true,
+       "tags": [
+        "auth",
+        "negative"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "api",
+         "projectName": "api",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 545,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:12.364Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "1880dd47a9b883be6a63-dc0076046b8a70d16a59",
+       "file": "api/auth.api.spec.ts",
+       "line": 45,
+       "column": 7
+      },
+      {
+       "title": "current user needs a token",
+       "ok": true,
+       "tags": [
+        "auth",
+        "negative"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "api",
+         "projectName": "api",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 446,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:12.718Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "1880dd47a9b883be6a63-cd33f0f03a8d8f22c97b",
+       "file": "api/auth.api.spec.ts",
+       "line": 52,
+       "column": 7
+      },
+      {
+       "title": "a made-up token is rejected",
+       "ok": true,
+       "tags": [
+        "auth",
+        "negative"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "api",
+         "projectName": "api",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 410,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:12.917Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "1880dd47a9b883be6a63-791b4386b8222d6d27a8",
+       "file": "api/auth.api.spec.ts",
+       "line": 58,
+       "column": 7
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "api/carts.api.spec.ts",
+   "file": "api/carts.api.spec.ts",
+   "column": 0,
+   "line": 0,
+   "specs": [],
+   "suites": [
+    {
+     "title": "Carts API",
+     "file": "api/carts.api.spec.ts",
+     "line": 12,
+     "column": 6,
+     "specs": [
+      {
+       "title": "a new cart is empty",
+       "ok": true,
+       "tags": [
+        "carts",
+        "smoke"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "api",
+         "projectName": "api",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 863,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:13.173Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "d2c372a79a85d89c5289-291a47d6e44b519d05ad",
+       "file": "api/carts.api.spec.ts",
+       "line": 13,
+       "column": 3
+      },
+      {
+       "title": "an added product is in the cart with its quantity",
+       "ok": true,
+       "tags": [
+        "carts",
+        "smoke"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "api",
+         "projectName": "api",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 1750,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:13.344Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "d2c372a79a85d89c5289-7b5fe1f97af20ec4b9ca",
+       "file": "api/carts.api.spec.ts",
+       "line": 20,
+       "column": 3
+      },
+      {
+       "title": "quantity can be changed and the product removed",
+       "ok": true,
+       "tags": [
+        "carts"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "api",
+         "projectName": "api",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 2929,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:14.044Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "d2c372a79a85d89c5289-0858dd6f5c07121094a3",
+       "file": "api/carts.api.spec.ts",
+       "line": 37,
+       "column": 3
+      },
+      {
+       "title": "quantity below 1 is rejected with a field error",
+       "ok": true,
+       "tags": [
+        "carts",
+        "negative"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "api",
+         "projectName": "api",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 1178,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:15.104Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "d2c372a79a85d89c5289-446cbb8179e3c893685a",
+       "file": "api/carts.api.spec.ts",
+       "line": 49,
+       "column": 3
+      },
+      {
+       "title": "unknown product id is rejected",
+       "ok": true,
+       "tags": [
+        "carts",
+        "negative"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "api",
+         "projectName": "api",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 778,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:16.288Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "d2c372a79a85d89c5289-f6ec537e26a5dc4fa9fb",
+       "file": "api/carts.api.spec.ts",
+       "line": 63,
+       "column": 3
+      },
+      {
+       "title": "business rule: only one Thor Hammer per cart",
+       "ok": true,
+       "tags": [
+        "carts",
+        "negative"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "api",
+         "projectName": "api",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 1542,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:16.980Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "d2c372a79a85d89c5289-11d72c933c60e755c1e6",
+       "file": "api/carts.api.spec.ts",
+       "line": 71,
+       "column": 3
+      },
+      {
+       "title": "unknown cart id returns 404",
+       "ok": true,
+       "tags": [
+        "carts",
+        "negative"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "api",
+         "projectName": "api",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 435,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:17.072Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "d2c372a79a85d89c5289-e98f209a6f6908f3db42",
+       "file": "api/carts.api.spec.ts",
+       "line": 86,
+       "column": 3
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "api/products.api.spec.ts",
+   "file": "api/products.api.spec.ts",
+   "column": 0,
+   "line": 0,
+   "specs": [],
+   "suites": [
+    {
+     "title": "Products API",
+     "file": "api/products.api.spec.ts",
+     "line": 4,
+     "column": 6,
+     "specs": [
+      {
+       "title": "first page matches the paging contract",
+       "ok": true,
+       "tags": [
+        "products",
+        "smoke"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "api",
+         "projectName": "api",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 402,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:17.516Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "18b23f8e2707fc53e8e2-47a85dc9e009d19c8b48",
+       "file": "api/products.api.spec.ts",
+       "line": 5,
+       "column": 7
+      },
+      {
+       "title": "pages do not overlap",
+       "ok": true,
+       "tags": [
+        "products"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "api",
+         "projectName": "api",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 820,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:17.926Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "18b23f8e2707fc53e8e2-1a73e7db4c2db8541c2c",
+       "file": "api/products.api.spec.ts",
+       "line": 14,
+       "column": 7
+      },
+      {
+       "title": "a product can be fetched by id",
+       "ok": true,
+       "tags": [
+        "products"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "api",
+         "projectName": "api",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 795,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:18.529Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "18b23f8e2707fc53e8e2-5a5b1b2f490a409fe1ab",
+       "file": "api/products.api.spec.ts",
+       "line": 23,
+       "column": 7
+      },
+      {
+       "title": "unknown product id returns 404",
+       "ok": true,
+       "tags": [
+        "products",
+        "negative"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "api",
+         "projectName": "api",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 381,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:18.752Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "18b23f8e2707fc53e8e2-ff92fb1234d59f1c7c09",
+       "file": "api/products.api.spec.ts",
+       "line": 32,
+       "column": 7
+      },
+      {
+       "title": "search returns only matching products",
+       "ok": true,
+       "tags": [
+        "products",
+        "smoke"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "api",
+         "projectName": "api",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 426,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:19.140Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "18b23f8e2707fc53e8e2-384532ce40b2c657bd3a",
+       "file": "api/products.api.spec.ts",
+       "line": 39,
+       "column": 7
+      },
+      {
+       "title": "search without a match returns an empty page",
+       "ok": true,
+       "tags": [
+        "products",
+        "negative"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "api",
+         "projectName": "api",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 386,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:19.330Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "18b23f8e2707fc53e8e2-cc15f30ef0a492dbac50",
+       "file": "api/products.api.spec.ts",
+       "line": 48,
+       "column": 7
+      },
+      {
+       "title": "sort by price asc is applied by the API",
+       "ok": true,
+       "tags": [
+        "products"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "api",
+         "projectName": "api",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 413,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:19.573Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "18b23f8e2707fc53e8e2-4ebd1ae772551b2bb44b",
+       "file": "api/products.api.spec.ts",
+       "line": 56,
+       "column": 9
+      },
+      {
+       "title": "sort by price desc is applied by the API",
+       "ok": true,
+       "tags": [
+        "products"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "api",
+         "projectName": "api",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 408,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:19.723Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "18b23f8e2707fc53e8e2-ef667f2282530fc5d135",
+       "file": "api/products.api.spec.ts",
+       "line": 56,
+       "column": 9
+      },
+      {
+       "title": "category filter returns only that category",
+       "ok": true,
+       "tags": [
+        "products"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "api",
+         "projectName": "api",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 819,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:19.994Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "18b23f8e2707fc53e8e2-9538279b2c5b44e23399",
+       "file": "api/products.api.spec.ts",
+       "line": 64,
+       "column": 7
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "errors": [],
+ "stats": {
+  "startTime": "2026-10-26T06:32:09.470Z",
+  "duration": 11372.445,
+  "expected": 23,
+  "skipped": 0,
+  "unexpected": 0,
+  "flaky": 0
+ }
+}

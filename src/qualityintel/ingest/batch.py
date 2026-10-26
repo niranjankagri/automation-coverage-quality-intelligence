@@ -1,8 +1,9 @@
 """Import many result files at once: files, directories and glob patterns.
 
-Formats (docs/ingestion.md): JUnit XML (``*.xml``), mochawesome reports (``*.json``, and
-``*.html`` when named explicitly) and Allure results folders (a folder with ``*-result.json``
-files is one run). A directory input is searched recursively for all of them.
+Formats (docs/ingestion.md): JUnit XML (``*.xml``), Playwright JSON reports and mochawesome
+reports (``*.json``, told apart by their content; mochawesome also as ``*.html`` when named
+explicitly) and Allure results folders (a folder with ``*-result.json`` files is one run).
+A directory input is searched recursively for all of them.
 
 A batch never hides a problem: every file that could not be imported is listed in
 ``errors``, and a pattern or directory that matched nothing is an error too. The caller
@@ -21,6 +22,7 @@ from qualityintel.ingest.allure import is_allure_folder, read_allure_folder
 from qualityintel.ingest.errors import IngestError, NoResultFilesError, UnsupportedFormatError
 from qualityintel.ingest.junit import DEFAULT_ID_PATTERN, ParsedFile, read_junit_file
 from qualityintel.ingest.mochawesome import read_mochawesome_file
+from qualityintel.ingest.playwright_json import read_playwright_file
 from qualityintel.models.results import PipelineJob, RunContext, TestRun
 
 _GLOB_CHARS = re.compile(r"[*?\[]")
@@ -177,6 +179,17 @@ def read_any(
     suffix = path.suffix.lower()
     if suffix == ".xml":
         return read_junit_file(path, context=context, id_pattern=id_pattern, source=source)
+    if suffix == ".json":
+        try:
+            return read_playwright_file(path, context=context, source=source)
+        except UnsupportedFormatError:
+            pass  # not Playwright: mochawesome is the other JSON report
+        try:
+            return read_mochawesome_file(path, context=context, source=source)
+        except UnsupportedFormatError:
+            raise UnsupportedFormatError(
+                source or path.name, "JSON that is neither a Playwright nor a mochawesome report"
+            ) from None
     if suffix in _READABLE:
         return read_mochawesome_file(path, context=context, source=source)
     raise UnsupportedFormatError(

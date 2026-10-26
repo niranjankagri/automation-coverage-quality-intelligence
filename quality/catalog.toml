@@ -117,7 +117,7 @@ criticality = "high"
 
 [[requirement]]
 id = "FMT-01"
-title = "Cypress (mochawesome) and Allure results normalise into the same model as JUnit XML; malformed and unknown input is reported"
+title = "Cypress (mochawesome), Playwright JSON and Allure results normalise into the same model as JUnit XML; malformed and unknown input is reported"
 feature = "Ingestion"
 criticality = "high"
 
@@ -417,13 +417,14 @@ automated_by = [
 
 [[test_case]]
 id = "TC-FORMAT-ADAPTERS"
-title = "mochawesome and Allure importers map statuses, keys, retries and context; bad input is rejected with the file named"
+title = "mochawesome, Playwright JSON and Allure importers map statuses, keys, retries and context; bad input is rejected with the file named"
 automation_status = "automated"
 framework = "pytest"
 requirements = ["FMT-01"]
 automated_by = [
   "tests.unit.ingest.test_mochawesome::*",
   "tests.unit.ingest.test_allure::*",
+  "tests.unit.ingest.test_playwright_json::*",
   "tests.unit.ingest.test_batch::test_directory_with_every_format_is_read_with_the_right_importer",
   "tests.unit.ingest.test_batch::test_unknown_json_in_a_directory_is_an_error_not_silence",
 ]

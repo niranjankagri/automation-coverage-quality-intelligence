@@ -1,0 +1,67 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites id="" name="" tests="23" failures="0" skipped="0" errors="0" time="11.372444999999999">
+  <testsuite name="api/auth.api.spec.ts" timestamp="2026-10-26T06:32:10.103Z" tests="7" failures="0" skipped="0" time="4.158" errors="0">
+    <properties>
+      <property name="framework" value="playwright" />
+      <property name="build" value="6da9aba" />
+    </properties>
+    <testcase name="Auth API › a new customer can register" classname="api/auth.api.spec.ts" time="0.717">
+</testcase>
+    <testcase name="Auth API › registering the same e-mail twice is rejected" classname="api/auth.api.spec.ts" time="0.635">
+</testcase>
+    <testcase name="Auth API › valid login returns a bearer JWT" classname="api/auth.api.spec.ts" time="0.482">
+</testcase>
+    <testcase name="Auth API › the token identifies the logged-in user" classname="api/auth.api.spec.ts" time="0.923">
+</testcase>
+    <testcase name="Auth API › wrong password is rejected with 401" classname="api/auth.api.spec.ts" time="0.545">
+</testcase>
+    <testcase name="Auth API › current user needs a token" classname="api/auth.api.spec.ts" time="0.446">
+</testcase>
+    <testcase name="Auth API › a made-up token is rejected" classname="api/auth.api.spec.ts" time="0.41">
+</testcase>
+  </testsuite>
+  <testsuite name="api/carts.api.spec.ts" timestamp="2026-10-26T06:32:10.103Z" tests="7" failures="0" skipped="0" time="9.475" errors="0">
+    <properties>
+      <property name="framework" value="playwright" />
+      <property name="build" value="6da9aba" />
+    </properties>
+    <testcase name="Carts API › a new cart is empty" classname="api/carts.api.spec.ts" time="0.863">
+</testcase>
+    <testcase name="Carts API › an added product is in the cart with its quantity" classname="api/carts.api.spec.ts" time="1.75">
+</testcase>
+    <testcase name="Carts API › quantity can be changed and the product removed" classname="api/carts.api.spec.ts" time="2.929">
+</testcase>
+    <testcase name="Carts API › quantity below 1 is rejected with a field error" classname="api/carts.api.spec.ts" time="1.178">
+</testcase>
+    <testcase name="Carts API › unknown product id is rejected" classname="api/carts.api.spec.ts" time="0.778">
+</testcase>
+    <testcase name="Carts API › business rule: only one Thor Hammer per cart" classname="api/carts.api.spec.ts" time="1.542">
+</testcase>
+    <testcase name="Carts API › unknown cart id returns 404" classname="api/carts.api.spec.ts" time="0.435">
+</testcase>
+  </testsuite>
+  <testsuite name="api/products.api.spec.ts" timestamp="2026-10-26T06:32:10.103Z" tests="9" failures="0" skipped="0" time="4.85" errors="0">
+    <properties>
+      <property name="framework" value="playwright" />
+      <property name="build" value="6da9aba" />
+    </properties>
+    <testcase name="Products API › first page matches the paging contract" classname="api/products.api.spec.ts" time="0.402">
+</testcase>
+    <testcase name="Products API › pages do not overlap" classname="api/products.api.spec.ts" time="0.82">
+</testcase>
+    <testcase name="Products API › a product can be fetched by id" classname="api/products.api.spec.ts" time="0.795">
+</testcase>
+    <testcase name="Products API › unknown product id returns 404" classname="api/products.api.spec.ts" time="0.381">
+</testcase>
+    <testcase name="Products API › search returns only matching products" classname="api/products.api.spec.ts" time="0.426">
+</testcase>
+    <testcase name="Products API › search without a match returns an empty page" classname="api/products.api.spec.ts" time="0.386">
+</testcase>
+    <testcase name="Products API › sort by price asc is applied by the API" classname="api/products.api.spec.ts" time="0.413">
+</testcase>
+    <testcase name="Products API › sort by price desc is applied by the API" classname="api/products.api.spec.ts" time="0.408">
+</testcase>
+    <testcase name="Products API › category filter returns only that category" classname="api/products.api.spec.ts" time="0.819">
+</testcase>
+  </testsuite>
+</testsuites>

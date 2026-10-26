@@ -1,0 +1,946 @@
+{
+ "config": {
+  "version": "1.64.0",
+  "projects": [
+   {
+    "name": "api"
+   },
+   {
+    "name": "chromium"
+   },
+   {
+    "name": "firefox"
+   },
+   {
+    "name": "webkit"
+   }
+  ]
+ },
+ "suites": [
+  {
+   "title": "ui/catalog.spec.ts",
+   "file": "ui/catalog.spec.ts",
+   "column": 0,
+   "line": 0,
+   "specs": [],
+   "suites": [
+    {
+     "title": "Product catalogue",
+     "file": "ui/catalog.spec.ts",
+     "line": 5,
+     "column": 6,
+     "specs": [
+      {
+       "title": "home page shows a full first page of products",
+       "ok": true,
+       "tags": [
+        "catalog",
+        "smoke"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 1606,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:28.077Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-3e14eee2e127a2d9f43a",
+       "file": "ui/catalog.spec.ts",
+       "line": 10,
+       "column": 7
+      },
+      {
+       "title": "search shows only matching products",
+       "ok": true,
+       "tags": [
+        "catalog",
+        "smoke"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 2265,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:28.091Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-d7072cbf62702fea9a27",
+       "file": "ui/catalog.spec.ts",
+       "line": 18,
+       "column": 7
+      },
+      {
+       "title": "search without a match says so",
+       "ok": true,
+       "tags": [
+        "catalog",
+        "negative"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 1698,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:30.708Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-a88c96cd1e987b0aa877",
+       "file": "ui/catalog.spec.ts",
+       "line": 31,
+       "column": 7
+      },
+      {
+       "title": "category filter shows the same products as the API",
+       "ok": true,
+       "tags": [
+        "catalog"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 2394,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:31.333Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-cf5daa3ec429ebaea6b8",
+       "file": "ui/catalog.spec.ts",
+       "line": 38,
+       "column": 7
+      },
+      {
+       "title": "sort \"Name (A - Z)\" orders the products by name",
+       "ok": true,
+       "tags": [
+        "catalog"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 1759,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:32.429Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-fc412f33e5a0e87442d3",
+       "file": "ui/catalog.spec.ts",
+       "line": 60,
+       "column": 9
+      },
+      {
+       "title": "sort \"Name (Z - A)\" orders the products by name",
+       "ok": true,
+       "tags": [
+        "catalog"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 1554,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:33.744Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-5086fc0b47aa1be8907d",
+       "file": "ui/catalog.spec.ts",
+       "line": 60,
+       "column": 9
+      },
+      {
+       "title": "sort \"Price (Low - High)\" orders the products by price",
+       "ok": true,
+       "tags": [
+        "catalog"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 1582,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:34.224Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-5bc806cc16daa24259d0",
+       "file": "ui/catalog.spec.ts",
+       "line": 60,
+       "column": 9
+      },
+      {
+       "title": "sort \"Price (High - Low)\" orders the products by price",
+       "ok": true,
+       "tags": [
+        "catalog"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 1649,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:35.331Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-fbbe35776f69f28abe48",
+       "file": "ui/catalog.spec.ts",
+       "line": 60,
+       "column": 9
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "ui/checkout.spec.ts",
+   "file": "ui/checkout.spec.ts",
+   "column": 0,
+   "line": 0,
+   "specs": [],
+   "suites": [
+    {
+     "title": "Checkout as a logged-in customer",
+     "file": "ui/checkout.spec.ts",
+     "line": 4,
+     "column": 6,
+     "specs": [
+      {
+       "title": "customer can order two products",
+       "ok": true,
+       "tags": [
+        "checkout",
+        "smoke",
+        "e2e"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "failed",
+           "duration": 17538,
+           "error": {
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('#order-confirmation')\nExpected substring: \u001b[32m\"Thanks for your order!\"\u001b[39m\nTimeout: 10000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" locator('#order-confirmation') with timeout 10000ms\u001b[22m\n\u001b[2m  - waiting for locator('#order-confirmation')\u001b[22m\n",
+            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('#order-confirmation')\nExpected substring: \u001b[32m\"Thanks for your order!\"\u001b[39m\nTimeout: 10000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" locator('#order-confirmation') with timeout 10000ms\u001b[22m\n\u001b[2m  - waiting for locator('#order-confirmation')\u001b[22m\n\n"
+           },
+           "errors": [
+            {
+             "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('#order-confirmation')\nExpected substring: \u001b[32m\"Thanks for your order!\"\u001b[39m\nTimeout: 10000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" locator('#order-confirmation') with timeout 10000ms\u001b[22m\n\u001b[2m  - waiting for locator('#order-confirmation')\u001b[22m\n\n"
+            }
+           ],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:35.833Z"
+          },
+          {
+           "workerIndex": 2,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 8960,
+           "errors": [],
+           "retry": 1,
+           "startTime": "2026-10-26T06:32:54.939Z"
+          }
+         ],
+         "status": "flaky"
+        }
+       ],
+       "id": "25ab1bfc84c57e3e3a45-77a6244142bf64c87bc3",
+       "file": "ui/checkout.spec.ts",
+       "line": 8,
+       "column": 7
+      },
+      {
+       "title": "cart line prices and total add up",
+       "ok": true,
+       "tags": [
+        "checkout"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 5935,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:37.013Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "25ab1bfc84c57e3e3a45-306a817c2ec423e50d7b",
+       "file": "ui/checkout.spec.ts",
+       "line": 44,
+       "column": 7
+      }
+     ]
+    },
+    {
+     "title": "Checkout as a guest",
+     "file": "ui/checkout.spec.ts",
+     "line": 66,
+     "column": 6,
+     "specs": [
+      {
+       "title": "guest is asked to sign in at checkout",
+       "ok": true,
+       "tags": [
+        "checkout"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 3052,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:42.966Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "25ab1bfc84c57e3e3a45-f2e73902cd480d4d7fa9",
+       "file": "ui/checkout.spec.ts",
+       "line": 67,
+       "column": 7
+      },
+      {
+       "title": "a cart filled through the API shows up in the browser",
+       "ok": true,
+       "tags": [
+        "checkout",
+        "hybrid"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 2337,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:46.034Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "25ab1bfc84c57e3e3a45-dfa31306e8409fe9ab1c",
+       "file": "ui/checkout.spec.ts",
+       "line": 80,
+       "column": 7
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "ui/login.spec.ts",
+   "file": "ui/login.spec.ts",
+   "column": 0,
+   "line": 0,
+   "specs": [],
+   "suites": [
+    {
+     "title": "Login",
+     "file": "ui/login.spec.ts",
+     "line": 5,
+     "column": 6,
+     "specs": [
+      {
+       "title": "customer can log in and lands on the account page",
+       "ok": true,
+       "tags": [
+        "login",
+        "smoke"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [
+          {
+           "type": "skip",
+           "description": "Cloudflare bot check (\"Performing security verification\") shown by the site",
+           "location": {
+            "file": "/home/runner/work/playwright-typescript-framework/playwright-typescript-framework/src/utils/botCheck.ts",
+            "line": 18,
+            "column": 8
+           }
+          }
+         ],
+         "expectedStatus": "skipped",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "skipped",
+           "duration": 1444,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:48.385Z"
+          }
+         ],
+         "status": "skipped"
+        }
+       ],
+       "id": "41d3fd2474a19feb00a1-8bbe09a671a0a3f76e38",
+       "file": "ui/login.spec.ts",
+       "line": 10,
+       "column": 7
+      },
+      {
+       "title": "wrong password is rejected with a message",
+       "ok": true,
+       "tags": [
+        "login",
+        "negative"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 1236,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:49.844Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "41d3fd2474a19feb00a1-58fb7d92a64b98c1bd10",
+       "file": "ui/login.spec.ts",
+       "line": 26,
+       "column": 7
+      },
+      {
+       "title": "empty form shows a message for each required field",
+       "ok": true,
+       "tags": [
+        "login",
+        "negative"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 1024,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:51.094Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "41d3fd2474a19feb00a1-c55d5d5a8f882cc378d0",
+       "file": "ui/login.spec.ts",
+       "line": 35,
+       "column": 7
+      },
+      {
+       "title": "customer can sign out again",
+       "ok": true,
+       "tags": [
+        "login"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [
+          {
+           "type": "skip",
+           "description": "Cloudflare bot check (\"Performing security verification\") shown by the site",
+           "location": {
+            "file": "/home/runner/work/playwright-typescript-framework/playwright-typescript-framework/src/utils/botCheck.ts",
+            "line": 18,
+            "column": 8
+           }
+          }
+         ],
+         "expectedStatus": "skipped",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "skipped",
+           "duration": 1443,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:52.134Z"
+          }
+         ],
+         "status": "skipped"
+        }
+       ],
+       "id": "41d3fd2474a19feb00a1-5040878f209cd38825d7",
+       "file": "ui/login.spec.ts",
+       "line": 42,
+       "column": 7
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "ui/network.spec.ts",
+   "file": "ui/network.spec.ts",
+   "column": 0,
+   "line": 0,
+   "specs": [],
+   "suites": [
+    {
+     "title": "Catalogue with a mocked API",
+     "file": "ui/network.spec.ts",
+     "line": 14,
+     "column": 6,
+     "specs": [
+      {
+       "title": "renders exactly the products the API sends",
+       "ok": true,
+       "tags": [
+        "network"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 1178,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:53.597Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "5567a9004528a7a67849-8f53bd7c2403e8544ddd",
+       "file": "ui/network.spec.ts",
+       "line": 15,
+       "column": 7
+      },
+      {
+       "title": "shows a message when the API returns no products",
+       "ok": true,
+       "tags": [
+        "network"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 1093,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:54.790Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "5567a9004528a7a67849-956d5ee6abbbb5331ee4",
+       "file": "ui/network.spec.ts",
+       "line": 29,
+       "column": 7
+      },
+      {
+       "title": "a failing product API leaves the rest of the page working",
+       "ok": true,
+       "tags": [
+        "network"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 934,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:55.895Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "5567a9004528a7a67849-d672292222cd1a91a261",
+       "file": "ui/network.spec.ts",
+       "line": 38,
+       "column": 7
+      }
+     ]
+    },
+    {
+     "title": "Requests the front end sends",
+     "file": "ui/network.spec.ts",
+     "line": 52,
+     "column": 6,
+     "specs": [
+      {
+       "title": "sorting asks the API for sorted data",
+       "ok": true,
+       "tags": [
+        "network"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 1190,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:56.848Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "5567a9004528a7a67849-8696c3f47356b624f12e",
+       "file": "ui/network.spec.ts",
+       "line": 53,
+       "column": 7
+      },
+      {
+       "title": "search sends the search term to the search endpoint",
+       "ok": true,
+       "tags": [
+        "network"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 1506,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:58.052Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "5567a9004528a7a67849-bf5a39101a08d08582be",
+       "file": "ui/network.spec.ts",
+       "line": 70,
+       "column": 7
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "ui/product.spec.ts",
+   "file": "ui/product.spec.ts",
+   "column": 0,
+   "line": 0,
+   "specs": [],
+   "suites": [
+    {
+     "title": "Product details",
+     "file": "ui/product.spec.ts",
+     "line": 4,
+     "column": 6,
+     "specs": [
+      {
+       "title": "card and detail page show the same name and price",
+       "ok": true,
+       "tags": [
+        "product",
+        "smoke"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 1692,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:59.582Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "2fa8ab87beca8e7f39ce-6993b755e02dff5f8d4d",
+       "file": "ui/product.spec.ts",
+       "line": 5,
+       "column": 7
+      },
+      {
+       "title": "adding a product with a quantity updates the cart badge",
+       "ok": true,
+       "tags": [
+        "product"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 3437,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:33:01.288Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "2fa8ab87beca8e7f39ce-6e55a619006cab469038",
+       "file": "ui/product.spec.ts",
+       "line": 18,
+       "column": 7
+      },
+      {
+       "title": "the + button raises the quantity by one",
+       "ok": true,
+       "tags": [
+        "product"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "workerIndex": 2,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 2054,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:33:04.624Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "2fa8ab87beca8e7f39ce-da1adca37ce203c3c1ce",
+       "file": "ui/product.spec.ts",
+       "line": 31,
+       "column": 7
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "errors": [],
+ "stats": {
+  "startTime": "2026-10-26T06:32:26.685Z",
+  "duration": 40074.992,
+  "expected": 21,
+  "skipped": 2,
+  "unexpected": 0,
+  "flaky": 1
+ }
+}
