@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.1 — 2026-10-26
+
+- Distinguish unresolved collection problems from workflows that subsequently produced complete successful evidence. Preserve all historical incomplete records, counts and problems, and expose the recovery linkage in status. Keep the three-problem threshold and freshness checks.
+- Explain historical incompleteness separately in the report; older APIs keep the original fail-closed monitor behavior.
+
 ## Unreleased
 
 - Recover retained historical Chromium evidence through a copy-only, audited backfill. Preserve the original collection and a permanent published-database backup; reject changes to existing executions. Existing monitor thresholds and genuine incomplete records are unchanged.

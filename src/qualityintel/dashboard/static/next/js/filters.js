@@ -118,9 +118,11 @@ function freshness(facts, refresh) {
   } else {
     parts.push(`Imported result files, loaded ${formatDate(status.loaded_at)} (no CI collection)`);
   }
-  const incomplete = status.incomplete_collections_7d ?? 0;
-  parts.push(incomplete ? `${n(incomplete)} incomplete collection(s) in 7 days` : status.latest_collection_at ? "collections complete" : null);
-  if (incomplete) warnings.push(`Collection incomplete: ${n(incomplete)} pipeline(s) in 7 days are missing jobs or reports, so some results may be absent.`);
+  const historical = status.incomplete_collections_7d ?? 0;
+  const incomplete = status.unresolved_incomplete_collections_7d ?? historical;
+  parts.push(incomplete ? `${n(incomplete)} unresolved incomplete collection(s) in 7 days` : historical ? `workflows recovered; ${n(historical)} historical incomplete collections retained` : status.latest_collection_at ? "collections complete" : null);
+  if (incomplete) warnings.push(`Collection incomplete: ${n(incomplete)} pipeline(s) in 7 days have no later successful complete collection, so some results may be absent.`);
+  if (historical && !incomplete) warnings.push(`${n(historical)} historical collections remain incomplete. Later successful complete runs show these workflows have recovered; the missing historical results have not been reconstructed.`);
   if (status.stale) warnings.push(`The data could not be reloaded${status.last_error ? `: ${status.last_error}` : ""}; figures are from ${formatDate(status.loaded_at)}.`);
   return h("div", { class: "freshness-box" },
     h("div", { class: "freshness" }, h("span", {}, parts.filter(Boolean).join(" · ")), button),

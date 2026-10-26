@@ -220,3 +220,5 @@ Development setup: `pip install -e ".[dev,e2e]"`, `playwright install chromium`,
 
 [MIT](LICENSE). Code, documentation and the requirement catalog are my own work; the sample
 results are sanitised CI output of my own public repositories.
+
+Collection monitoring distinguishes historical incomplete records from unresolved operational problems. Later complete, successful evidence for the same repository/workflow/branch can resolve an operational alert without reconstructing or deleting historical results. See [operations](docs/operations.md#operational-collection-recovery-121).
