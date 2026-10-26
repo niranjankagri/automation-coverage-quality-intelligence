@@ -1,0 +1,909 @@
+{
+ "config": {
+  "version": "1.64.0",
+  "projects": [
+   {
+    "name": "api"
+   },
+   {
+    "name": "chromium"
+   },
+   {
+    "name": "firefox"
+   },
+   {
+    "name": "webkit"
+   }
+  ]
+ },
+ "suites": [
+  {
+   "title": "ui/catalog.spec.ts",
+   "file": "ui/catalog.spec.ts",
+   "column": 0,
+   "line": 0,
+   "specs": [],
+   "suites": [
+    {
+     "title": "Product catalogue",
+     "file": "ui/catalog.spec.ts",
+     "line": 5,
+     "column": 6,
+     "specs": [
+      {
+       "title": "home page shows a full first page of products",
+       "ok": true,
+       "tags": [
+        "catalog",
+        "smoke"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 2613,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:24.632Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-17f445111ef136deee4b",
+       "file": "ui/catalog.spec.ts",
+       "line": 10,
+       "column": 7
+      },
+      {
+       "title": "search shows only matching products",
+       "ok": true,
+       "tags": [
+        "catalog",
+        "smoke"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 3215,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:24.632Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-1e57e0b16ce1c5bacf1b",
+       "file": "ui/catalog.spec.ts",
+       "line": 18,
+       "column": 7
+      },
+      {
+       "title": "search without a match says so",
+       "ok": true,
+       "tags": [
+        "catalog",
+        "negative"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 2237,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:28.883Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-6daf15ea96c9f5c6f3e8",
+       "file": "ui/catalog.spec.ts",
+       "line": 31,
+       "column": 7
+      },
+      {
+       "title": "category filter shows the same products as the API",
+       "ok": true,
+       "tags": [
+        "catalog"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 2738,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:29.750Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-d89dc478d49f5cd83077",
+       "file": "ui/catalog.spec.ts",
+       "line": 38,
+       "column": 7
+      },
+      {
+       "title": "sort \"Name (A - Z)\" orders the products by name",
+       "ok": true,
+       "tags": [
+        "catalog"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 1852,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:31.131Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-df5dd824dddca1377981",
+       "file": "ui/catalog.spec.ts",
+       "line": 60,
+       "column": 9
+      },
+      {
+       "title": "sort \"Name (Z - A)\" orders the products by name",
+       "ok": true,
+       "tags": [
+        "catalog"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 2018,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:32.503Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-2dcdf588ddf1cebea966",
+       "file": "ui/catalog.spec.ts",
+       "line": 60,
+       "column": 9
+      },
+      {
+       "title": "sort \"Price (Low - High)\" orders the products by price",
+       "ok": true,
+       "tags": [
+        "catalog"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 2076,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:32.992Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-943af9c8a8f06a091f87",
+       "file": "ui/catalog.spec.ts",
+       "line": 60,
+       "column": 9
+      },
+      {
+       "title": "sort \"Price (High - Low)\" orders the products by price",
+       "ok": true,
+       "tags": [
+        "catalog"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 1740,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:34.535Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "30aa42b97d8966d0c2dc-36c56ee69c24d1a87cdb",
+       "file": "ui/catalog.spec.ts",
+       "line": 60,
+       "column": 9
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "ui/checkout.spec.ts",
+   "file": "ui/checkout.spec.ts",
+   "column": 0,
+   "line": 0,
+   "specs": [],
+   "suites": [
+    {
+     "title": "Checkout as a logged-in customer",
+     "file": "ui/checkout.spec.ts",
+     "line": 4,
+     "column": 6,
+     "specs": [
+      {
+       "title": "customer can order two products",
+       "ok": true,
+       "tags": [
+        "checkout",
+        "smoke",
+        "e2e"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 9153,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:35.093Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "25ab1bfc84c57e3e3a45-c4e625e0ef28ce212817",
+       "file": "ui/checkout.spec.ts",
+       "line": 8,
+       "column": 7
+      },
+      {
+       "title": "cart line prices and total add up",
+       "ok": true,
+       "tags": [
+        "checkout"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 6472,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:36.288Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "25ab1bfc84c57e3e3a45-3a427c57ad10f122c47d",
+       "file": "ui/checkout.spec.ts",
+       "line": 44,
+       "column": 7
+      }
+     ]
+    },
+    {
+     "title": "Checkout as a guest",
+     "file": "ui/checkout.spec.ts",
+     "line": 66,
+     "column": 6,
+     "specs": [
+      {
+       "title": "guest is asked to sign in at checkout",
+       "ok": true,
+       "tags": [
+        "checkout"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 3983,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:42.783Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "25ab1bfc84c57e3e3a45-9a8f7a5ccf00fe2807ce",
+       "file": "ui/checkout.spec.ts",
+       "line": 67,
+       "column": 7
+      },
+      {
+       "title": "a cart filled through the API shows up in the browser",
+       "ok": true,
+       "tags": [
+        "checkout",
+        "hybrid"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 2612,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:44.267Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "25ab1bfc84c57e3e3a45-52c4783102eafaed2a6f",
+       "file": "ui/checkout.spec.ts",
+       "line": 80,
+       "column": 7
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "ui/login.spec.ts",
+   "file": "ui/login.spec.ts",
+   "column": 0,
+   "line": 0,
+   "specs": [],
+   "suites": [
+    {
+     "title": "Login",
+     "file": "ui/login.spec.ts",
+     "line": 5,
+     "column": 6,
+     "specs": [
+      {
+       "title": "customer can log in and lands on the account page",
+       "ok": true,
+       "tags": [
+        "login",
+        "smoke"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 2158,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:46.781Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "41d3fd2474a19feb00a1-0d8d9133fbffbab1335e",
+       "file": "ui/login.spec.ts",
+       "line": 10,
+       "column": 7
+      },
+      {
+       "title": "wrong password is rejected with a message",
+       "ok": true,
+       "tags": [
+        "login",
+        "negative"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 1820,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:46.891Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "41d3fd2474a19feb00a1-9cdf3b341a966be1e6c2",
+       "file": "ui/login.spec.ts",
+       "line": 26,
+       "column": 7
+      },
+      {
+       "title": "empty form shows a message for each required field",
+       "ok": true,
+       "tags": [
+        "login",
+        "negative"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 1038,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:48.726Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "41d3fd2474a19feb00a1-fb4582f4a479b50f4690",
+       "file": "ui/login.spec.ts",
+       "line": 35,
+       "column": 7
+      },
+      {
+       "title": "customer can sign out again",
+       "ok": true,
+       "tags": [
+        "login"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 4301,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:48.954Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "41d3fd2474a19feb00a1-9ff03012e18aecdb97d3",
+       "file": "ui/login.spec.ts",
+       "line": 42,
+       "column": 7
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "ui/network.spec.ts",
+   "file": "ui/network.spec.ts",
+   "column": 0,
+   "line": 0,
+   "specs": [],
+   "suites": [
+    {
+     "title": "Catalogue with a mocked API",
+     "file": "ui/network.spec.ts",
+     "line": 14,
+     "column": 6,
+     "specs": [
+      {
+       "title": "renders exactly the products the API sends",
+       "ok": true,
+       "tags": [
+        "network"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 1079,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:49.778Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "5567a9004528a7a67849-ca697a0cd7767d8bf53d",
+       "file": "ui/network.spec.ts",
+       "line": 15,
+       "column": 7
+      },
+      {
+       "title": "shows a message when the API returns no products",
+       "ok": true,
+       "tags": [
+        "network"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 1670,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:50.867Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "5567a9004528a7a67849-4028234c49542ae81c16",
+       "file": "ui/network.spec.ts",
+       "line": 29,
+       "column": 7
+      },
+      {
+       "title": "a failing product API leaves the rest of the page working",
+       "ok": true,
+       "tags": [
+        "network"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 1117,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:52.545Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "5567a9004528a7a67849-dde6be23d3cc14eaf70d",
+       "file": "ui/network.spec.ts",
+       "line": 38,
+       "column": 7
+      }
+     ]
+    },
+    {
+     "title": "Requests the front end sends",
+     "file": "ui/network.spec.ts",
+     "line": 52,
+     "column": 6,
+     "specs": [
+      {
+       "title": "sorting asks the API for sorted data",
+       "ok": true,
+       "tags": [
+        "network"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 1525,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:53.268Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "5567a9004528a7a67849-bcd99d64885549914108",
+       "file": "ui/network.spec.ts",
+       "line": 53,
+       "column": 7
+      },
+      {
+       "title": "search sends the search term to the search endpoint",
+       "ok": true,
+       "tags": [
+        "network"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 1926,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:53.674Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "5567a9004528a7a67849-eb802f3eeb6062d3983c",
+       "file": "ui/network.spec.ts",
+       "line": 70,
+       "column": 7
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "ui/product.spec.ts",
+   "file": "ui/product.spec.ts",
+   "column": 0,
+   "line": 0,
+   "specs": [],
+   "suites": [
+    {
+     "title": "Product details",
+     "file": "ui/product.spec.ts",
+     "line": 4,
+     "column": 6,
+     "specs": [
+      {
+       "title": "card and detail page show the same name and price",
+       "ok": true,
+       "tags": [
+        "product",
+        "smoke"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 2915,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:54.804Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "2fa8ab87beca8e7f39ce-2353299b600fcc250aea",
+       "file": "ui/product.spec.ts",
+       "line": 5,
+       "column": 7
+      },
+      {
+       "title": "adding a product with a quantity updates the cart badge",
+       "ok": true,
+       "tags": [
+        "product"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 0,
+           "parallelIndex": 0,
+           "status": "passed",
+           "duration": 3468,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:55.614Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "2fa8ab87beca8e7f39ce-07050c5402f4c6341c29",
+       "file": "ui/product.spec.ts",
+       "line": 18,
+       "column": 7
+      },
+      {
+       "title": "the + button raises the quantity by one",
+       "ok": true,
+       "tags": [
+        "product"
+       ],
+       "tests": [
+        {
+         "timeout": 45000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "firefox",
+         "projectName": "firefox",
+         "results": [
+          {
+           "workerIndex": 1,
+           "parallelIndex": 1,
+           "status": "passed",
+           "duration": 2333,
+           "errors": [],
+           "retry": 0,
+           "startTime": "2026-10-26T06:32:57.728Z"
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "2fa8ab87beca8e7f39ce-6b11a9e7e4321f6df728",
+       "file": "ui/product.spec.ts",
+       "line": 31,
+       "column": 7
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "errors": [],
+ "stats": {
+  "startTime": "2026-10-26T06:32:23.625Z",
+  "duration": 36733.667,
+  "expected": 24,
+  "skipped": 0,
+  "unexpected": 0,
+  "flaky": 0
+ }
+}

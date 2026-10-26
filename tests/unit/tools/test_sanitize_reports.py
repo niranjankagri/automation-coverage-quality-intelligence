@@ -6,9 +6,10 @@ import pytest
 
 from qualityintel.ingest.allure import read_allure_folder
 from qualityintel.ingest.mochawesome import parse_mochawesome
+from qualityintel.ingest.playwright_json import parse_playwright
 
 sys.path.insert(0, str(Path(__file__).parents[3] / "tools"))
-from sanitize_reports import main, sanitize_allure, sanitize_mochawesome
+from sanitize_reports import main, sanitize_allure, sanitize_mochawesome, sanitize_playwright
 
 pytestmark = pytest.mark.unit
 
@@ -95,3 +96,55 @@ def test_command_line(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> Non
     assert json.loads((tmp_path / "out.json").read_text(encoding="utf-8"))["qi_context"] == {"build": "abc"}
     assert main(["mochawesome", str(report), str(tmp_path / "x.json"), "--set", "build"]) == 2
     assert main([]) == 2
+
+
+def test_playwright_copy_drops_logs_attachments_and_paths_but_keeps_results() -> None:
+    """Every attempt keeps status, retry and error; logs, attachments and local paths go."""
+    report = {
+        "config": {
+            "version": "1.64.0",
+            "rootDir": "/home/someone/project",
+            "projects": [{"name": "chromium", "outputDir": "x"}],
+        },
+        "suites": [
+            {
+                "title": "a.spec.ts",
+                "file": "a.spec.ts",
+                "specs": [
+                    {
+                        "title": "t",
+                        "file": "a.spec.ts",
+                        "tests": [
+                            {
+                                "projectName": "chromium",
+                                "results": [
+                                    {
+                                        "status": "failed",
+                                        "retry": 0,
+                                        "duration": 5,
+                                        "stdout": [{"text": "token=abc"}],
+                                        "attachments": [{"name": "trace", "path": "/home/someone/trace.zip"}],
+                                        "errors": [
+                                            {"message": "boom", "stack": r"at C:\Users\someone\a.spec.ts:1"}
+                                        ],
+                                    },
+                                    {"status": "passed", "retry": 1, "duration": 4, "errors": []},
+                                ],
+                            }
+                        ],
+                    }
+                ],
+            }
+        ],
+        "errors": [],
+        "stats": {"startTime": "2026-10-26T06:32:26Z"},
+    }
+    cleaned = sanitize_playwright(json.dumps(report).encode())
+    first, second = cleaned["suites"][0]["specs"][0]["tests"][0]["results"]
+
+    assert cleaned["config"] == {"version": "1.64.0", "projects": [{"name": "chromium"}]}
+    assert "stdout" not in first
+    assert "attachments" not in first
+    assert "someone" not in json.dumps(cleaned)
+    assert (first["status"], first["retry"], second["status"], second["retry"]) == ("failed", 0, "passed", 1)
+    assert parse_playwright(json.dumps(cleaned).encode(), "x.json").run.results[0].retries == 1

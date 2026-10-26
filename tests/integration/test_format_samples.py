@@ -1,8 +1,9 @@
 """Phase 5 acceptance: genuine Cypress (mochawesome) and Allure results import correctly and agree with JUnit.
 
 Samples (samples/formats, see samples/README.md): Cypress API and UI runs of my TaskBoard
-project, and five runs of the enterprise API suite, each kept as Allure results AND as the
-Surefire JUnit XML that the same CI job wrote at the same time.
+project, five runs of the enterprise API suite, each kept as Allure results AND as the
+Surefire JUnit XML that the same CI job wrote at the same time, and one Playwright CI run
+(four projects) kept as Playwright's JSON report AND as its JUnit XML of the same jobs.
 """
 
 import json
@@ -15,6 +16,7 @@ from qualityintel.ingest.allure import read_allure_folder
 from qualityintel.ingest.batch import import_results
 from qualityintel.ingest.junit import read_junit_file
 from qualityintel.ingest.mochawesome import read_mochawesome_file
+from qualityintel.ingest.playwright_json import read_playwright_file
 from qualityintel.models.enums import Outcome
 
 pytestmark = pytest.mark.integration
@@ -22,6 +24,7 @@ pytestmark = pytest.mark.integration
 FORMATS = Path(__file__).parents[2] / "samples" / "formats"
 CYPRESS = sorted(FORMATS.glob("cypress-*/*.json"))
 ALLURE = sorted(p for p in (FORMATS / "allure-enterprise-api").iterdir() if p.is_dir())
+PLAYWRIGHT = sorted((FORMATS / "playwright-toolshop").glob("*.json"))
 
 
 @pytest.mark.parametrize("path", CYPRESS, ids=lambda p: f"{p.parent.name}/{p.name}")
@@ -91,15 +94,58 @@ def test_allure_and_junit_of_the_same_run_agree(folder: Path) -> None:
     assert max(differences) < 3.0  # measured: up to 2.2 s (the two reporters time a test differently)
 
 
+@pytest.mark.parametrize("path", PLAYWRIGHT, ids=lambda p: p.stem.rsplit("_", 1)[1])
+def test_playwright_json_and_junit_of_the_same_job_agree(path: Path) -> None:
+    """Same CI job, two reporters: same keys, same outcomes, the counts of Playwright's own stats.
+
+    The keys are equal, so a producer can move from JUnit to JSON without losing test history.
+    """
+    stats = json.loads(path.read_text(encoding="utf-8"))["stats"]
+    from_json = {r.key: r for r in read_playwright_file(path).run.results}
+    from_junit = {
+        r.key: r
+        for r in read_junit_file(FORMATS / "junit-playwright-toolshop" / f"{path.stem}.xml").run.results
+    }
+
+    assert set(from_json) == set(from_junit)
+    assert all(from_json[k].outcome is from_junit[k].outcome for k in from_json)
+    assert len(from_json) == stats["expected"] + stats["unexpected"] + stats["flaky"] + stats["skipped"]
+    assert sum(r.passed_after_retry for r in from_json.values()) == stats["flaky"]
+
+
+def test_the_flaky_checkout_test_is_visible_only_in_the_json_report() -> None:
+    """CI run 40280345033, chromium: the checkout test failed once and passed on its retry.
+
+    Playwright's JUnit says passed (no retries); the JSON report gives the retry, so the test
+    becomes a flaky candidate.
+    """
+    name = "2026-10-26_6da9aba_40280345033_chromium"
+    arrow = " \N{SINGLE RIGHT-POINTING ANGLE QUOTATION MARK} "
+    key = f"ui/checkout.spec.ts::Checkout as a logged-in customer{arrow}customer can order two products"
+    from_json = {
+        r.key: r for r in read_playwright_file(FORMATS / "playwright-toolshop" / f"{name}.json").run.results
+    }
+    from_junit = {
+        r.key: r for r in read_junit_file(FORMATS / "junit-playwright-toolshop" / f"{name}.xml").run.results
+    }
+
+    assert from_junit[key].outcome is Outcome.PASSED
+    assert from_junit[key].retries == 0
+    assert from_json[key].outcome is Outcome.PASSED
+    assert from_json[key].retries == 1
+    assert [k for k, r in from_json.items() if r.retries] == [key]
+
+
 def test_all_formats_import_together_from_one_folder() -> None:
     """A directory with mochawesome JSON, Allure folders and JUnit XML is one clean batch."""
     batch = import_results([FORMATS])
 
     assert batch.complete
     kinds = {r.context.framework for r in batch.runs}
-    assert kinds == {"cypress", "testng"}
-    # Allure and JUnit copies of each API run, plus the nightly full run
-    assert len(batch.runs) == len(CYPRESS) + len(ALLURE) * 2 + 1
+    assert kinds == {"cypress", "testng", "playwright"}
+    # Allure and JUnit copies of each API run, plus the nightly full run; JSON and JUnit copies
+    # of each Playwright job
+    assert len(batch.runs) == len(CYPRESS) + len(ALLURE) * 2 + 1 + len(PLAYWRIGHT) * 2
     # The only warning: the nightly's repeated invocations share a key (as in JUnit XML)
     assert all("everyThreadGetsItsOwnBrowser" in w for w in batch.warnings)
 
