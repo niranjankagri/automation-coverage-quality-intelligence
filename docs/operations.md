@@ -120,3 +120,39 @@ Run on the real history and the live site; the commands and tests are in the rep
   updates come as soon as an advisory is published.
 - GitHub secret scanning with push protection is on: a commit containing a known token format
   is refused.
+
+## Audited historical collection recovery
+
+The 23 Oct Playwright TypeScript run `39927750283`, attempt 2, was originally collected with
+three jobs and 71 results: two retained Chromium artifacts were ambiguous to the collector at
+that time. The current timestamp-aware artifact selection can reconstruct all four jobs and
+95 results from retained GitHub artifacts. This is a recovery of actual evidence, not a new test
+execution and not an assumption that a missing report passed.
+
+`tools/recover_playwright_collection.py --database INPUT --output NEW_FILE` is deliberately
+limited to that reviewed run, commit and its original JUnit publishing contract (it predates
+the 26 Oct JSON contract). It refuses a changed original record, changed/missing existing
+executions, wrong attempts, incomplete reimports, active WAL/journal files, and existing or
+in-place output paths. The input file is never modified. The output gains only the retained
+Chromium job and its 24 results. An additive `collection_recoveries` table preserves the entire
+original collection, replacement collection, artifact IDs/upload times and downloaded SHA-256
+hashes. Existing table layouts and schema reader compatibility remain unchanged. Inspect it
+through `HistoryStore.collection_recoveries()`; the cancelled Enterprise run and duplicated
+Java test-report collection remain incomplete.
+
+The main-push CI recovery job runs only after every relevant test, browser, audit, container,
+demonstration and self-gate dependency passed. It shares the collection workflow's `collect`
+concurrency group. It first uploads a permanent `quality-before-recovery-RUN-ATTEMPT.db` backup
+of the current published file without overwriting any backup. It creates and verifies a new
+file, publishes that file, downloads the published bytes and compares them, then writes the
+one-off completion marker `recovery-playwright-39927750283.json`. The marker makes later CI
+runs skip the completed operation. A failed publication can be retried; a complete collection
+is accepted as a no-op only when its matching recovery audit exists. PRs cannot run this job
+or access its publication token. No monitor threshold, collection window, or test outcome is
+changed. Publication completes within main CI before the host's checks-pass deployment starts.
+
+For rollback, retain the permanent original backup and restore its bytes as the `quality.db`
+release asset using the existing publication procedure. The completion marker intentionally
+prevents silently reapplying a recovery an operator rolled back. Remove that marker only after
+reviewing why recovery should be attempted again. Restoring the original restores its original
+incomplete-collection warning as well.

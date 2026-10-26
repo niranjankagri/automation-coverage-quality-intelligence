@@ -34,6 +34,7 @@ from qualityintel.models.results import FailureDetails, PipelineJob, RunContext,
 
 # 1: runs and results. 2: coverage snapshots. 3: pipeline columns on runs. 4: collections.
 # 5: repository of a pipeline run. 6: collected runs without a start time take their pipeline's.
+# The additive recovery audit table leaves existing table layouts/readers compatible.
 # Older files are upgraded when opened.
 SCHEMA_VERSION = 6
 PIPELINE_COLUMNS = {
@@ -104,6 +105,15 @@ CREATE TABLE IF NOT EXISTS collections (
     runs         INTEGER NOT NULL,
     results      INTEGER NOT NULL,
     problems     TEXT    NOT NULL,
+    PRIMARY KEY (pipeline_id, attempt)
+);
+CREATE TABLE IF NOT EXISTS collection_recoveries (
+    pipeline_id TEXT NOT NULL,
+    attempt INTEGER NOT NULL,
+    recovered_at TEXT NOT NULL,
+    previous_record TEXT NOT NULL,
+    replacement_record TEXT NOT NULL,
+    evidence TEXT NOT NULL,
     PRIMARY KEY (pipeline_id, attempt)
 );
 CREATE TABLE IF NOT EXISTS coverage_snapshots (
@@ -360,6 +370,103 @@ class HistoryStore:
                 ),
             )
         return added
+
+    def recover_collection(
+        self, record: PipelineCollection, runs: list[TestRun], evidence: dict[str, str]
+    ) -> int:
+        """Complete an incomplete attempt using retained evidence; preserve the original in an audit row.
+
+        Existing executions are never changed or removed. New evidence must retain every existing
+        job and result byte-for-byte in the normalized model, and must add at least one missing run.
+        A complete attempt, changed identity, changed result, or conflicting job is refused.
+
+        Raises:
+            HistoryError: The recovery changes existing evidence or cannot establish completeness.
+        """
+        previous = next(
+            (
+                c
+                for c in self.collections()
+                if (c.pipeline_id, c.attempt) == (record.pipeline_id, record.attempt)
+            ),
+            None,
+        )
+        if previous is None or previous.state != "incomplete":
+            raise HistoryError("recovery requires an existing incomplete collection")
+        if record.state != "complete" or record.problems or not evidence:
+            raise HistoryError("recovery requires complete evidence without problems")
+        mutable = {"collected_at", "state", "runs", "results", "problems"}
+        if previous.model_dump(exclude=mutable) != record.model_dump(exclude=mutable):
+            raise HistoryError("recovery cannot change pipeline identity or provenance")
+        if record.collected_at < previous.collected_at:
+            raise HistoryError("recovery cannot predate the original collection")
+        incoming = {run.run_id: run for run in runs}
+        if (
+            len(incoming) != len(runs)
+            or record.runs != len(runs)
+            or record.results != sum(len(r.results) for r in runs)
+        ):
+            raise HistoryError("recovery counts do not reconcile")
+        if any(
+            r.pipeline is None
+            or (r.pipeline.pipeline_id, r.pipeline.attempt) != (record.pipeline_id, record.attempt)
+            for r in runs
+        ):
+            raise HistoryError("recovery contains another pipeline attempt")
+        stored = {r.run_id: r for r in self.runs()}
+        if any(r.run_id in stored and stored[r.run_id] != r for r in runs):
+            raise HistoryError("recovery cannot replace stored result payloads")
+        existing = [
+            r
+            for r in stored.values()
+            if r.pipeline
+            and (r.pipeline.pipeline_id, r.pipeline.attempt) == (record.pipeline_id, record.attempt)
+        ]
+        if len(existing) != previous.runs or sum(len(r.results) for r in existing) != previous.results:
+            raise HistoryError("original collection counts do not reconcile")
+        if any(r.run_id not in incoming or incoming[r.run_id] != r for r in existing):
+            raise HistoryError("recovery cannot change or omit existing executions")
+        if len(incoming) <= len(existing) or self.conflicting_jobs(runs):
+            raise HistoryError("recovery must add missing jobs without conflicting executions")
+        added = 0
+        with self._transaction() as db:
+            for run in runs:
+                added += self._insert(db, run)
+            db.execute(
+                "INSERT INTO collection_recoveries VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    record.pipeline_id,
+                    record.attempt,
+                    _iso(record.collected_at),
+                    previous.model_dump_json(),
+                    record.model_dump_json(),
+                    json.dumps(evidence, sort_keys=True),
+                ),
+            )
+            db.execute(
+                "UPDATE collections SET collected_at=?, state=?, runs=?, results=?, problems=? "
+                "WHERE pipeline_id=? AND attempt=?",
+                (
+                    _iso(record.collected_at),
+                    record.state,
+                    record.runs,
+                    record.results,
+                    json.dumps(list(record.problems)),
+                    record.pipeline_id,
+                    record.attempt,
+                ),
+            )
+        return added
+
+    def collection_recoveries(self) -> list[dict[str, str]]:
+        """Original and replacement records plus source evidence for every audited recovery."""
+        rows = self._db.execute(
+            "SELECT previous_record, replacement_record, evidence FROM collection_recoveries "
+            "ORDER BY recovered_at"
+        ).fetchall()
+        return [
+            dict(zip(("previous_record", "replacement_record", "evidence"), row, strict=True)) for row in rows
+        ]
 
     def collections(self) -> list[PipelineCollection]:
         """Every collection record, newest pipeline start first."""

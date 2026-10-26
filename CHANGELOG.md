@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Recover retained historical Chromium evidence through a copy-only, audited backfill. Preserve the original collection and a permanent published-database backup; reject changes to existing executions. Existing monitor thresholds and genuine incomplete records are unchanged.
+
+## Unreleased
+
 - Collection: playwright-typescript-framework is collected from Playwright's JSON report
   (`playwright-json-<project>`, from 2026-10-26) instead of its JUnit XML, so a test that passed
   on a retry shows as a pass after retry. Earlier runs keep their JUnit history (same keys).

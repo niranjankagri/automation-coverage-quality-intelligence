@@ -317,3 +317,71 @@ jobs:
           name: demo-output-${{ matrix.os }}
           path: demo-output/
           if-no-files-found: error
+
+  # One reviewed backfill. Never runs PR code with write permissions or publishes before gates pass.
+  recover-history:
+    name: Recover retained historical Chromium evidence
+    needs: [self-gate, quality-gate, container, audit, demo, other-browsers]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    concurrency:
+      group: collect
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check permanent recovery marker
+        id: marker
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view history --json assets > release-assets.json
+          if python -c 'import json; import sys; sys.exit(not any(a["name"] == "recovery-playwright-39927750283.json" for a in json.load(open("release-assets.json"))["assets"]))'; then
+            echo 'needed=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'needed=true' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        if: steps.marker.outputs.needed == 'true'
+        with:
+          python-version: '3.13'
+      - run: pip install -e .
+        if: steps.marker.outputs.needed == 'true'
+      - name: Download current history and preserve original release backup
+        if: steps.marker.outputs.needed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p history
+          gh release download history --pattern quality.db --dir history
+          backup="quality-before-recovery-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.db"
+          cp history/quality.db "history/$backup"
+          gh release upload history "history/$backup"
+      - name: Recover to a new verified file with original-record audit
+        if: steps.marker.outputs.needed == 'true'
+        id: recovery
+        env:
+          GITHUB_TOKEN: ${{ secrets.COLLECT_TOKEN || github.token }}
+        run: python tools/recover_playwright_collection.py --database history/quality.db --output publish/quality.db
+      - name: Publish recovered history
+        if: steps.recovery.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload history publish/quality.db --clobber
+          mkdir -p verified
+          gh release download history --pattern quality.db --dir verified
+          cmp publish/quality.db verified/quality.db
+      - name: Record one-off recovery completion
+        if: steps.marker.outputs.needed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          printf '{"pipeline":"playwright-typescript-framework#39927750283","attempt":2,"recovery_commit":"%s","ci_run":"%s"}\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > recovery-playwright-39927750283.json
+          gh release upload history recovery-playwright-39927750283.json
+          echo 'Recovered retained Chromium evidence; original database backup and collection audit are preserved.' >> "$GITHUB_STEP_SUMMARY"
