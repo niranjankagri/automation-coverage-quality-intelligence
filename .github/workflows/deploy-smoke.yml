@@ -52,12 +52,15 @@ jobs:
       - run: pip install -e ".[e2e]"
         if: steps.newest.outputs.current == 'true'
       # Like the CI browser installs (ci.yml, other-browsers): the system libraries get one long try
-      # (a slow mirror still finishes), the browser download 5 minutes a try and three tries
+      # against the official Ubuntu archive (at most 10 minutes); browser downloads get three 5-minute tries
       - name: Install Chromium
         if: steps.newest.outputs.current == 'true'
-        timeout-minutes: 45
+        timeout-minutes: 30
         run: |
-          timeout 1800 playwright install-deps chromium
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' /etc/apt/apt-mirrors.txt
+          fi
+          timeout 600 playwright install-deps chromium
           for attempt in 1 2 3; do
             timeout 300 playwright install chromium && exit 0
             echo "::warning::Chromium download: attempt $attempt failed or timed out"
