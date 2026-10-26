@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **Playwright JSON reports** (`ingest/playwright_json.py`, [docs/ingestion.md](docs/ingestion.md#playwright-json)):
+  Playwright's JUnit reporter writes a test that passed on a retry as a plain pass, so flaky
+  Playwright tests were invisible. The JSON reporter's file keeps every attempt: the last one
+  decides the outcome, the earlier ones are `retries`. Keys equal Playwright's JUnit keys (spec
+  file + describe titles and test title), so history continues when a producer switches. A
+  `*.json` file is read as Playwright or mochawesome by its content; one project per file.
+  Real samples: one CI run of playwright-typescript-framework (four projects) as JSON and as
+  JUnit, compared test by test; its Chromium checkout test passed on a retry, which only the
+  JSON shows. `tools/sanitize_reports.py playwright` cleans such reports for sharing.
+
 ## 1.2.0 (2026-10-26)
 
 **Highlights.** 1.1.0 read result files that someone handed it. 1.2.0 collects them on its own
