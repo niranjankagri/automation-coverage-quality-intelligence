@@ -27,6 +27,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from qualityintel import __version__
+from qualityintel.collect.health import recovered_workflows
 from qualityintel.history.analysis import DEFAULTS, HistorySettings
 from qualityintel.links import dashboard_path
 from qualityintel.live import LiveData
@@ -330,6 +331,9 @@ class DataStatus(View):
     collections: int
     latest_collection_at: datetime | None
     incomplete_collections_7d: int
+    unresolved_incomplete_collections_7d: int
+    recovered_workflow_collections_7d: int
+    collection_resolutions: tuple[str, ...]
     collection_problems: tuple[str, ...]
 
 
@@ -450,6 +454,8 @@ def create_app(
         week_ago = datetime.now(UTC) - timedelta(days=7)
         recent = [c for c in snapshot.collections if c.collected_at >= week_ago]
         incomplete = [c for c in recent if c.state == "incomplete"]
+        recovered = recovered_workflows(snapshot.collections)
+        resolved = [c for c in incomplete if (c.pipeline_id, c.attempt) in recovered]
         return DataStatus(
             version=state.version,
             loaded_at=state.loaded_at,
@@ -463,6 +469,15 @@ def create_app(
             collections=len(snapshot.collections),
             latest_collection_at=max((c.collected_at for c in snapshot.collections), default=None),
             incomplete_collections_7d=len(incomplete),
+            unresolved_incomplete_collections_7d=len(incomplete) - len(resolved),
+            recovered_workflow_collections_7d=len(resolved),
+            collection_resolutions=tuple(
+                f"{c.pipeline_id} attempt {c.attempt}: workflow resumed successfully in "
+                f"{recovered[(c.pipeline_id, c.attempt)].pipeline_id} "
+                f"attempt {recovered[(c.pipeline_id, c.attempt)].attempt}; "
+                "historical evidence remains incomplete"
+                for c in resolved
+            ),
             collection_problems=tuple(f"{c.pipeline_id}: {p}" for c in incomplete for p in c.problems)[:20],
         )
 

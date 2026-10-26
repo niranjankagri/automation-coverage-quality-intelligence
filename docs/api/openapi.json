@@ -519,6 +519,13 @@
             "title": "Collection Problems",
             "type": "array"
           },
+          "collection_resolutions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Collection Resolutions",
+            "type": "array"
+          },
           "collections": {
             "title": "Collections",
             "type": "integer"
@@ -591,6 +598,10 @@
             "title": "Loaded At",
             "type": "string"
           },
+          "recovered_workflow_collections_7d": {
+            "title": "Recovered Workflow Collections 7D",
+            "type": "integer"
+          },
           "refresh_seconds": {
             "title": "Refresh Seconds",
             "type": "number"
@@ -611,6 +622,10 @@
             "title": "Stale",
             "type": "boolean"
           },
+          "unresolved_incomplete_collections_7d": {
+            "title": "Unresolved Incomplete Collections 7D",
+            "type": "integer"
+          },
           "version": {
             "title": "Version",
             "type": "string"
@@ -629,6 +644,9 @@
           "collections",
           "latest_collection_at",
           "incomplete_collections_7d",
+          "unresolved_incomplete_collections_7d",
+          "recovered_workflow_collections_7d",
+          "collection_resolutions",
           "collection_problems"
         ],
         "title": "DataStatus",
@@ -4596,7 +4614,7 @@
   "info": {
     "description": "Read-only API over a requirement catalog and imported test results.",
     "title": "Quality Intelligence Dashboard",
-    "version": "1.2.0"
+    "version": "1.2.1"
   },
   "openapi": "3.1.0",
   "paths": {

@@ -71,3 +71,47 @@ def test_smoke_rejects_oversized_remote_response() -> None:
     oversized = io.BytesIO(b"x" * (smoke.MAX_RESPONSE_BYTES + 1))
     with pytest.raises(ValueError, match="exceeds 2 MiB limit"):
         smoke._read_bounded(oversized)
+
+
+@pytest.mark.parametrize(("unresolved", "expected"), [(0, True), (2, True), (3, False), (None, False)])
+def test_collection_monitor_uses_unresolved_count_and_legacy_fallback(
+    unresolved: int | None,
+    expected: bool,
+) -> None:
+    """Keep the threshold of three, and fail closed against raw history on older APIs."""
+    from datetime import UTC, datetime
+
+    from fastapi.testclient import TestClient
+
+    from qualityintel.dashboard.app import create_app
+    from qualityintel.ingest.catalog_file import load_catalog
+    from qualityintel.workspace import Workspace
+
+    state = {
+        "incomplete_collections_7d": 13,
+        "latest_collection_at": datetime.now(UTC).isoformat(),
+    }
+    if unresolved is not None:
+        state["unresolved_incomplete_collections_7d"] = unresolved
+    workspace = Workspace(load_catalog(Path(__file__).parents[3] / "samples" / "catalog.toml"), [])
+    with TestClient(create_app(workspace)) as client:
+
+        def fake_get(url: str) -> tuple[int, dict[str, str], bytes]:
+            path = url.replace("http://testserver", "")
+            if path == "/api/status":
+                return 200, {}, json.dumps(state).encode()
+            response = client.get(path)
+            return response.status_code, dict(response.headers), response.content
+
+        with (
+            patch.object(smoke, "get", side_effect=fake_get),
+            patch.object(
+                smoke,
+                "report_drilldowns",
+                return_value=[],
+            ),
+        ):
+            checks = smoke.checks("http://testserver", False, 30)
+    result = next(check for check in checks if check[0] == "no repeated incomplete collections")
+    assert result[1] is expected
+    assert "13 historical incomplete" in result[2]

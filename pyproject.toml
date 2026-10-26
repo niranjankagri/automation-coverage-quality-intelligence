@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "automation-coverage-quality-intelligence"
-version = "1.2.0"
+version = "1.2.1"
 description = "Imports results from existing test automation frameworks, measures requirement and automation coverage, tracks failures and flaky-test candidates, and runs release quality gates."
 readme = "README.md"
 license = "MIT"

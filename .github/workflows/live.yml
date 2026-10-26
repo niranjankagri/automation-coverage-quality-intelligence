@@ -4,6 +4,10 @@
 name: Live dashboard
 
 on:
+  workflow_run:
+    workflows: [Deployment smoke]
+    types: [completed]
+    branches: [main]
   schedule:
     - cron: "30 8 * * *" # after the collection (07:40 UTC) and the hourly fetch
   workflow_dispatch:
@@ -18,7 +22,9 @@ permissions:
 jobs:
   smoke:
     name: Smoke test of the live dashboard
-    if: vars.QI_LIVE_URL != ''
+    if: >-
+      vars.QI_LIVE_URL != '' && (github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:

@@ -235,12 +235,14 @@ def checks(base: str, collected: bool, max_age_hours: float | None = None) -> li
                 else "no collection recorded",
             )
         )
-        incomplete = int(state.get("incomplete_collections_7d") or 0)
+        historical = int(state.get("incomplete_collections_7d") or 0)
+        incomplete = int(state.get("unresolved_incomplete_collections_7d", historical))
         results.append(
             (
                 "no repeated incomplete collections",
                 incomplete < 3,
-                f"{incomplete} incomplete in 7 days (3 or more fail)",
+                f"{incomplete} unresolved incomplete in 7 days (3 or more fail); "
+                f"{historical} historical incomplete",
             )
         )
     return results
