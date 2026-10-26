@@ -2,6 +2,37 @@
 
 ## Unreleased
 
+## 1.2.0 (2026-10-26)
+
+**Highlights.** 1.1.0 read result files that someone handed it. 1.2.0 collects them on its own
+every day from the CI runs of 23 portfolio repositories. It runs live on a free host and checks
+itself after every deployment. It also gets a new report-style front end, the M13 analyses
+(regressions, readiness scorecard, gate history, gaps, repository trends, daily digest, issue
+drafts), search and Needs Attention, plus hardening for hosted use. The self gate now covers
+31 requirements (was 20) on 1,143 unit and integration tests and 229 browser tests in Chromium,
+Firefox and WebKit, with 96 % branch coverage.
+
+**Upgrade notes**
+
+- History databases are upgraded when opened (schema 3 to 6): new tables for collections and
+  coverage snapshots, repository and CI start time on runs (filled from the collection records
+  where known). A database written by 1.2.0 cannot be opened by 1.1.0.
+- The home page `/` is now the hybrid dashboard. The report is at `/next/`, and the 1.1.0
+  dashboard is at `/classic/` with its links kept. Renamed report sections keep their old addresses.
+- New settings for hosted use (all optional): `QI_DASHBOARD_PUBLIC` (serve public data without a
+  login, only on purpose), `QI_FORWARDED_ALLOW_IPS` (trusted proxies), `QI_REFRESH_SECONDS`
+  (refresh interval, default 30), `QI_ACCESS_LOG`, `QI_COLLECTION_HOURS` / `QI_COLLECTION_URL`
+  (collection freshness); see [docs/operations.md](docs/operations.md) and
+  [docs/deployment.md](docs/deployment.md). Ten wrong logins from one address are answered
+  with 429 for a while.
+- New commands: `qi collect`, `qi history fetch | prune | backup | check | restore`, `qi digest`,
+  and `qi gate --database --pipeline` for a collected pipeline.
+
+**Changes**
+
+- The *Portfolio* link in the header opens the portfolio's home page.
+- Test fix: a collection-issues test depended on the real clock and began failing 7 days after
+  its sample records (26 Oct 2026); it now uses a fixed clock.
 - Neutral light-mode headings and repository links; selected-scope rows show exact outcome counts
   instead of full-width green bars, with accessible keyboard scrolling and readable dark headings.
 
