@@ -1,5 +1,6 @@
 """``/api/pipelines`` and pipeline fields of ``/api/runs`` on the two real TaskBoard pipelines."""
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -158,7 +159,7 @@ def record(
 
 
 @pytest.fixture(scope="module")
-def collected() -> TestClient:
+def collected_workspace() -> Workspace:
     """The two pipelines plus collection records: attempts of one, and a cancelled run with nothing."""
     records = [
         record("39238241112", 1, "success", "complete", 19),
@@ -180,9 +181,14 @@ def collected() -> TestClient:
         ),
         record("40000000000", 1, "cancelled", "incomplete", 18, ("job api: artifact report-api not found",)),
     ]
-    workspace = Workspace(load_catalog(PIPELINES / "catalog.toml"), pipeline_runs(), collections=records)  # type: ignore[arg-type]
+    return Workspace(load_catalog(PIPELINES / "catalog.toml"), pipeline_runs(), collections=records)  # type: ignore[arg-type]
+
+
+@pytest.fixture(scope="module")
+def collected(collected_workspace: Workspace) -> TestClient:
+    """The dashboard on ``collected_workspace``."""
     return TestClient(
-        create_app(workspace, collection_hours=26, collection_url="https://github.com/x/y/actions")
+        create_app(collected_workspace, collection_hours=26, collection_url="https://github.com/x/y/actions")
     )
 
 
@@ -253,17 +259,26 @@ def test_status_counts_the_collection_records_of_fixed_data(collected: TestClien
     assert status["collections"] == sum(len(p["attempts"]) for p in pipelines["pipelines"] if p["attempts"])
 
 
-def test_collection_problems_point_to_their_run_attempt(collected: TestClient) -> None:
-    """Each problem names its pipeline and attempt and links that attempt's page on GitHub."""
-    rows = collected.get("/api/collection").json()["repositories"]
-    issues = [issue for row in rows for issue in row["issues"]]
+def test_collection_problems_point_to_their_run_attempt(
+    collected_workspace: Workspace, collected: TestClient
+) -> None:
+    """Each problem names its pipeline and attempt and links that attempt's page on GitHub.
 
-    assert issues
-    assert len(issues) == sum(len(row["problems"]) for row in rows)
+    Only the last 7 days' records count, so the clock is fixed one day after the newest record
+    (with the real clock this test began failing on 26 Oct 2026, 7 days after the records).
+    """
+    rows = collected_workspace.collection_health(now=datetime(2026, 10, 20, tzinfo=UTC)).repositories
+    issues = [issue for row in rows for issue in row.issues]
+
+    assert len(issues) == 3
+    assert len(issues) == sum(len(row.problems) for row in rows)
     for issue in issues:
-        assert issue["run_url"].startswith(f"https://github.com/{REPO}/actions/runs/")
-        assert issue["run_url"].endswith(f"/attempts/{issue['attempt']}")
-        assert issue["text"]
+        assert issue.run_url is not None
+        assert issue.run_url.startswith(f"https://github.com/{REPO}/actions/runs/")
+        assert issue.run_url.endswith(f"/attempts/{issue.attempt}")
+        assert issue.text
+    api_rows = collected.get("/api/collection").json()["repositories"]
+    assert all(len(row["issues"]) == len(row["problems"]) for row in api_rows)
 
 
 def test_one_pipeline_can_be_focused_and_its_build_lists_its_github_run(collected: TestClient) -> None:
