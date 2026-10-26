@@ -78,9 +78,12 @@ purpose (k6 regression-demo, the "sample answers" jobs), and the repositories th
 automation (JBDL, ExampleApp, the portfolio site). `tests/unit/collect/test_config_and_audit.py`
 fails when a portfolio repository is neither collected nor named here.
 
-**Flaky tests from Playwright** are not visible as retries: its JUnit output records a test that
-passed only on a retry as passed (checked with a deliberately flaky test on 2026-10-20). TestNG's
-retries are (see [ingestion.md](ingestion.md)).
+**Flaky tests from Playwright:** its JUnit output records a test that passed only on a retry as
+passed (checked with a deliberately flaky test on 2026-10-20), so playwright-typescript-framework
+is collected from Playwright's JSON report (`playwright-json-<project>`) since 2026-10-26, which
+keeps every attempt ([ingestion.md](ingestion.md#playwright-json)). Its earlier runs came from
+`junit-<project>`; the test keys are the same, so their history continues. TestNG's retries are
+visible in its JUnit XML.
 
 ## What one collection pass does
 

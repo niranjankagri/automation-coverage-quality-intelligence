@@ -22,7 +22,8 @@
 #   or permanently red;
 # - JBDL, ExampleApp, niranjankagri.github.io: not test automation projects.
 # Playwright's JUnit output records a test that passed only on a retry as passed (verified
-# 2026-10-20), so flaky Playwright tests are not visible as retries here.
+# 2026-10-20), so Playwright Test jobs are collected from Playwright's JSON report instead
+# (playwright-json-<project>, since 2026-10-26), which keeps every attempt (docs/ingestion.md).
 
 [[producer]]
 repository = "niranjankagri/enterprise-test-automation-framework"
@@ -195,28 +196,30 @@ context = { browser = "webkit" }
 repository = "niranjankagri/playwright-typescript-framework"
 workflow = "ci.yml"
 context = { framework = "playwright", environment = "ci", platform = "linux" }
-since = 2026-10-20T20:12:29Z
+# JSON report artifacts exist from its PR #6 (merged 2026-10-26T06:44:21Z); runs before that
+# were collected from junit-<project> and stay in the history with the same test keys
+since = 2026-10-26T06:44:21Z
 
 [[producer.job]]
 name = "api"
-artifact = "junit-api"
+artifact = "playwright-json-api"
 path = "."
 
 [[producer.job]]
 name = "chromium"
-artifact = "junit-chromium"
+artifact = "playwright-json-chromium"
 path = "."
 context = { browser = "chromium" }
 
 [[producer.job]]
 name = "firefox"
-artifact = "junit-firefox"
+artifact = "playwright-json-firefox"
 path = "."
 context = { browser = "firefox" }
 
 [[producer.job]]
 name = "webkit"
-artifact = "junit-webkit"
+artifact = "playwright-json-webkit"
 path = "."
 context = { browser = "webkit" }
 

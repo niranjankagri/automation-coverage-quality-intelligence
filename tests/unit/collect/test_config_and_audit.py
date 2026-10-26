@@ -79,7 +79,9 @@ def test_the_repository_producers_file_covers_the_whole_portfolio() -> None:
     assert all(f"- {name}" in header or f", {name}" in header for name in NOT_COLLECTED)
     assert all(job.path for p in config.producer for job in p.job)
     assert all(
-        p.since is not None for p in config.producer if any(j.artifact.startswith("junit-") for j in p.job)
+        p.since is not None
+        for p in config.producer
+        if any(j.artifact.startswith(("junit-", "playwright-json-")) for j in p.job)
     )
 
 
