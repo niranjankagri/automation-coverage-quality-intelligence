@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Collection: playwright-typescript-framework is collected from Playwright's JSON report
+  (`playwright-json-<project>`, from 2026-10-26) instead of its JUnit XML, so a test that passed
+  on a retry shows as a pass after retry. Earlier runs keep their JUnit history (same keys).
+
 - **Playwright JSON reports** (`ingest/playwright_json.py`, [docs/ingestion.md](docs/ingestion.md#playwright-json)):
   Playwright's JUnit reporter writes a test that passed on a retry as a plain pass, so flaky
   Playwright tests were invisible. The JSON reporter's file keeps every attempt: the last one

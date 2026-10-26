@@ -26,7 +26,7 @@ LISTED = 10
 LIMITATIONS = (
     "Observations from imported CI reports only; no cause is inferred.",
     "A test that passed only on a retry is shown as passed when its report does not record the retry "
-    "(Playwright JUnit output).",
+    "(Playwright JUnit output; its JSON report does).",
 )
 
 
