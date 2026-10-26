@@ -147,10 +147,10 @@ src/qualityintel/
 ## Evidence: the plan's acceptance criteria
 
 This repository gates its own release on them: [`quality/catalog.toml`](quality/catalog.toml)
-lists the ten acceptance criteria and five implementation rules of the project plan and the five
+lists the ten acceptance criteria and five implementation rules of the project plan and the 16
 capabilities added after 1.0 (below), linked to their tests, and CI job *Self gate* runs `qi gate`
-on this repository's own unit and browser results as one pipeline execution (20/20 requirements
-automated, all tests passing).
+on this repository's own unit and browser results as one pipeline execution (31/31 requirements
+automated, 1,372 tests, all passing).
 
 | # | Criterion | Proven by |
 |---|---|---|
@@ -161,7 +161,7 @@ automated, all tests passing).
 | 5 | Dashboard metrics match independent calculations | a second, standard-library-only implementation in `tests/integration/test_sample_traceability.py`; API and browser tests show the same numbers |
 | 6 | Historical trends can be inspected | `tests/unit/history/`, `qi history report`, the Stability page (browser test) |
 | 7 | Gates pass or fail a pipeline | `tests/unit/test_cli_gate.py`; CI job *Quality gates* asserts exit codes 0, 1, 1 and 3 |
-| 8 | Tests validate calculations, ingestion and gates | 765 unit and integration tests + 20 browser tests, 98 % branch coverage |
+| 8 | Tests validate calculations, ingestion and gates | 1,143 unit and integration tests + 229 browser tests, 96 % branch coverage |
 | 9 | A clean checkout reproduces the demonstration | `tests/integration/test_demo.py`; CI job *Demonstration from a clean checkout* |
 | 10 | No sensitive data in docs and reports | `tests/integration/test_repository_hygiene.py` scans every tracked file (it found and fixed a local path in two sample files); failure messages are redacted ([security](docs/security.md)) |
 
@@ -174,6 +174,17 @@ Added after 1.0, each a requirement of the self gate:
 | FMT-01 | Cypress (mochawesome) and Allure results | real samples; Allure and JUnit of the same CI run agree test by test |
 | PIPE-01 | Pipeline executions: no decision on a pipeline with a missing job | a real cancelled pipeline: `tests/integration/test_pipeline_samples.py` |
 | SEC-01 | Hostile input, dashboard login, no secrets in reports | `tests/unit/ingest/test_hostile_input.py`, `tests/architecture/test_no_code_execution.py`, [security](docs/security.md) |
+| COL-01 | CI results collected without manual copying | `tests/unit/collect/` (archive, collector, GitHub client, config and audit, CLI) |
+| REFRESH-01 | New data without a restart; a failed refresh keeps the last good data | `tests/unit/test_live.py`, `tests/unit/dashboard/test_api.py`, browser tests |
+| UI-01 | Release status from the gate policy; unknown is never ready | `tests/unit/test_readiness.py`, API and browser tests |
+| UI-04 | Pipeline explorer and collection health | `tests/unit/dashboard/test_pipelines_api.py`, browser tests |
+| UI-05 | Build comparison and test investigation | `tests/unit/history/test_builds.py`, API and browser tests |
+| UI-06 | Tables, filters, chips, shareable views, keyboard charts | API and browser tests |
+| UI-07 | WCAG 2.2 A/AA in both themes; phone to desktop; Chromium, Firefox, WebKit | `tests/e2e/test_accessibility.py`, browser tests |
+| SEC-02 | Hosted operation: lock-out, public mode, https, prune and backup | `tests/unit/test_cli_history.py`, `tests/unit/history/test_store.py`, API tests |
+| REQ-OWNER-01 | Requirement owners: filter and grouping | `tests/unit/ingest/test_requirements_csv.py`, API and browser tests |
+| PROD-01 | Production data complete and traceable | `tests/unit/collect/test_collector.py`, `tests/unit/test_workspace.py`, `tests/unit/history/` |
+| UI-08 | Search, Needs Attention, grounded summaries | `tests/unit/test_search.py`, `tests/unit/test_attention.py`, `tests/e2e/test_investigation.py` |
 
 ## How this repository is checked
 
@@ -181,8 +192,8 @@ Added after 1.0, each a requirement of the self gate:
 |---|---|---|
 | Lint incl. a docstring on every public item, formatting | ruff | Lint, format, types |
 | Types, package and tests | mypy `--strict` | Lint, format, types |
-| 765 unit and integration tests, branch coverage >= 90 % (98 %), warnings are errors | pytest | Tests (Python 3.12, 3.13 on Ubuntu 26.04; 3.13 on Windows and on the latest Ubuntu image) |
-| 20 dashboard tests in a real browser, incl. 390 px phone width and a login | Playwright, Chromium | Dashboard in Chromium |
+| 1,143 unit and integration tests, branch coverage >= 90 % (96 %), warnings are errors | pytest | Tests (Python 3.12, 3.13 on Ubuntu 26.04; 3.13 on Windows and on the latest Ubuntu image) |
+| 229 dashboard tests in a real browser, incl. 390 px phone width, a login and WCAG checks | Playwright | Dashboard in Chromium, Dashboard in firefox, Dashboard in webkit |
 | Known vulnerabilities in installed dependencies | pip-audit | Dependency audit |
 | Sample gates: passed, failed, failed on a real attempt, incomplete | `qi gate` | Quality gates (sample data) |
 | The plan's acceptance criteria | `qi gate` on this repo's own results | Self gate |
