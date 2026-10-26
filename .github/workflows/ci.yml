@@ -108,7 +108,17 @@ jobs:
           cache: pip
       - run: pip install -e ".[dev,e2e]"
       - name: Install Chromium
-        run: playwright install --with-deps chromium
+        timeout-minutes: 30
+        run: |
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' /etc/apt/apt-mirrors.txt
+          fi
+          timeout 600 playwright install-deps chromium
+          for attempt in 1 2 3; do
+            timeout 300 playwright install chromium && exit 0
+            echo "::warning::Chromium download: attempt $attempt failed or timed out"
+          done
+          exit 1
       - name: pytest -m e2e
         run: pytest -m e2e --junitxml=reports/junit-e2e.xml
       # The same screenshots as in docs/images, taken on this run, as evidence of what the page shows
@@ -146,11 +156,14 @@ jobs:
       # killing a slow apt only restarts it and leaves its dpkg lock behind. The browser download
       # has stalled outright, so it gets 5 minutes a try and three tries.
       - name: Install ${{ matrix.engine }}
-        timeout-minutes: 45
+        timeout-minutes: 30
         env:
           ENGINE: ${{ matrix.engine }}
         run: |
-          timeout 1800 playwright install-deps "$ENGINE"
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' /etc/apt/apt-mirrors.txt
+          fi
+          timeout 600 playwright install-deps "$ENGINE"
           for attempt in 1 2 3; do
             timeout 300 playwright install "$ENGINE" && exit 0
             echo "::warning::$ENGINE download: attempt $attempt failed or timed out"
