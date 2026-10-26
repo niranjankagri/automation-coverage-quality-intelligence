@@ -324,7 +324,7 @@ def test_stale_and_incomplete_collections_are_said_plainly(edge_page: Page) -> N
 
     expect(page.locator(".notice-warning summary")).to_contain_text("Collection stale")
     expect(page.locator(".notice-warning")).to_contain_text("Collection incomplete")
-    expect(page.locator(".freshness")).to_contain_text("1 incomplete collection(s) in 7 days")
+    expect(page.locator(".freshness")).to_contain_text("1 unresolved incomplete collection(s) in 7 days")
 
 
 def test_unmapped_coverage_and_missing_durations_are_named(edge_page: Page) -> None:
