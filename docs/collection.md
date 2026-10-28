@@ -75,7 +75,7 @@ Not collected, on purpose: **selenium-java-framework** (frozen; its CI keeps an 
 **mobile-test-automation-framework** (its CI compiles only: the app under test may not be
 redistributed), the k6 soak test (scheduled and manual runs only) and the jobs that fail on
 purpose (k6 regression-demo, the "sample answers" jobs), and the repositories that are not test
-automation (JBDL, ExampleApp, the portfolio site). `tests/unit/collect/test_config_and_audit.py`
+automation (java-backend-development, formerly JBDL; ExampleApp, the portfolio site). `tests/unit/collect/test_config_and_audit.py`
 fails when a portfolio repository is neither collected nor named here.
 
 **Flaky tests from Playwright:** its JUnit output records a test that passed only on a retry as

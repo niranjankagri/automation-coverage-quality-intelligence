@@ -64,7 +64,7 @@ COLLECTED = {
 NOT_COLLECTED = {
     "selenium-java-framework",
     "mobile-test-automation-framework",
-    "JBDL",
+    "java-backend-development",
     "ExampleApp",
     "niranjankagri.github.io",
 }

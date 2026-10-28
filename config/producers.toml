@@ -20,7 +20,7 @@
 # - k6 soak test (scheduled and manual runs only) and the jobs that fail on purpose
 #   (k6 regression-demo, llm/ai "sample answers"): listing them would make pipelines incomplete
 #   or permanently red;
-# - JBDL, ExampleApp, niranjankagri.github.io: not test automation projects.
+# - java-backend-development (was JBDL), ExampleApp, niranjankagri.github.io: not test automation projects.
 # Playwright's JUnit output records a test that passed only on a retry as passed (verified
 # 2026-10-20), so Playwright Test jobs are collected from Playwright's JSON report instead
 # (playwright-json-<project>, since 2026-10-26), which keeps every attempt (docs/ingestion.md).
