@@ -57,9 +57,15 @@ def test_main_dashboard_classic_and_preview_links_stay_available(page: Page) -> 
     expect(page.get_by_role("link", name="Portfolio", exact=True)).to_have_attribute(
         "href", "https://niranjankagri.github.io/"
     )
+    # The name/logo leads to the report home; only the Portfolio link leaves the site
+    expect(page.get_by_role("link", name="Quality Intelligence report home")).to_have_attribute("href", "/")
     expect(page.locator(".ring .seg-passed")).to_have_css("stroke", "rgb(21, 153, 104)")
     page.get_by_role("link", name="Classic dashboard", exact=True).click()
     expect(page).to_have_url(re.compile(r"/classic/"))
+    expect(page.locator("#view h1")).to_be_visible()
+    page.get_by_role("link", name="Quality Intelligence report home").click()
+    heading(page, "Quality at a glance")
+    page.get_by_role("link", name="Classic dashboard", exact=True).click()
     expect(page.locator("#view h1")).to_be_visible()
     page.get_by_role("link", name="Quality Intelligence home", exact=False).click()
     heading(page, "Quality at a glance")
