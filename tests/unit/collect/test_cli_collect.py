@@ -2,6 +2,8 @@
 
 import json
 import re
+from dataclasses import replace
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +33,17 @@ artifact = "report-ui"
 path = "reports/junit.xml"
 context = { browser = "chromium" }
 """
+
+
+def recent_run() -> WorkflowRun:
+    """The fake run, started an hour ago.
+
+    `qi collect` only looks back --days (default 7) from today, so the fixed 2026-10-19 start
+    made these tests fail once that date was more than 7 days ago.
+    """
+    return replace(run(), started_at=datetime.now(UTC) - timedelta(hours=1))
+
+
 GATE = '[execution]\nmax_failed_tests = 0\n[pipeline]\njobs = ["api", "ui"]\n'
 
 
@@ -40,7 +53,7 @@ def setup(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     (tmp_path / "producers.toml").write_text(PRODUCERS, encoding="utf-8")
     (tmp_path / "gate.toml").write_text(GATE, encoding="utf-8")
     monkeypatch.setenv("GITHUB_TOKEN", "ghs_test_token")
-    holder: dict[str, Any] = {"source": FakeSource([run()], good_artifacts()), "dir": tmp_path}
+    holder: dict[str, Any] = {"source": FakeSource([recent_run()], good_artifacts()), "dir": tmp_path}
     monkeypatch.setattr(cli, "GitHubActions", lambda token: holder["source"])
     holder["base"] = [
         "collect",
@@ -109,7 +122,7 @@ def test_a_failing_test_in_a_collected_pipeline_fails_the_gate(setup: dict[str, 
     # The first testcase gets a failure (the sample writes them self-closing)
     failing = rb"\1><failure message='boom'/></testcase>"
     api["junit.xml"] = re.sub(rb"(<testcase[^>]*?)/>", failing, api["junit.xml"], count=1)
-    setup["source"] = FakeSource([run()], artifacts)
+    setup["source"] = FakeSource([recent_run()], artifacts)
     main(setup["base"])
 
     assert main(gate(setup, "python-pytest-framework#100")) == EXIT_GATE_FAILED
