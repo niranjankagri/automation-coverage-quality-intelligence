@@ -65,8 +65,8 @@ up and what to do about it.
 
 Not built, in the order they would add most value. None is claimed anywhere else in this repository.
 
-1. **Direct requirement sync** with a test-management tool (Jira/Xray, Azure DevOps, TargetProcess);
-   today their CSV export is imported ([requirements-import.md](requirements-import.md)).
+1. **Direct requirement sync** with Azure DevOps or TargetProcess; Jira Cloud sync is available,
+   including Jira custom fields used by Xray-backed projects ([requirements-import.md](requirements-import.md)).
 2. **PostgreSQL** store, only if several writers or a shared server become a real need
    ([ADR 0003](adr/0003-sqlite-first.md)).
 3. **Ownership** (team or component per requirement) to route gaps and failures.
