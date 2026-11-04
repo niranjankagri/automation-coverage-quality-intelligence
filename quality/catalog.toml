@@ -199,6 +199,12 @@ title = "A user can search across tests, failure messages, requirements, pipelin
 feature = "Dashboard"
 criticality = "high"
 
+[[requirement]]
+id = "JIRA-SYNC-01"
+title = "Jira Cloud requirements can be previewed and safely synchronized into a generated catalog using explicit field mappings while preserving local links"
+feature = "Requirements sync"
+criticality = "high"
+
 # ---- Test cases ----------------------------------------------------------------------------
 
 [[test_case]]
@@ -669,4 +675,15 @@ automated_by = [
   "tests.unit.dashboard.test_api::test_search_groups_results_links_them_and_validates_input",
   "tests.unit.dashboard.test_api::test_attention_agrees_with_the_pages_it_summarises",
   "tests.e2e.test_investigation::*",
+]
+
+[[test_case]]
+id = "TC-JIRA-REQUIREMENTS-SYNC"
+title = "Jira Cloud config, field mapping, paginated read-only search, preview, safe apply, repeat sync and link preservation"
+automation_status = "automated"
+framework = "pytest"
+requirements = ["JIRA-SYNC-01", "AC-08"]
+automated_by = [
+  "tests.unit.ingest.test_jira_requirements::*",
+  "tests.unit.test_cli_jira_requirements::*",
 ]
