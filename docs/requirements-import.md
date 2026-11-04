@@ -1,12 +1,38 @@
-# Importing requirements from CSV
+# Importing and syncing requirements
 
-Requirements usually live in an issue tracker or a spreadsheet. `qi requirements import` turns a
-CSV export into the catalog format, shows what would change, and writes only when asked.
+Requirements may come from an issue tracker or a spreadsheet. `qi requirements import` turns a
+CSV export into the catalog format; `qi requirements sync` reads Jira Cloud directly. Both show
+what would change and write only when asked.
 
 ```bash
 qi requirements import export.csv --into requirements.toml --catalog catalog.toml          # preview
 qi requirements import export.csv --into requirements.toml --catalog catalog.toml --apply  # write
+qi requirements sync jira-sync.toml --into requirements.toml --catalog catalog.toml         # preview
+qi requirements sync jira-sync.toml --into requirements.toml --catalog catalog.toml --apply # write
 ```
+
+## Syncing from Jira Cloud
+
+Copy [`samples/jira-sync.toml`](../samples/jira-sync.toml) and set `base_url`, a scoped JQL query,
+and the fields that map to your Jira project. Jira and Xray projects often use custom fields for
+criticality and risk; map those paths under `[fields]` and add translations under `[values.*]`.
+Field paths start at the returned issue object (`key` or `fields.summary`); dotted paths can
+include numeric array positions such as `fields.components.0.name`. Jira's rich-text description
+is flattened to readable text.
+
+Create an Atlassian API token with read access to the issues in the JQL scope. Set the account email
+and token in the environment variables named by `email_env` and `token_env` (defaults:
+`QI_JIRA_EMAIL` and `QI_JIRA_API_TOKEN`). The token is never accepted in the TOML file or command
+line. The client uses Jira Cloud's enhanced issue search over HTTPS and never writes to Jira.
+
+The preview is the default. It reports added, changed, unchanged and kept issues. `--apply` writes
+only the generated requirements file. It keeps requirements absent from the current Jira search,
+and preserves optional existing values when Jira returns them empty; it never removes test-case
+links or updates issues in Jira. A failed or incomplete search writes nothing. Use a narrowly scoped
+JQL query and inspect the preview before applying.
+
+The same generated file can be used by CSV import and Jira sync. Keep test cases and their links in
+the hand-written catalog file, which includes the generated file as described below.
 
 Sample: [`samples/requirements.csv`](../samples/requirements.csv)
 ([download](https://raw.githubusercontent.com/niranjankagri/automation-coverage-quality-intelligence/main/samples/requirements.csv)),
@@ -92,6 +118,7 @@ the links).
 
 ## Not supported (yet)
 
-- Direct connection to a tracker (Jira, Azure DevOps, TargetProcess): export to CSV first.
+- Direct sync adapters for Azure DevOps and TargetProcess: export to CSV first.
 - Hierarchies (epics, parent requirements) and custom fields: extra columns are refused rather
-  than silently dropped, so nothing is lost without notice.
+  than silently dropped by CSV import, so nothing is lost without notice. Jira fields can be mapped
+  explicitly to the supported requirement fields, but unmapped custom fields are not retained.
