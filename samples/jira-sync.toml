@@ -1,0 +1,35 @@
+# Jira Cloud issue search. Replace the host, JQL, and custom field IDs with your project's values.
+base_url = "https://example.atlassian.net"
+jql = "project = SHOP AND issuetype in (Story, Requirement) ORDER BY key"
+email_env = "QI_JIRA_EMAIL"
+token_env = "QI_JIRA_API_TOKEN"
+max_pages = 100
+
+[fields]
+id = "key"
+title = "fields.summary"
+description = "fields.description"
+feature = "fields.components.0.name"
+owner = "fields.assignee.displayName"
+priority = "fields.priority.name"
+criticality = "fields.customfield_10042.value"
+risk = "fields.customfield_10043.value"
+platforms = "fields.labels"
+
+# Optional maps translate Jira values to Quality Intelligence's closed enum values.
+[values.criticality]
+"Critical" = "critical"
+"High" = "high"
+"Medium" = "medium"
+"Low" = "low"
+
+[values.priority]
+"Highest" = "p1"
+"High" = "p2"
+"Medium" = "p3"
+"Low" = "p4"
+
+[values.risk]
+"High" = "high"
+"Medium" = "medium"
+"Low" = "low"
