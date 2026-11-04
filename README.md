@@ -61,7 +61,7 @@ CI on Linux and Windows on every push: [docs/validation.md](docs/validation.md).
 | Area | Commands | What you get | Docs |
 |---|---|---|---|
 | Ingestion | `qi inspect` | JUnit XML, Cypress mochawesome reports and Allure results folders from files, folders or quoted patterns; outcomes, reruns, nested suites, explicit test ids, run context; every unreadable file reported | [ingestion](docs/ingestion.md) |
-| Requirements | `qi requirements import` | CSV export (id, title, description, component, priority, criticality ...) into the catalog: preview, row-level errors, all-or-nothing, re-import without duplicates, test-case links preserved | [requirements import](docs/requirements-import.md) |
+| Requirements | `qi requirements import / sync` | CSV import or read-only Jira Cloud sync (including configurable custom/Xray fields): preview, explicit apply, stable IDs, test-case links preserved | [requirements import and sync](docs/requirements-import.md) |
 | Traceability | `qi coverage` | requirement coverage, automation coverage, automated requirement coverage; gaps; breakdowns by feature, criticality, test type, platform; execution status per requirement | [traceability](docs/traceability.md), [metrics](docs/metrics.md) |
 | History | `qi history import / report / compare` | SQLite history with coverage snapshots; stability classes with evidence (flaky candidates, consistent and new failures); recurring failures; duration regressions; trends | [history](docs/history.md) |
 | Quality gates | `qi gate` | configurable rules; passed / failed / incomplete as exit codes 0 / 1 / 3; JSON, HTML and Markdown reports | [quality gates](docs/quality-gates.md) |
@@ -147,9 +147,9 @@ src/qualityintel/
 ## Evidence: the plan's acceptance criteria
 
 This repository gates its own release on them: [`quality/catalog.toml`](quality/catalog.toml)
-lists the ten acceptance criteria and five implementation rules of the project plan and the 16
+lists the ten acceptance criteria and five implementation rules of the project plan and the 17
 capabilities added after 1.0 (below), linked to their tests, and CI job *Self gate* runs `qi gate`
-on this repository's own unit and browser results as one pipeline execution (31/31 requirements
+on this repository's own unit and browser results as one pipeline execution (32/32 requirements
 automated, 1,372 tests, all passing).
 
 | # | Criterion | Proven by |
@@ -185,6 +185,7 @@ Added after 1.0, each a requirement of the self gate:
 | REQ-OWNER-01 | Requirement owners: filter and grouping | `tests/unit/ingest/test_requirements_csv.py`, API and browser tests |
 | PROD-01 | Production data complete and traceable | `tests/unit/collect/test_collector.py`, `tests/unit/test_workspace.py`, `tests/unit/history/` |
 | UI-08 | Search, Needs Attention, grounded summaries | `tests/unit/test_search.py`, `tests/unit/test_attention.py`, `tests/e2e/test_investigation.py` |
+| JIRA-SYNC-01 | Read-only Jira Cloud sync with configurable fields, safe preview/apply, and preserved links | `tests/unit/ingest/test_jira_requirements.py`, `tests/unit/test_cli_jira_requirements.py` |
 
 ## How this repository is checked
 
