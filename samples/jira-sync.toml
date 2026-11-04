@@ -17,6 +17,8 @@ risk = "fields.customfield_10043.value"
 platforms = "fields.labels"
 
 # Optional maps translate Jira values to Quality Intelligence's closed enum values.
+# Map EVERY value your Jira project uses: one unmapped value (such as Jira's default "Lowest")
+# stops the whole sync with an error, because a sync never writes partial results.
 [values.criticality]
 "Critical" = "critical"
 "High" = "high"
@@ -28,6 +30,7 @@ platforms = "fields.labels"
 "High" = "p2"
 "Medium" = "p3"
 "Low" = "p4"
+"Lowest" = "p4"
 
 [values.risk]
 "High" = "high"

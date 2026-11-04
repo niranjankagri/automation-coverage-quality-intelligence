@@ -30,6 +30,9 @@ MAX_RESPONSE_BYTES = 10 * 1024 * 1024
 MAX_PAGES = 100
 PAGE_SIZE = 100
 TIMEOUT_SECONDS = 30
+# Requirement.description is LongText (at most 4,000 characters)
+MAX_DESCRIPTION_CHARS = 4000
+TRUNCATION_NOTE = " [... shortened; full text in Jira]"
 _ENV_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _FIELD_PATH = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*|\.[0-9]+)*$")
 _REQUIREMENT_FIELDS = frozenset(FIELD_ORDER)
@@ -279,6 +282,11 @@ def _requirement(issue: dict[str, Any], config: JiraRequirementsConfig) -> Requi
                 rendered = config.value_maps.get(name, {}).get(key, key)
             if name == "platforms":
                 data[name] = [part.strip() for part in rendered.split(",") if part.strip()]
+            elif name == "description" and len(rendered) > MAX_DESCRIPTION_CHARS:
+                # Requirement descriptions hold at most 4,000 characters. A longer Jira description is
+                # shortened, visibly, instead of failing the whole sync; Jira keeps the full text.
+                keep = MAX_DESCRIPTION_CHARS - len(TRUNCATION_NOTE)
+                data[name] = rendered[:keep].rstrip() + TRUNCATION_NOTE
             else:
                 data[name] = rendered
         item = Requirement.model_validate(data)
@@ -321,13 +329,52 @@ def _render_value(value: Any) -> str | None:
         items = [rendered for item in value if (rendered := _render_value(item))]
         return ", ".join(items) if items else None
     if isinstance(value, dict):
+        # Rich text (Atlassian Document Format) has its own rules: see _adf_text.
+        if isinstance(value.get("type"), str) and ("content" in value or value["type"] == "text"):
+            return _adf_text(value).strip() or None
         for key in ("value", "name", "displayName", "text"):
             if isinstance(value.get(key), (str, int, float)):
                 return _render_value(value[key])
-        content = value.get("content")
-        if isinstance(content, list):
-            return _render_value(content)
     return None
+
+
+# ADF nodes that hold inline text: their children are joined without a separator, because Jira splits
+# one sentence into several text nodes wherever formatting or a link changes ("Users " + bold "must" + ...).
+_ADF_INLINE_PARENTS = frozenset({"paragraph", "heading", "codeBlock", "mediaSingle"})
+
+
+def _adf_text(node: Any) -> str:
+    """Plain text of an ADF node: inline text joined as written, block nodes on their own lines."""
+    if not isinstance(node, dict):
+        return ""
+    kind = node.get("type")
+    if kind == "text":
+        text = node.get("text")
+        return text if isinstance(text, str) else ""
+    if kind == "hardBreak":
+        return "\n"
+    if kind in ("mention", "emoji", "status", "inlineCard"):
+        attrs = node.get("attrs")
+        if isinstance(attrs, dict):
+            for key in ("text", "shortName", "url"):
+                if isinstance(attrs.get(key), str):
+                    return str(attrs[key])
+        return ""
+    content = node.get("content")
+    if not isinstance(content, list):
+        return ""
+    parts = [_adf_text(child) for child in content]
+    if kind in _ADF_INLINE_PARENTS:
+        return "".join(parts)
+    # Block containers (doc, lists, list items, quotes, panels, tables): one line per child block.
+    lines = [part.strip("\n") for part in parts if part.strip()]
+    if kind == "listItem":
+        return " ".join(line.strip() for line in lines)
+    if kind == "bulletList":
+        lines = [f"- {line}" for line in lines]
+    elif kind == "orderedList":
+        lines = [f"{number}. {line}" for number, line in enumerate(lines, start=1)]
+    return "\n".join(lines)
 
 
 def _jira_field_names(fields: Mapping[str, str]) -> list[str]:

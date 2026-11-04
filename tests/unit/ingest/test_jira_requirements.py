@@ -215,3 +215,103 @@ def test_http_errors_do_not_expose_credentials(tmp_path: Path) -> None:
     with pytest.raises(JiraRequirementsError, match="HTTP 401") as raised:
         fetch_requirements(config, ENV, Opener(error))
     assert "secret-token-value" not in str(raised.value)
+
+
+def _with_description(description: dict[str, Any]) -> dict[str, Any]:
+    """The fixture issue with another rich-text description."""
+    item = issue()
+    item["fields"]["description"] = description
+    return item
+
+
+def _fetch_one(tmp_path: Path, item: dict[str, Any], config: str = CONFIG) -> Any:
+    """Fetch one issue through the real client with a fake opener."""
+    (requirement,) = fetch_requirements(
+        load_config(write_config(tmp_path, config)), ENV, Opener({"issues": [item], "isLast": True})
+    )
+    return requirement
+
+
+def test_rich_text_keeps_formatted_words_in_their_sentence(tmp_path: Path) -> None:
+    """Jira splits a sentence into text nodes at bold or links; they are joined as written, not by commas."""
+    description = {
+        "type": "doc",
+        "content": [
+            {
+                "type": "paragraph",
+                "content": [
+                    {"type": "text", "text": "Users "},
+                    {"type": "text", "text": "must", "marks": [{"type": "strong"}]},
+                    {"type": "text", "text": " log in with "},
+                    {
+                        "type": "text",
+                        "text": "SSO",
+                        "marks": [{"type": "link", "attrs": {"href": "https://sso"}}],
+                    },
+                    {"type": "text", "text": "."},
+                ],
+            },
+            {"type": "paragraph", "content": [{"type": "text", "text": "Second paragraph."}]},
+        ],
+    }
+    requirement = _fetch_one(tmp_path, _with_description(description))
+    assert requirement.description == "Users must log in with SSO.\nSecond paragraph."
+
+
+def test_rich_text_lists_and_line_breaks(tmp_path: Path) -> None:
+    """Bullet and numbered list items get their own lines; a hard break is a line break."""
+
+    def item_text(text: str) -> dict[str, Any]:
+        """One list item holding one paragraph."""
+        return {
+            "type": "listItem",
+            "content": [{"type": "paragraph", "content": [{"type": "text", "text": text}]}],
+        }
+
+    description = {
+        "type": "doc",
+        "content": [
+            {
+                "type": "paragraph",
+                "content": [
+                    {"type": "text", "text": "Rules:"},
+                    {"type": "hardBreak"},
+                    {"type": "text", "text": "ask "},
+                    {"type": "mention", "attrs": {"text": "@Ana"}},
+                ],
+            },
+            {"type": "bulletList", "content": [item_text("card"), item_text("invoice")]},
+            {"type": "orderedList", "content": [item_text("pay"), item_text("confirm")]},
+        ],
+    }
+    requirement = _fetch_one(tmp_path, _with_description(description))
+    assert requirement.description == "Rules:\nask @Ana\n- card\n- invoice\n1. pay\n2. confirm"
+
+
+def test_long_description_is_shortened_not_rejected(tmp_path: Path) -> None:
+    """A description over 4,000 characters no longer stops the sync: it is shortened with a visible note."""
+    long_text = {
+        "type": "doc",
+        "content": [{"type": "paragraph", "content": [{"type": "text", "text": "x" * 5000}]}],
+    }
+    requirement = _fetch_one(tmp_path, _with_description(long_text))
+    assert len(requirement.description) == 4000
+    assert requirement.description.endswith("[... shortened; full text in Jira]")
+
+
+def test_sample_config_maps_every_default_jira_priority(tmp_path: Path) -> None:
+    """The shipped sample covers Jira's five default priorities, so none of them stops a sync."""
+    sample = (Path(__file__).parents[3] / "samples" / "jira-sync.toml").read_text(encoding="utf-8")
+    sample = sample.replace(
+        'base_url = "https://example.atlassian.net"', 'base_url = "https://jira.example.test"'
+    )
+    sample = sample.replace('email_env = "QI_JIRA_EMAIL"', 'email_env = "JIRA_EMAIL"')
+    sample = sample.replace('token_env = "QI_JIRA_API_TOKEN"', 'token_env = "JIRA_TOKEN"')
+    expected = {"Highest": "p1", "High": "p2", "Medium": "p3", "Low": "p4", "Lowest": "p4"}
+    for name, priority in expected.items():
+        item = issue()
+        item["fields"]["priority"] = {"name": name}
+        item["fields"]["customfield_10042"] = {"value": "High"}
+        requirement = _fetch_one(tmp_path, item, sample)
+        assert requirement.priority is not None
+        assert requirement.priority.value == priority, name

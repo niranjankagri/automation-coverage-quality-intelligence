@@ -16,9 +16,13 @@ qi requirements sync jira-sync.toml --into requirements.toml --catalog catalog.t
 Copy [`samples/jira-sync.toml`](../samples/jira-sync.toml) and set `base_url`, a scoped JQL query,
 and the fields that map to your Jira project. Jira and Xray projects often use custom fields for
 criticality and risk; map those paths under `[fields]` and add translations under `[values.*]`.
+Map every value the project uses (Jira's default priorities are Highest, High, Medium, Low and Lowest):
+one unmapped value stops the whole sync with an error, because a sync never writes partial results.
 Field paths start at the returned issue object (`key` or `fields.summary`); dotted paths can
 include numeric array positions such as `fields.components.0.name`. Jira's rich-text description
-is flattened to readable text.
+is flattened to readable text: formatted words stay in their sentence, each paragraph is a line, and
+list items start with `-` or their number. A description longer than 4,000 characters is shortened
+and ends with "[... shortened; full text in Jira]".
 
 Create an Atlassian API token with read access to the issues in the JQL scope. Set the account email
 and token in the environment variables named by `email_env` and `token_env` (defaults:
