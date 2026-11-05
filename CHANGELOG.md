@@ -7,6 +7,7 @@
 
 ## Unreleased
 
+- Collect the CI results of wiremock-api-mocking (24 repositories, 60 jobs).
 - Add read-only Jira Cloud requirement sync with configurable field mappings, paginated search,
   preview/apply behavior, protected generated catalogs and preserved test-case links.
 - Recover retained historical Chromium evidence through a copy-only, audited backfill. Preserve the original collection and a permanent published-database backup; reject changes to existing executions. Existing monitor thresholds and genuine incomplete records are unchanged.

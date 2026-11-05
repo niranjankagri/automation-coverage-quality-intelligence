@@ -52,6 +52,7 @@ COLLECTED = {
     "cucumber-bdd-demo",
     "java-selenium-testng-pom-framework",
     "integration-testing-testcontainers",
+    "wiremock-api-mocking",
     "mobile-real-device-testing",
     "llm-feature-testing",
     "ai-assisted-test-automation",

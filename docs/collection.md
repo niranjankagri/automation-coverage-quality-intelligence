@@ -42,7 +42,7 @@ artifact `junit-<job>`, holding nothing else, and the producer names it with `pa
 four first producers keep the layouts they already had. `framework` is the runner that wrote the
 results (testng, junit5, playwright, vitest, node-test, k6, cucumber, pytest, ...).
 
-**Producers today**: 23 repositories, 24 workflows, 59 jobs. Each layout was checked against a
+**Producers today**: 24 repositories, 25 workflows, 60 jobs. Each layout was checked against a
 real run, and the first collected run of each against its CI log (same number of tests and
 outcomes):
 
@@ -62,6 +62,7 @@ outcomes):
 | cucumber-java-framework | `tests.yml` | tests | Cucumber JUnit XML |
 | cucumber-bdd-demo, java-selenium-testng-pom-framework | `tests.yml` (new CI) | tests | Surefire XML |
 | integration-testing-testcontainers | `ci.yml` | integration | Surefire XML |
+| wiremock-api-mocking | `ci.yml` | wiremock | Surefire XML |
 | mobile-real-device-testing | `ci.yml` | emulation | Surefire XML |
 | llm-feature-testing | `ci.yml` | unit | Surefire XML |
 | ai-assisted-test-automation | `ci.yml` | unit, ui-chromium, ui-firefox, ui-webkit | Surefire XML |
