@@ -334,6 +334,17 @@ artifact = "junit-integration"
 path = "."
 
 [[producer]]
+repository = "niranjankagri/wiremock-api-mocking"
+workflow = "ci.yml"
+context = { framework = "junit5", environment = "ci-wiremock", platform = "linux" }
+since = 2026-11-05T07:44:19Z
+
+[[producer.job]]
+name = "wiremock"
+artifact = "junit-wiremock"
+path = "."
+
+[[producer]]
 repository = "niranjankagri/mobile-real-device-testing"
 workflow = "ci.yml"                      # the emulation job; real devices run on demand only
 context = { framework = "testng", environment = "ci-emulation", platform = "linux", browser = "chrome" }
