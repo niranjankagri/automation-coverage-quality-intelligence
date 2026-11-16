@@ -20,6 +20,8 @@
 # - k6 soak test (scheduled and manual runs only) and the jobs that fail on purpose
 #   (k6 regression-demo, llm/ai "sample answers"): listing them would make pipelines incomplete
 #   or permanently red;
+# - gatling-performance-testing: Gatling writes its own HTML report and simulation.log, no JUnit
+#   XML, and there is no Gatling reader (its SLO gate already fails the CI job);
 # - JBDL, ExampleApp, niranjankagri.github.io: not test automation projects.
 # Playwright's JUnit output records a test that passed only on a retry as passed (verified
 # 2026-10-20), so Playwright Test jobs are collected from Playwright's JSON report instead
@@ -343,6 +345,44 @@ since = 2026-11-05T07:44:19Z
 name = "wiremock"
 artifact = "junit-wiremock"
 path = "."
+
+[[producer]]
+repository = "niranjankagri/healenium-self-healing-tests"
+workflow = "ci.yml"
+context = { framework = "testng", environment = "ci-healenium", platform = "linux", browser = "chrome" }
+since = 2026-11-10T12:08:51Z
+
+[[producer.job]]
+name = "test"
+artifact = "junit-healenium"                # also holds TestNG's own reports, screenshots and the log
+path = "target/surefire-reports/junitreports"   # one JUnit XML per test class; the folder above repeats them
+
+[[producer]]
+repository = "niranjankagri/pit-mutation-testing"
+workflow = "ci.yml"
+context = { framework = "junit5", environment = "ci", platform = "linux" }
+since = 2026-11-16T13:20:32Z                # first run with the junit-<suite> artifacts
+
+[[producer.job]]
+name = "strong"
+artifact = "junit-strong"
+path = "."
+
+[[producer.job]]
+name = "weak"
+artifact = "junit-weak"
+path = "."
+
+[[producer]]
+repository = "niranjankagri/quicktheories-property-based-testing"
+workflow = "ci.yml"
+context = { framework = "testng", environment = "ci", platform = "linux" }
+since = 2026-11-11T07:16:38Z
+
+[[producer.job]]
+name = "properties"
+artifact = "test-reports"                   # also holds the shrinking report (Markdown) and .txt files
+path = "surefire-reports"
 
 [[producer]]
 repository = "niranjankagri/mobile-real-device-testing"

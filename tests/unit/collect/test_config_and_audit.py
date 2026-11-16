@@ -53,6 +53,9 @@ COLLECTED = {
     "java-selenium-testng-pom-framework",
     "integration-testing-testcontainers",
     "wiremock-api-mocking",
+    "healenium-self-healing-tests",
+    "pit-mutation-testing",
+    "quicktheories-property-based-testing",
     "mobile-real-device-testing",
     "llm-feature-testing",
     "ai-assisted-test-automation",
@@ -68,6 +71,7 @@ NOT_COLLECTED = {
     "JBDL",
     "ExampleApp",
     "niranjankagri.github.io",
+    "gatling-performance-testing",
 }
 
 
