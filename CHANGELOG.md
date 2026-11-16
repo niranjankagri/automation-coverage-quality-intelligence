@@ -7,6 +7,9 @@
 
 ## Unreleased
 
+- Collect the CI results of healenium-self-healing-tests, pit-mutation-testing and
+  quicktheories-property-based-testing (27 repositories, 64 jobs); gatling-performance-testing is
+  listed as not collected (no JUnit XML).
 - Collect the CI results of wiremock-api-mocking (24 repositories, 60 jobs).
 - Add read-only Jira Cloud requirement sync with configurable field mappings, paginated search,
   preview/apply behavior, protected generated catalogs and preserved test-case links.
