@@ -56,6 +56,8 @@ COLLECTED = {
     "healenium-self-healing-tests",
     "pit-mutation-testing",
     "quicktheories-property-based-testing",
+    "pattern-shop-demo-app",
+    "design-patterns-test-framework",
     "mobile-real-device-testing",
     "llm-feature-testing",
     "ai-assisted-test-automation",

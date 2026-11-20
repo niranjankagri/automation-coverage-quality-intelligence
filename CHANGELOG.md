@@ -7,6 +7,10 @@
 
 ## Unreleased
 
+- Collect the CI results of pattern-shop-demo-app (the demo shop's own JUnit tests) and
+  design-patterns-test-framework (core job and 7 UI jobs on Selenium and Playwright, read from
+  Surefire's TEST-TestSuite.xml so data-provider cases keep their own names): 29 repositories,
+  73 jobs.
 - Collect the CI results of healenium-self-healing-tests, pit-mutation-testing and
   quicktheories-property-based-testing (27 repositories, 64 jobs); gatling-performance-testing is
   listed as not collected (no JUnit XML).

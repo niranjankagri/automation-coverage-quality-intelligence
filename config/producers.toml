@@ -385,6 +385,72 @@ artifact = "test-reports"                   # also holds the shrinking report (M
 path = "surefire-reports"
 
 [[producer]]
+repository = "niranjankagri/pattern-shop-demo-app"
+workflow = "ci.yml"                         # the demo shop the frameworks test; its own JUnit tests
+context = { framework = "junit5", environment = "ci", platform = "linux" }
+since = 2026-11-20T07:33:37Z
+
+[[producer.job]]
+name = "app"
+artifact = "junit-app"                      # the Surefire folder: one XML and its .txt summary
+path = "."
+
+[[producer]]
+repository = "niranjankagri/design-patterns-test-framework"
+workflow = "ci.yml"                         # one core job and a matrix of 7 UI jobs (engine, browser)
+context = { framework = "testng", environment = "ci", platform = "linux" }
+since = 2026-11-20T07:49:44Z
+# path: Surefire's TEST-TestSuite.xml names each data-provider case ("signInOutcome[User[...]](2)");
+# junitreports/ repeats the bare method name per case, which would be read as duplicates
+
+[[producer.job]]
+name = "core"
+artifact = "junit-core"
+path = "surefire-reports/TEST-TestSuite.xml"
+
+[[producer.job]]
+name = "ui-selenium-chrome"
+artifact = "junit-ui-selenium-chrome"
+path = "surefire-reports/TEST-TestSuite.xml"
+context = { browser = "chrome", environment = "ci-selenium" }
+
+[[producer.job]]
+name = "ui-selenium-firefox"
+artifact = "junit-ui-selenium-firefox"
+path = "surefire-reports/TEST-TestSuite.xml"
+context = { browser = "firefox", environment = "ci-selenium" }
+
+[[producer.job]]
+name = "ui-selenium-edge"
+artifact = "junit-ui-selenium-edge"
+path = "surefire-reports/TEST-TestSuite.xml"
+context = { browser = "edge", environment = "ci-selenium" }
+
+[[producer.job]]
+name = "ui-selenium-chrome-grid"
+artifact = "junit-ui-selenium-chrome-grid"
+path = "surefire-reports/TEST-TestSuite.xml"
+context = { browser = "chrome", environment = "ci-selenium-grid" }
+
+[[producer.job]]
+name = "ui-playwright-chromium"
+artifact = "junit-ui-playwright-chromium"
+path = "surefire-reports/TEST-TestSuite.xml"
+context = { browser = "chromium", environment = "ci-playwright" }
+
+[[producer.job]]
+name = "ui-playwright-firefox"
+artifact = "junit-ui-playwright-firefox"
+path = "surefire-reports/TEST-TestSuite.xml"
+context = { browser = "firefox", environment = "ci-playwright" }
+
+[[producer.job]]
+name = "ui-playwright-webkit"
+artifact = "junit-ui-playwright-webkit"
+path = "surefire-reports/TEST-TestSuite.xml"
+context = { browser = "webkit", environment = "ci-playwright" }
+
+[[producer]]
 repository = "niranjankagri/mobile-real-device-testing"
 workflow = "ci.yml"                      # the emulation job; real devices run on demand only
 context = { framework = "testng", environment = "ci-emulation", platform = "linux", browser = "chrome" }
