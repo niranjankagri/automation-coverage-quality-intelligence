@@ -42,7 +42,7 @@ artifact `junit-<job>`, holding nothing else, and the producer names it with `pa
 four first producers keep the layouts they already had. `framework` is the runner that wrote the
 results (testng, junit5, playwright, vitest, node-test, k6, cucumber, pytest, ...).
 
-**Producers today**: 27 repositories, 28 workflows, 64 jobs. Each layout was checked against a
+**Producers today**: 29 repositories, 30 workflows, 73 jobs. Each layout was checked against a
 real run, and the first collected run of each against its CI log (same number of tests and
 outcomes):
 
@@ -66,6 +66,8 @@ outcomes):
 | healenium-self-healing-tests | `ci.yml` | test (path `target/surefire-reports/junitreports`) | TestNG JUnit XML |
 | pit-mutation-testing | `ci.yml` | strong, weak | Surefire XML |
 | quicktheories-property-based-testing | `ci.yml` | properties (path `surefire-reports`) | Surefire XML |
+| pattern-shop-demo-app | `ci.yml` | app | Surefire XML |
+| design-patterns-test-framework | `ci.yml` | core, ui-selenium-chrome, ui-selenium-firefox, ui-selenium-edge, ui-selenium-chrome-grid, ui-playwright-chromium, ui-playwright-firefox, ui-playwright-webkit (path `surefire-reports/TEST-TestSuite.xml`) | Surefire XML |
 | mobile-real-device-testing | `ci.yml` | emulation | Surefire XML |
 | llm-feature-testing | `ci.yml` | unit | Surefire XML |
 | ai-assisted-test-automation | `ci.yml` | unit, ui-chromium, ui-firefox, ui-webkit | Surefire XML |
