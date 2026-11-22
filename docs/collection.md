@@ -42,7 +42,7 @@ artifact `junit-<job>`, holding nothing else, and the producer names it with `pa
 four first producers keep the layouts they already had. `framework` is the runner that wrote the
 results (testng, junit5, playwright, vitest, node-test, k6, cucumber, pytest, ...).
 
-**Producers today**: 29 repositories, 30 workflows, 73 jobs. Each layout was checked against a
+**Producers today**: 31 repositories, 32 workflows, 76 jobs. Each layout was checked against a
 real run, and the first collected run of each against its CI log (same number of tests and
 outcomes):
 
@@ -76,12 +76,18 @@ outcomes):
 | k6-performance-testing | `perf.yml` | app, smoke, load, stress, spike | JUnit XML, one case per k6 threshold |
 | pact-contract-testing | `contract.yml` | consumer (Vitest), provider (Surefire) | JUnit XML |
 | jenkins-kubernetes-pipeline | `ci.yml` | checks-service-unit, checks-api-local, kubernetes-smoke, kubernetes-regression | JUnit XML |
+| webdriverio-typescript-framework | `ci.yml` | chrome, firefox | WebdriverIO JUnit XML |
+| rag-agent-evals | `ci.yml` | test (artifact `eval-reports`, path `junit.xml`) | pytest JUnit XML |
 
 Not collected, on purpose: **selenium-java-framework** (frozen; its CI keeps an HTML report only),
 **mobile-test-automation-framework** (its CI compiles only: the app under test may not be
 redistributed), the k6 soak test (scheduled and manual runs only) and the jobs that fail on
-purpose (k6 regression-demo, the "sample answers" jobs), and the repositories that are not test
-automation (JBDL, ExampleApp, the portfolio site). `tests/unit/collect/test_config_and_audit.py`
+purpose (k6 regression-demo, the "sample answers" jobs), **jmeter-performance-testing** (HTML
+dashboards only, like Gatling), **postman-newman-api-testing** (its one artifact mixes the Newman
+JUnit XML with a k6 JSON summary and an HTML report), **ai-application-quality-testing** (its CI
+uploads no result files), the Karate job of webdriverio-typescript-framework (HTML report only),
+and the repositories that are not test automation (JBDL, ExampleApp, the portfolio site, the
+profile README). `tests/unit/collect/test_config_and_audit.py`
 fails when a portfolio repository is neither collected nor named here.
 
 **Flaky tests from Playwright:** its JUnit output records a test that passed only on a retry as

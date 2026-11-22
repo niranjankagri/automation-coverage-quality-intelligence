@@ -22,7 +22,13 @@
 #   or permanently red;
 # - gatling-performance-testing: Gatling writes its own HTML report and simulation.log, no JUnit
 #   XML, and there is no Gatling reader (its SLO gate already fails the CI job);
-# - JBDL, ExampleApp, niranjankagri.github.io: not test automation projects.
+# - jmeter-performance-testing: likewise, only JMeter's HTML dashboards (its SLO gate fails the job);
+# - postman-newman-api-testing: its one artifact mixes the Newman JUnit XML of two runs with a k6
+#   JSON summary and an HTML report, so no single path holds only its results (checked 2026-11-22);
+# - ai-application-quality-testing: its CI uploads no result files, and the local-model evals are
+#   graded by a model that is not repeatable;
+# - webdriverio-typescript-framework's Karate job: HTML report only (its browser jobs are collected);
+# - JBDL, ExampleApp, niranjankagri.github.io, niranjankagri (profile README): not test automation projects.
 # Playwright's JUnit output records a test that passed only on a retry as passed (verified
 # 2026-10-20), so Playwright Test jobs are collected from Playwright's JSON report instead
 # (playwright-json-<project>, since 2026-10-26), which keeps every attempt (docs/ingestion.md).
@@ -614,3 +620,32 @@ name = "kubernetes-regression"
 artifact = "reports-kubernetes"
 path = "regression.xml"
 context = { framework = "pytest", environment = "ci-kind" }
+
+[[producer]]
+repository = "niranjankagri/webdriverio-typescript-framework"
+workflow = "ci.yml"
+context = { framework = "webdriverio", environment = "ci", platform = "linux" }
+since = 2026-10-29T08:27:32Z                # first main run; junit-<browser> artifacts from the start
+
+[[producer.job]]
+name = "chrome"
+artifact = "junit-chrome"
+path = "."
+context = { browser = "chrome" }
+
+[[producer.job]]
+name = "firefox"
+artifact = "junit-firefox"
+path = "."
+context = { browser = "firefox" }
+
+[[producer]]
+repository = "niranjankagri/rag-agent-evals"
+workflow = "ci.yml"
+context = { framework = "pytest", environment = "ci", platform = "linux" }
+since = 2026-11-06T06:53:41Z                # first main run
+
+[[producer.job]]
+name = "test"
+artifact = "eval-reports"                   # also holds summary.md and traces.jsonl
+path = "junit.xml"                          # the 7 strict xfail known misses are reported as skipped

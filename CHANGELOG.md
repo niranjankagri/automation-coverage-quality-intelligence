@@ -7,6 +7,10 @@
 
 ## Unreleased
 
+- Collect the CI results of webdriverio-typescript-framework (chrome and firefox jobs) and
+  rag-agent-evals (pytest JUnit XML from its eval-reports artifact): 31 repositories, 76 jobs.
+  jmeter-performance-testing, postman-newman-api-testing and ai-application-quality-testing are
+  listed as not collected, with the reason, so every public repository is accounted for.
 - Collect the CI results of pattern-shop-demo-app (the demo shop's own JUnit tests) and
   design-patterns-test-framework (core job and 7 UI jobs on Selenium and Playwright, read from
   Surefire's TEST-TestSuite.xml so data-provider cases keep their own names): 29 repositories,
