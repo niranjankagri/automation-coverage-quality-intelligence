@@ -58,6 +58,8 @@ COLLECTED = {
     "quicktheories-property-based-testing",
     "pattern-shop-demo-app",
     "design-patterns-test-framework",
+    "webdriverio-typescript-framework",
+    "rag-agent-evals",
     "mobile-real-device-testing",
     "llm-feature-testing",
     "ai-assisted-test-automation",
@@ -74,6 +76,10 @@ NOT_COLLECTED = {
     "ExampleApp",
     "niranjankagri.github.io",
     "gatling-performance-testing",
+    "jmeter-performance-testing",
+    "postman-newman-api-testing",
+    "ai-application-quality-testing",
+    "niranjankagri",
 }
 
 
