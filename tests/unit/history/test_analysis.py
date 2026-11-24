@@ -58,6 +58,8 @@ def status(runs: list[TestRun], settings: HistorySettings = DEFAULTS) -> Stabili
         ([P, E, E], Stability.CONSISTENTLY_FAILING),  # errors count as failures
         ([P, S, S, P, P], Stability.STABLE),  # skips are ignored
         ([S, S, S], Stability.INSUFFICIENT_DATA),
+        ([P, F, F, S, S, S, S], Stability.INSUFFICIENT_DATA),  # 4 of 7 skipped
+        ([P, F, F, S, S, S], Stability.CONSISTENTLY_FAILING),  # 3 of 6 skipped: not more than half
     ],
     ids=[
         "stable",
@@ -69,6 +71,8 @@ def status(runs: list[TestRun], settings: HistorySettings = DEFAULTS) -> Stabili
         "errors",
         "skips",
         "only-skips",
+        "mostly-skipped",
+        "half-skipped",
     ],
 )
 def test_classification_rules(outcomes: list[Outcome], expected: Stability) -> None:
@@ -102,6 +106,27 @@ def test_consistent_failure_wins_over_flaky_signals() -> None:
     runs = history(P, F, P, F, F, builds="aaabb")
 
     assert status(runs) is Stability.CONSISTENTLY_FAILING
+
+
+def test_mostly_skipped_test_says_why() -> None:
+    """Old failures of a test that now skips itself are reported as too little evidence."""
+    runs = history(P, F, F, *[S] * 8)
+
+    (line,) = timelines(runs).values()
+    verdict = classify(line)
+
+    assert verdict.status is Stability.INSUFFICIENT_DATA
+    assert verdict.reasons == ("skipped in 8 of the last 10 runs",)
+    assert verdict.failures == 2
+
+
+def test_pass_after_retry_still_counts_when_mostly_skipped() -> None:
+    """A retry signal is evidence by itself, however many runs skipped the test."""
+    runs = [run(result("t", P, retries=1), day=1, build="a")] + [
+        run(result("t", S), day=day, build=chr(ord("a") + day)) for day in range(2, 6)
+    ]
+
+    assert status(runs) is Stability.FLAKY_CANDIDATE
 
 
 def test_window_limits_how_far_back_history_counts() -> None:

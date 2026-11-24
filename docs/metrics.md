@@ -175,12 +175,16 @@ context.
 
 | # | Class | Rule (defaults) | Meaning |
 |---|---|---|---|
-| 1 | insufficient data | fewer than **3** verdicts and no pass-after-retry | too early to say anything |
+| 1 | insufficient data | no pass-after-retry, and fewer than **3** verdicts **or** more than half (`max_skip_share` **0.5**) of the last `window` executions skipped | too early, or too little recent evidence, to say anything |
 | 2 | consistently failing | the last **2** verdicts both failed or errored | a reproduced failure: treat as a real defect, **not** as flakiness |
 | 3 | flaky candidate | a pass after a retry inside one run, **or** one build that both passed and failed, **or** at least **2** flips (`flips_for_flaky`) | mixed results without a code change; a *candidate*, to be confirmed by a person |
 | 4 | new failure | the latest verdict failed (and none of the above) | broke recently; one failure is not yet a confirmed failure |
 | 5 | recovered | a failure earlier in the window, passing now | watch it |
 | 6 | stable | every verdict passed | |
+
+A test that is skipped in most recent runs (for example when a site's bot check makes the test
+skip itself) keeps old verdicts in its window, possibly from weeks ago. Rule 1 stops those few old
+verdicts from deciding the class: two old timeouts are not a "consistently failing" test today.
 
 Failure rate (shown with every class) = failed or errored verdicts / verdicts in the window.
 
