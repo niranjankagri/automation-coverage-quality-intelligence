@@ -7,6 +7,10 @@
 
 ## Unreleased
 
+- History: a test skipped in more than half of its last `window` executions (`max_skip_share`,
+  default 0.5) is classified as insufficient data instead of by its few old verdicts. A
+  Playwright test that skips itself behind a site's bot check had been shown as consistently
+  failing because of two timeouts weeks earlier.
 - Collect the CI results of webdriverio-typescript-framework (chrome and firefox jobs) and
   rag-agent-evals (pytest JUnit XML from its eval-reports artifact): 31 repositories, 76 jobs.
   jmeter-performance-testing, postman-newman-api-testing and ai-application-quality-testing are

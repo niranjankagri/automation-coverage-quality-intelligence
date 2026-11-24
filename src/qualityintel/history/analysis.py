@@ -33,7 +33,7 @@ ContextKey = tuple[str | None, ...]
 class Stability(StrEnum):
     """Classification of one test in one context (precedence top to bottom)."""
 
-    INSUFFICIENT_DATA = "insufficient data"  # fewer verdicts than min_verdicts, no retry signal
+    INSUFFICIENT_DATA = "insufficient data"  # too few verdicts, or mostly skipped; no retry signal
     CONSISTENTLY_FAILING = "consistently failing"  # the last confirm_after verdicts all failed
     FLAKY_CANDIDATE = "flaky candidate"  # mixed results without a code change, or many flips
     NEW_FAILURE = "new failure"  # latest verdict failed after passing
@@ -53,6 +53,7 @@ class HistorySettings:
     slow_min_seconds: float = 1.0
     slow_confirm_runs: int = 2
     min_baseline: int = 3
+    max_skip_share: float = 0.5
 
 
 DEFAULTS = HistorySettings()
@@ -176,7 +177,10 @@ def classify(executions: Sequence[Execution], settings: HistorySettings = DEFAUL
 
     Rules, first match wins:
 
-    1. fewer than ``min_verdicts`` verdicts and no pass-after-retry: insufficient data;
+    1. no pass-after-retry, and fewer than ``min_verdicts`` verdicts or more than
+       ``max_skip_share`` of the last ``window`` executions skipped: insufficient data (a test
+       that is almost always skipped has too little recent evidence, even if its few old
+       verdicts failed);
     2. the last ``confirm_after`` verdicts all failed: consistently failing (a reproduced
        failure, not flakiness);
     3. a pass after a retry inside one run, or one build that both passed and failed, or at
@@ -193,6 +197,8 @@ def classify(executions: Sequence[Execution], settings: HistorySettings = DEFAUL
     failures = sum(1 for e in verdicts if e.failed)
     flips = sum(1 for a, b in pairwise(verdicts) if a.failed != b.failed)
     mixed = _mixed_builds(verdicts)
+    recent = executions[-settings.window :]
+    skipped = sum(1 for e in recent if e.result.outcome is Outcome.SKIPPED)
     last = executions[-1].result
     failed_messages = [e.result.failure.message for e in verdicts if e.failed and e.result.failure]
     reasons: list[str] = []
@@ -200,6 +206,9 @@ def classify(executions: Sequence[Execution], settings: HistorySettings = DEFAUL
     if len(verdicts) < settings.min_verdicts and not retried:
         status = Stability.INSUFFICIENT_DATA
         reasons.append(f"{len(verdicts)} verdict(s), {settings.min_verdicts} needed")
+    elif skipped > settings.max_skip_share * len(recent) and not retried:
+        status = Stability.INSUFFICIENT_DATA
+        reasons.append(f"skipped in {skipped} of the last {len(recent)} runs")
     elif len(verdicts) >= settings.confirm_after and all(
         e.failed for e in verdicts[-settings.confirm_after :]
     ):
