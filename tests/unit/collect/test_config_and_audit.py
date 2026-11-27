@@ -60,6 +60,7 @@ COLLECTED = {
     "design-patterns-test-framework",
     "webdriverio-typescript-framework",
     "rag-agent-evals",
+    "rag-chatbot-quality-gate",
     "mobile-real-device-testing",
     "llm-feature-testing",
     "ai-assisted-test-automation",

@@ -28,6 +28,8 @@
 # - ai-application-quality-testing: its CI uploads no result files, and the local-model evals are
 #   graded by a model that is not repeatable;
 # - webdriverio-typescript-framework's Karate job: HTML report only (its browser jobs are collected);
+# - rag-chatbot-quality-gate's model-evals.yml: graded by real local models on a weekly schedule, not
+#   repeatable (its ci.yml gate job, on fixed recorded answers, is collected);
 # - JBDL, ExampleApp, niranjankagri.github.io, niranjankagri (profile README): not test automation projects.
 # Playwright's JUnit output records a test that passed only on a retry as passed (verified
 # 2026-10-20), so Playwright Test jobs are collected from Playwright's JSON report instead
@@ -649,3 +651,14 @@ since = 2026-11-06T06:53:41Z                # first main run
 name = "test"
 artifact = "eval-reports"                   # also holds summary.md and traces.jsonl
 path = "junit.xml"                          # the 7 strict xfail known misses are reported as skipped
+
+[[producer]]
+repository = "niranjankagri/rag-chatbot-quality-gate"
+workflow = "ci.yml"
+context = { framework = "pytest", environment = "ci", platform = "linux" }
+since = 2026-11-26T04:07:40Z                # first main run
+
+[[producer.job]]
+name = "gate"
+artifact = "quality-reports"                # also holds the DeepEval, Ragas, Promptfoo and retrieval JSON
+path = "junit.xml"                          # 10 strict xfail known misses and 12 model-only tests are reported as skipped
