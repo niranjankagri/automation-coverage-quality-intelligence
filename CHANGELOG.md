@@ -7,6 +7,9 @@
 
 ## Unreleased
 
+- Collect the CI results of rag-chatbot-quality-gate (pytest JUnit XML from the quality-reports
+  artifact of its gate job): 32 repositories, 77 jobs. Its real-model workflow is listed as not
+  collected: local models grade it, so the results are not repeatable.
 - History: a test skipped in more than half of its last `window` executions (`max_skip_share`,
   default 0.5) is classified as insufficient data instead of by its few old verdicts. A
   Playwright test that skips itself behind a site's bot check had been shown as consistently
